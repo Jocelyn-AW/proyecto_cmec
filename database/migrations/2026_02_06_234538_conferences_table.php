@@ -20,16 +20,15 @@ return new class extends Migration
             $table->string('held_by'); //sede
             $table->string('address');
             $table->string('google_coords');
-            $table->date('date');
+            $table->datetime('date');
             $table->string('organized_by');
             $table->string('specialties');
             $table->decimal('member_price', 10, 2);
-            $table->decimal('guess_price', 10, 2)->nullable();
+            $table->decimal('guest_price', 10, 2)->nullable();
             $table->decimal('resident_price', 10, 2)->nullable();
             $table->string('additional_comments')->nullable();
-            //todo
-            //programa en pdf (opcional)
-            //expositores
+
+            $table->timestamps();
         });
     }
 

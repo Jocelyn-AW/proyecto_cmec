@@ -7,8 +7,11 @@ import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
 import MainMenu from '@/Shared/MainMenu.vue';
+import Sidebar from '@/Shared/Sidebar.vue';
+import { useSidebarProvider } from '@/composables/useSidebar';
 
 const showingNavigationDropdown = ref(false);
+useSidebarProvider();
 </script>
 
 <template>
@@ -17,9 +20,10 @@ const showingNavigationDropdown = ref(false);
             <!-- <button class="bg-[red] text-white p-10 text-5xl">
     ¿ME VEO ROJO Y GIGANTE?
 </button> -->
-            <MainMenu />
+            <MainMenu class="px-8 mr-8 bg-white rounded-lg text-zinc-600"/>
+            <Sidebar/>
             
-            <div class="flex-1 lg:ml-[290px]">
+            <div class="flex-1">
                 
                 <nav class="border-b border-gray-100 bg-white ">
 

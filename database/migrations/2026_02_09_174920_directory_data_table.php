@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('invoice_data', function (Blueprint $table) {
+        Schema::create('directory_data', function (Blueprint $table) {
             $table->id();
-            // $table->integer('member_id')->nullable();
-            $table->string('rfc');
             $table->string('name');
-            $table->string('email');
-            $table->string('postal_code');
-            $table->string('tax_regime'); //regimen fiscal
-            $table->string('cfdi_use'); //uso cfdi
+            $table->string('specialty');
+            $table->string('state');
+            $table->string('city');
             $table->timestamps();
         });
     }
@@ -29,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('invoice_data');
+        Schema::dropIfExists('directory_data');
     }
 };

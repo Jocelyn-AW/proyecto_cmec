@@ -16,15 +16,19 @@ return new class extends Migration
             $table->string('topic');
             $table->string('description');
             $table->string('objectives')->nullable();
-            $table->date('date');
+            $table->datetime('date');
             $table->string('duration');
             $table->string('organized_by');
             $table->string('sponsored_by')->nullable();
             $table->decimal('member_price', 10, 2);
-            $table->decimal('guess_price', 10, 2)->nullable();
+            $table->decimal('guest_price', 10, 2)->nullable();
             $table->decimal('resident_price', 10, 2)->nullable();
             $table->string('link')->nullable();
+
+            $table->timestamps();
         });
+
+        
     }
 
     /**

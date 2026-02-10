@@ -17,9 +17,6 @@ return new class extends Migration
             $table->integer('order');
             $table->boolean('is_active');
             
-            //todo: revisar si usar esto o la libreria Media
-            $table->string('filename');
-            $table->string('file_path');
             $table->timestamps();           
         });
     }
