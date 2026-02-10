@@ -17,10 +17,9 @@ return new class extends Migration
             $table->string('content');
             $table->string('link')->nullable();
             $table->string('extract')->nullable();  
+            $table->string('type'); //sesion o noticia
             $table->boolean('is_active');
-            //TODO
-            $table->string('file_path')->nullable();
-            $table->string('filename')->nullable();
+            
             $table->timestamps();
         });
     }

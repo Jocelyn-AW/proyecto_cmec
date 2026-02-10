@@ -11,14 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        //Para el apartado de publicidad
-        Schema::create('posts', function(Blueprint $table) {
+        Schema::create('payment_methods', function (Blueprint $table) {
             $table->id();
-            $table->string('link')->nullable();
-            $table->integer('order');
-            $table->boolean('is_active');
-            
-            $table->timestamps();     
+
         });
     }
 
@@ -27,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('posts');
+        Schema::dropIfExists('payment_methods');
     }
 };

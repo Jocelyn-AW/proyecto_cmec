@@ -13,10 +13,9 @@ return new class extends Migration
     {
         Schema::create('attendees', function (Blueprint $table) {
             $table->id();
-            $table->morphs('attendable');
+            $table->morphs('event');
+            $table->nullableMorphs('person');
 
-            $table->unsignedBigInteger('person_id')->nullable();
-            $table->string('person_type')->default('miembro');
             $table->string('name');
             $table->string('phone');
             $table->string('state');
@@ -24,9 +23,11 @@ return new class extends Migration
             // $table->string('cmec_member_id');
             $table->string('status')->default('pendiente');
             $table->decimal('price', 10, 2);
-            $table->string('stripe_transaction_id');
-
+            // $table->string('stripe_transaction_id');
+            $table->boolean('did_attend')->default(0); //asistió
             //diploma pdf
+
+            $table->timestamps();
         });
     }
 

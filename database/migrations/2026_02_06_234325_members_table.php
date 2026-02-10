@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('stripe_transaction_id');
 
             //TODO: documents??
+            $table->timestamps();
         });
     }
 
