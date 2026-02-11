@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Banner;
+use App\Models\Media;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -30,55 +32,84 @@ class BannersController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request): Response
     {
-        //
+        $banners = Banner::with('media')
+            ->orderBy('order')
+            ->get()
+            ->map(function ($banner) {
+                return [
+                    'id' => $banner->id,
+                    'order' => $banner->order,
+                    'link' => $banner->link,
+                    'is_active' => $banner->is_active,
+                    'name' => $banner->media->first()?->name ?? null,
+                    'image' => $banner->getFirstMediaUrl('banners'),
+                ];
+            });
+
+        return Inertia::render('Banner/Banner', [
+            'banners' => $banners
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    /* public function index(Request $request)
     {
-        //
-    }
+        try {
+
+            $query = Banner::with('media');
+
+            $banners = $query->get();
+
+            return response()->json([
+                'message' => 'success',
+                'data' => $banners
+            ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    } */
 
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'order' => 'required|integer',
-            'image' => 'required|image|max:5120',
-            'link'  => 'nullable|url|max:255',
-        ]);
+        try {
+            $request->mergeIfMissing([
+                'is_active' => true,
+                'link' => null
+            ]);
 
-        $collectionName = 'banner';
+            $data = $request->validate([
+                'order' => 'required|numeric',
+                'link' => 'nullable|string|max:255',
+                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'is_active' => 'boolean'
+            ]);
 
-        $banner = Banner::create([
-            'link'      => $request->link,
-            'order'     => $request->order,
-            'is_active' => true,
-        ]);
+            $banner = Banner::create($data);
 
-        $media = $banner
-            ->addMediaFromRequest('image')
-            ->toMediaCollection($collectionName);
+            if ($request->hasFile('image')) {
+                $banner->addMediaFromRequest('image')
+                    ->toMediaCollection('banners');
+            }
 
-        return response()->json([
-            'success' => true,
-            'banner' => [
-                'id'        => $banner->id,
-                'order'     => $banner->order,
-                'image'     => [
-                    'id'       => $media->id,
-                    'url'      => $media->getUrl(),
-                    'filename' => $media->file_name,
-                    'collection_name' => $media->collection_name,
-                ],
-            ],
-        ], 201);
+            return response()->json([
+                'message' => 'success',
+                'data' => [
+                    'banner' => $banner
+                ]
+            ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
 
@@ -93,24 +124,89 @@ class BannersController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(Request $request, int $id)
     {
-        //
-    }
+        try {
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
+            $request->mergeIfMissing([
+                'is_active' => true,
+                'link' => null
+            ]);
+
+            $data = $request->validate([
+                'order' => 'required|numeric',
+                'link' => 'nullable|string|max:255',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'is_active' => 'boolean'
+            ]);
+
+            $banner = Banner::findOrFail($id);
+
+            $banner->update($data);
+
+            if ($request->hasFile('image')) {
+
+                $banner->clearMediaCollection('banners');
+
+                $banner->addMediaFromRequest('image')
+                    ->toMediaCollection('banners');
+            }
+
+            return response()->json([
+                'message' => 'success',
+                'data' => [
+                    'banner' => $banner->load('media')
+                ]
+            ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function delete(int $id)
     {
-        //
+        try {
+            $banner = Banner::findOrFail($id);
+
+            $banner->clearMediaCollection('banners');
+
+            $banner->delete();
+
+            return response()->json([
+                'message' => 'success',
+                'data' => [
+                    'deleted_id' => $id
+                ]
+            ], 200);
+        } catch (Exception $e) {
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'banners' => 'required|array',
+            'banners.*.id' => 'required|exists:banners,id',
+            'banners.*.order' => 'required|numeric'
+        ]);
+
+        foreach ($request->banners as $item) {
+            Banner::where('id', $item['id'])
+                ->update(['order' => $item['order']]);
+        }
+
+        return response()->json([
+            'message' => 'Orden actualizado'
+        ]);
     }
 }
