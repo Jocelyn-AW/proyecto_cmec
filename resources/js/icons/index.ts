@@ -45,6 +45,12 @@ import LayoutDashboardIcon from "./LayoutDashboardIcon.vue";
 import UserGroupIcon from "./UserGroupIcon.vue";
 import BellIcon from "./BellIcon.vue";
 import BarChartIcon from "./BarChartIcon.vue";
+import PresentationIcon from "./PresentationIcon.vue";
+import WebinarIcon from "./WebinarIcon.vue";
+import ImagesIcon from "./ImagesIcon.vue";
+import BlogIcon from "./BlogIcon.vue";
+import PriceTagIcon from "./PriceTagIcon.vue";
+import NewsIcon from "./NewsIcon.vue";
 
 export {
   BellIcon,
@@ -94,4 +100,10 @@ export {
   MailBox,
   SendIcon,
   DraftIcon,
+  PresentationIcon,
+  WebinarIcon,
+  ImagesIcon,
+  BlogIcon,
+  PriceTagIcon,
+  NewsIcon
 };

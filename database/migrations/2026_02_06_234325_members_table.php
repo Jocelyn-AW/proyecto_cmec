@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->date('inscription_date');
             $table->date('expiration_date');
-            $table->boolean('is_active');
+            $table->boolean('is_active')->default(true);
             $table->string('cmec_member_id');
             $table->string('stripe_transaction_id');
 

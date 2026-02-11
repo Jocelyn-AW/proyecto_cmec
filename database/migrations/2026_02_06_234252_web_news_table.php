@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('link')->nullable();
             $table->string('extract')->nullable();  
             $table->string('type'); //sesion o noticia
-            $table->boolean('is_active');
+            $table->boolean('is_active')->default(true);
             
             $table->timestamps();
         });
