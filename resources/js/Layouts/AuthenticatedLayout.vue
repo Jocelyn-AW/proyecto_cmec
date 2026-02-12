@@ -18,13 +18,13 @@ useSidebarProvider();
     <div>
         <div class="min-h-screen bg-gray-100 xl:flex">
             <!-- <button class="bg-[red] text-white p-10 text-5xl">
-    ¿ME VEO ROJO Y GIGANTE?
-</button> -->
-            <MainMenu class="px-8 mr-8 bg-white rounded-lg text-zinc-600"/>
-            <Sidebar/>
-            
+                ¿ME VEO ROJO Y GIGANTE?
+            </button> -->
+            <!-- <MainMenu class="px-8 mr-8 bg-white rounded-lg text-zinc-600" /> -->
+            <Sidebar />
+
             <div class="flex-1">
-                
+
                 <nav class="border-b border-gray-100 bg-white ">
 
 
@@ -43,6 +43,12 @@ useSidebarProvider();
                                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                                     <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                         Dashboard
+                                    </NavLink>
+                                    <NavLink
+                                        :href="route('banners.index')"
+                                        :active="route().current('banners.*')"
+                                    >
+                                        Banners
                                     </NavLink>
                                 </div>
                             </div>

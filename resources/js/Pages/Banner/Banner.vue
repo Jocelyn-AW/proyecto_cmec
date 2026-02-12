@@ -1,8 +1,13 @@
 <script setup>
 import { ref, watch } from 'vue'
 import draggable from 'vuedraggable'
-import { router } from '@inertiajs/vue3'
 import axios from 'axios'
+import { Head } from '@inertiajs/vue3'
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+
+defineOptions({
+    layout: AuthenticatedLayout
+})
 
 const props = defineProps({
     banners: {
@@ -73,62 +78,133 @@ const deleteBanner = (id) => {
 </script>
 
 <template>
-    <div class="p-6 bg-zinc-50 rounded-lg max-w-3xl mx-auto">
-        <div class="flex items-start justify-between mb-4">
-            <div>
-                <h2 class="text-xl font-semibold">Ordenar Banners</h2>
-                <p class="text-sm text-zinc-600">Arrastra y pulsa Guardar para aplicar el nuevo orden</p>
-            </div>
+    <div>
 
-            <div class="flex items-center gap-2">
-                <button @click="cancelChanges"
-                    class="bg-white border border-zinc-200 text-zinc-700 text-sm px-3 py-2 rounded hover:bg-zinc-50">
-                    Cancelar
-                </button>
-                <button @click="saveOrder" class="bg-zinc-900 text-white text-sm px-3 py-2 rounded hover:bg-zinc-800">
-                    Guardar orden
-                </button>
-            </div>
-        </div>
+        <Head title="Banners" />
 
-        <div class="bg-white rounded-xl shadow-sm border border-zinc-200 overflow-hidden">
-            <draggable :list="list" :disabled="!enabled" class="flex flex-col gap-3 p-4" ghost-class="ghost"
-                :move="checkMove" item-key="id" :swap="true" :swap-threshold="0.5" @start="startDrag" @end="endDrag">
-                <template #item="{ element, index }">
-                    <div
-                        class="list-group-item banner-card w-full bg-white border rounded-lg shadow-sm overflow-hidden cursor-move">
-                        <div class="flex gap-3 items-center p-3">
-                            <img v-if="element.image" :src="element.image" class="w-28 h-20 object-cover rounded" />
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-start">
-                                    <div class="truncate">
-                                        <div class="text-sm font-medium">Nombre: {{ element.name }}</div>
-                                        <a v-if="element.link" :href="element.link" target="_blank"
-                                            class="text-sm font-medium truncate text-blue-600 hover:text-blue-800 hover:underline cursor-pointer block">
-                                            {{ element.link }}
-                                        </a>
+        <div class="p-4 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
+            <div class="space-y-5">
+                <div
+                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Banners</h3>
+                            <p class="text-sm text-gray-500">Arrastra las filas para reordenar y pulsa "Guardar orden"
+                            </p>
+                        </div>
 
-                                        <span v-else
-                                            class="text-sm font-medium truncate text-gray-400 cursor-default block">
-                                            — sin link —
-                                        </span>
-                                        <div class="text-xs text-zinc-500">ID: {{ element.id }}</div>
-                                    </div>
-                                    <div class="text-sm text-zinc-600 ml-4">Pos: {{ index }}</div>
-                                </div>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            <div>
+                                <button @click="cancelChanges"
+                                    class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    Cancelar
+                                </button>
+                                <button @click="saveOrder"
+                                    class="inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-zinc-800 ml-2">
+                                    Guardar orden
+                                </button>
+                                <button @click="$inertia.visit('/banners/create')"
+                                    class="inline-flex h-10 items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-green-700 ml-2">
+                                    Nuevo
+                                </button>
                             </div>
-                            <button @click=""
-                                class="bg-yellow-600 text-white text-xs px-2 py-1 rounded hover:bg-yellow-700">
-                                Editar
-                            </button>
-                            <button @click="deleteBanner(element.id)"
-                                class="bg-red-600 text-white text-xs px-2 py-1 rounded hover:bg-red-700">
-                                Eliminar
-                            </button>
                         </div>
                     </div>
-                </template>
-            </draggable>
+
+                    <div class="lg:hidden px-5 pb-4">
+                        <div class="space-y-4">
+                            <draggable :list="list" :disabled="!enabled" ghost-class="ghost" :move="checkMove" item-key="id">
+                                <template #item="{ element, index }">
+                                    <div :key="element.id" class="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex items-center gap-4">
+                                        <div class="w-28 h-20 flex-shrink-0 overflow-hidden rounded">
+                                            <img v-if="element.image" :src="element.image" class="w-full h-full object-cover" />
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <div class="text-base font-medium leading-6 text-gray-800 dark:text-white/90 truncate">{{ element.name }}</div>
+                                            <div v-if="element.link" class="text-sm text-blue-600 truncate max-w-full"><a :href="element.link" target="_blank" class="hover:underline">{{ element.link }}</a></div>
+                                            <div v-else class="text-sm text-gray-400">— sin link —</div>
+                                        </div>
+
+                                        <div class="flex-shrink-0 flex flex-col gap-2">
+                                            <button @click="editBanner(element.id)" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Editar</button>
+                                            <button @click="deleteBanner(element.id)" class="inline-flex items-center gap-2 rounded-lg bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700">Eliminar</button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </draggable>
+                        </div>
+                    </div>
+
+                    <div class="hidden lg:block max-w-full overflow-x-auto custom-scrollbar px-5 pb-4">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="border-y border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
+                                    <th class="px-6 py-3 text-center">
+                                        <p class="font-medium text-gray-500 text-xs">Preview</p>
+                                    </th>
+                                    <th class="px-6 py-3 text-center">
+                                        <p class="font-medium text-gray-500 text-xs">Nombre</p>
+                                    </th>
+                                    <th class="px-6 py-3 text-center">
+                                        <p class="font-medium text-gray-500 text-xs">Link</p>
+                                    </th>
+                                    <!-- <th class="px-6 py-3 text-center">
+                                        <p class="font-medium text-gray-500 text-xs">Pos</p>
+                                    </th> -->
+                                    <th class="px-6 py-3 text-center">
+                                        <p class="font-medium text-gray-500 text-xs">Acciones</p>
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <draggable tag="tbody" :list="list" :disabled="!enabled" ghost-class="ghost"
+                                :move="checkMove" item-key="id" class="divide-y divide-gray-100 dark:divide-gray-800">
+                                <template #item="{ element, index }">
+                                    <tr class="border-t border-gray-100 dark:border-gray-800">
+                                        <td class="px-6 py-3.5 text-center">
+                                            <div class="w-28 h-20 overflow-hidden rounded mx-auto">
+                                                <img v-if="element.image" :src="element.image"
+                                                    class="w-full h-full object-cover" />
+                                            </div>
+                                        </td>
+
+                                        <td class="px-6 py-3.5 align-middle">
+                                            <div>
+                                                <div
+                                                    class="text-base font-medium leading-6 text-gray-800 dark:text-white/90 truncate text-center">
+                                                    {{ element.name }}</div>
+                                                <!-- <div class="text-xs text-gray-500">ID: {{ element.id }}</div> -->
+                                            </div>
+                                        </td>
+
+                                        <td class="px-6 py-3.5 align-middle text-center">
+                                            <div v-if="element.link"
+                                                class="text-sm text-gray-700 truncate max-w-sm mx-auto"><a
+                                                    :href="element.link" target="_blank"
+                                                    class="text-blue-600 hover:underline">{{ element.link }}</a></div>
+                                            <div v-else class="text-sm text-gray-400">— sin link —</div>
+                                        </td>
+
+                                        <!-- <td class="px-6 py-3.5 align-top">
+                                            <div class="text-sm text-gray-700">{{ index }}</div>
+                                        </td> -->
+
+                                        <td class="px-6 py-3.5 align-middle text-center">
+                                            <div class="flex items-center gap-2 justify-center">
+                                                <button @click="editBanner(element.id)"
+                                                    class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Editar</button>
+                                                <button @click="deleteBanner(element.id)"
+                                                    class="inline-flex items-center gap-2 rounded-lg bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700">Eliminar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </draggable>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>

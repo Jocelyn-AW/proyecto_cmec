@@ -18,9 +18,9 @@
             </Link>
             <!-- <router-link to="/">
                 <ApplicationLogo /> -->
-                <!-- <img v-if="isExpanded || isHovered || isMobileOpen" class="dark:hidden" src="/images/logo/logo.svg"
+            <!-- <img v-if="isExpanded || isHovered || isMobileOpen" class="dark:hidden" src="/images/logo/logo.svg"
                     alt="Logo" width="150" height="40" /> -->
-                <!-- <img v-if="isExpanded || isHovered || isMobileOpen" class="hidden dark:block"
+            <!-- <img v-if="isExpanded || isHovered || isMobileOpen" class="hidden dark:block"
                     src="/images/logo/logo-dark.svg" alt="Logo" width="150" height="40" />
                 <img v-else src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" /> -->
             <!-- </router-link> -->
@@ -71,7 +71,7 @@
                                         },
                                     ]" />
                                 </button>
-                                <router-link v-else-if="item.path" :to="item.path" :class="[
+                                <Link v-else-if="item.path" :href="item.path" :class="[
                                     'menu-item group',
                                     {
                                         'menu-item-active': isActive(item.path),
@@ -87,7 +87,7 @@
                                     </span>
                                     <span v-if="isExpanded || isHovered || isMobileOpen" class="menu-item-text">{{
                                         item.name }}</span>
-                                </router-link>
+                                </Link>
                                 <transition @enter="startTransition" @after-enter="endTransition"
                                     @before-leave="startTransition" @after-leave="endTransition">
                                     <div v-show="isSubmenuOpen(groupIndex, index) &&
@@ -95,7 +95,7 @@
                                         ">
                                         <ul class="mt-2 space-y-1 ml-9">
                                             <li v-for="subItem in item.subItems" :key="subItem.name">
-                                                <router-link :to="subItem.path" :class="[
+                                                <Link :href="subItem.path" :class="[
                                                     'menu-dropdown-item',
                                                     {
                                                         'menu-dropdown-item-active': isActive(
@@ -135,7 +135,7 @@
                                                             pro
                                                         </span>
                                                     </span>
-                                                </router-link>
+                                                </Link>
                                             </li>
                                         </ul>
                                     </div>
@@ -186,6 +186,11 @@ const menuGroups = [
                 icon: GridIcon,
                 name: "Dashboard",
                 subItems: [{ name: "Ecommerce", path: "/dashboard", pro: false }],
+            },
+            {
+                icon: BoxCubeIcon,
+                name: "Banners",
+                path: "/banners",
             },
             {
                 icon: CalenderIcon,
@@ -275,7 +280,7 @@ const isAnySubmenuRouteActive = computed(() => {
 const isSubmenuOpen = (groupIndex, itemIndex) => {
     const key = `${groupIndex}-${itemIndex}`;
     // console.log(openSubmenu);
-    
+
     return (
         openSubmenu.value === key ||
         (isAnySubmenuRouteActive.value &&
