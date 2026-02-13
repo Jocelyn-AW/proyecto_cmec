@@ -5,6 +5,8 @@ import axios from 'axios'
 import { Head, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import Modal from '@/Components/Modal.vue'
+import Alerta from '@/Components/Alerta.vue'
+import { useAlert } from '@/composables/useAlert'
 
 defineOptions({
     layout: AuthenticatedLayout
@@ -17,23 +19,36 @@ const props = defineProps({
     }
 })
 
+
+const { alertState, success, error, warning, info } = useAlert()
 const showCreateModal = ref(false)
+const showEditModal = ref(false)
 const enabled = ref(true)
 const list = ref([])
 const original = ref([])
 const dragging = ref(false)
 
-// Form data defaul para crear banner
-const form = ref({
+// Form para crear banner
+const createForm = ref({
     image: null,
     link: '',
     order: 0
 })
 
-const imagePreview = ref(null)
+// Form para editar banner
+const editForm = ref({
+    id: null,
+    image: null,
+    link: '',
+    order: 0,
+    currentImage: null // mostrar la imagen actual
+})
+
+const createImagePreview = ref(null)
+const editImagePreview = ref(null)
 const isSubmitting = ref(false)
 
-// prox. order para nuevo banner
+// order para nuevo banner
 const nextOrder = computed(() => {
     if (list.value.length === 0) return 0
     const maxOrder = Math.max(...list.value.map(b => b.order ?? 0))
@@ -71,7 +86,8 @@ const saveOrder = async () => {
 
         original.value = list.value.map(b => ({ ...b }))
 
-        alert('Orden actualizado correctamente')
+        console.log('Orden actualizado exitosamente')
+        success('Orden actualizado correctamente')
 
     } catch (error) {
         console.error(error)
@@ -95,48 +111,43 @@ const deleteBanner = (id) => {
     })
 }
 
-const editBanner = (id) => {
-    console.log('Editar banner:', id)
-}
-
-
-/* Modal */
+/* MODAL CREAR */
 const openCreateModal = () => {
-    resetForm()
-    form.value.order = nextOrder.value
+    resetCreateForm()
+    createForm.value.order = nextOrder.value
     showCreateModal.value = true
 }
 
 const closeCreateModal = () => {
     showCreateModal.value = false
-    resetForm()
+    resetCreateForm()
 }
 
-const resetForm = () => {
-    form.value = {
+const resetCreateForm = () => {
+    createForm.value = {
         image: null,
         link: '',
         order: 0
     }
-    imagePreview.value = null
+    createImagePreview.value = null
 }
 
-const handleImageChange = (event) => {
+const handleCreateImageChange = (event) => {
     const file = event.target.files[0]
     if (file) {
-        form.value.image = file
+        createForm.value.image = file
 
         // preview
         const reader = new FileReader()
         reader.onload = (e) => {
-            imagePreview.value = e.target.result
+            createImagePreview.value = e.target.result
         }
         reader.readAsDataURL(file)
     }
 }
 
 const createBanner = async () => {
-    if (!form.value.image) {
+    if (!createForm.value.image) {
         alert('Por favor selecciona una imagen')
         return
     }
@@ -145,11 +156,11 @@ const createBanner = async () => {
 
     try {
         const formData = new FormData()
-        formData.append('image', form.value.image)
-        formData.append('order', form.value.order)
+        formData.append('image', createForm.value.image)
+        formData.append('order', createForm.value.order)
 
-        if (form.value.link && form.value.link.trim() !== '') {
-            formData.append('link', form.value.link)
+        if (createForm.value.link && createForm.value.link.trim() !== '') {
+            formData.append('link', createForm.value.link)
         }
 
         const response = await axios.post('/banners', formData, {
@@ -161,8 +172,8 @@ const createBanner = async () => {
         if (response.data.message === 'success') {
             //alert('Banner creado exitosamente')
             closeCreateModal()
-
             router.reload({ only: ['banners'] })
+            success('El banner ha sido creado correctamente')
         }
 
     } catch (error) {
@@ -173,12 +184,107 @@ const createBanner = async () => {
         isSubmitting.value = false
     }
 }
+
+/* MODAL EDITAR */
+const openEditModal = (id) => {
+    const banner = list.value.find(b => b.id === id)
+
+    if (!banner) {
+        alert('Banner no encontrado')
+        return
+    }
+
+    editForm.value = {
+        id: banner.id,
+        image: null,
+        link: banner.link || '',
+        order: banner.order,
+        currentImage: banner.image // guardas la imagen actual
+    }
+
+    editImagePreview.value = null
+    showEditModal.value = true
+}
+
+const closeEditModal = () => {
+    showEditModal.value = false
+    resetEditForm()
+}
+
+const resetEditForm = () => {
+    editForm.value = {
+        id: null,
+        image: null,
+        link: '',
+        order: 0,
+        currentImage: null
+    }
+    editImagePreview.value = null
+}
+
+const handleEditImageChange = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+        editForm.value.image = file
+
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            editImagePreview.value = e.target.result
+        }
+        reader.readAsDataURL(file)
+    }
+}
+
+const updateBanner = async () => {
+    isSubmitting.value = true
+
+    try {
+        const formData = new FormData()
+        formData.append('order', editForm.value.order)
+
+        if (editForm.value.link && editForm.value.link.trim() !== '') {
+            formData.append('link', editForm.value.link)
+        }
+
+        /**solo actualizar si hay nueva */
+        if (editForm.value.image) {
+            formData.append('image', editForm.value.image)
+        }
+
+        const response = await axios.post(`/banners/${editForm.value.id}`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
+
+        if (response.data.message === 'success') {
+            closeEditModal()
+            router.reload({ only: ['banners'] })
+        }
+
+    } catch (error) {
+        console.error('Error actualizando banner:', error)
+        alert('Error al actualizar el banner')
+    } finally {
+        isSubmitting.value = false
+    }
+}
 </script>
 
 <template>
     <div>
 
         <Head title="Banners" />
+
+        <Alerta
+            :show="alertState.show"
+            :message="alertState.message"
+            :title="alertState.title"
+            :type="alertState.type"
+            :duration="alertState.duration"
+            :buttonText="alertState.buttonText"
+            @close="alertState.show = false"
+        />
 
         <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
             <div class="space-y-5">
@@ -233,10 +339,14 @@ const createBanner = async () => {
                                         </div>
 
                                         <div class="flex-shrink-0 flex flex-col gap-2">
-                                            <button @click="editBanner(element.id)"
-                                                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Editar</button>
+                                            <button @click="openEditModal(element.id)"
+                                                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-blue-600 hover:bg-blue-700 px-3 py-2 text-sm font-medium text-white">
+                                                Editar
+                                            </button>
                                             <button @click="deleteBanner(element.id)"
-                                                class="inline-flex items-center gap-2 rounded-lg bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700">Eliminar</button>
+                                                class="inline-flex items-center gap-2 rounded-lg bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700">
+                                                Eliminar
+                                            </button>
                                         </div>
                                     </div>
                                 </template>
@@ -247,16 +357,17 @@ const createBanner = async () => {
             </div>
         </div>
 
+        <!-- MODAL CREAR -->
         <Modal :show="showCreateModal" @close="closeCreateModal" maxWidth="2xl">
             <template #title>
                 Crear banner
             </template>
 
             <div class="p-6 space-y-4">
-                <div v-if="imagePreview" class="mb-4">
+                <div v-if="createImagePreview" class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Vista previa</label>
                     <div class="w-full h-48 overflow-hidden rounded-lg border border-gray-300">
-                        <img :src="imagePreview" class="w-full h-full object-cover" alt="Preview">
+                        <img :src="createImagePreview" class="w-full h-full object-cover" alt="Preview">
                     </div>
                 </div>
 
@@ -264,7 +375,8 @@ const createBanner = async () => {
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Imagen <span class="text-red-500">*</span>
                     </label>
-                    <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp" @change="handleImageChange"
+                    <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp"
+                        @change="handleCreateImageChange"
                         class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
                     <p class="mt-1 text-xs text-gray-500">
                         JPG, PNG, WEBP (máx. 5MB)
@@ -275,7 +387,7 @@ const createBanner = async () => {
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Link (opcional)
                     </label>
-                    <input v-model="form.link" type="text" placeholder="https://ejemplo.com"
+                    <input v-model="createForm.link" type="text" placeholder="https://ejemplo.com"
                         class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-green-500">
                 </div>
 
@@ -292,9 +404,66 @@ const createBanner = async () => {
                     Cancelar
                 </button>
 
-                <button @click="createBanner" :disabled="isSubmitting || !form.image"
+                <button @click="createBanner" :disabled="isSubmitting || !createForm.image"
                     class="rounded-md bg-green-600 py-2 px-4 text-sm text-white transition-all shadow-md hover:bg-green-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                     {{ isSubmitting ? 'Creando...' : 'Crear banner' }}
+                </button>
+            </template>
+        </Modal>
+
+        <!-- MODAL EDITAR -->
+        <Modal :show="showEditModal" @close="closeEditModal" maxWidth="2xl">
+            <template #title>
+                Editar banner
+            </template>
+
+            <div class="p-6 space-y-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ editImagePreview ? 'Nueva imagen' : 'Imagen actual' }}
+                    </label>
+                    <div class="w-full h-48 overflow-hidden rounded-lg border border-gray-300">
+                        <img :src="editImagePreview || editForm.currentImage" class="w-full h-full object-cover"
+                            alt="Banner">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Cambiar imagen (opcional)
+                    </label>
+                    <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp"
+                        @change="handleEditImageChange"
+                        class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                    <p class="mt-1 text-xs text-gray-500">
+                        JPG, PNG, WEBP (máx. 5MB). Deja vacío para mantener la imagen actual.
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Link (opcional)
+                    </label>
+                    <input v-model="editForm.link" type="text" placeholder="https://ejemplo.com"
+                        class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+
+                <!-- <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium">Orden actual:</span> {{ editForm.order }}
+                    </p>
+                </div> -->
+            </div>
+
+            <template #footer>
+                <button @click="closeEditModal" :disabled="isSubmitting"
+                    class="rounded-md border border-transparent py-2 px-4 text-sm text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-50">
+                    Cancelar
+                </button>
+
+                <button @click="updateBanner" :disabled="isSubmitting"
+                    class="rounded-md bg-blue-600 py-2 px-4 text-sm text-white transition-all shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                    {{ isSubmitting ? 'Actualizando...' : 'Actualizar banner' }}
                 </button>
             </template>
         </Modal>

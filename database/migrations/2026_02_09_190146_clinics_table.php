@@ -14,7 +14,7 @@ return new class extends Migration
         //consultorios
         Schema::create('clinics', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('member_id')->constrained()->onDelete('caascade');
+            $table->foreignId('member_id')->constrained()->onDelete('cascade');
             $table->string('hospital_name')->nullable();
             $table->string('address');
             $table->integer('phone');
