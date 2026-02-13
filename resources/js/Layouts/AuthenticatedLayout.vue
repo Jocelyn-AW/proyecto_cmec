@@ -44,12 +44,12 @@ useSidebarProvider();
                                     <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
                                         Dashboard
                                     </NavLink>
-                                    <NavLink
+                                    <!-- <NavLink
                                         :href="route('banners.index')"
                                         :active="route().current('banners.*')"
                                     >
                                         Banners
-                                    </NavLink>
+                                    </NavLink> -->
                                 </div>
                             </div>
 
