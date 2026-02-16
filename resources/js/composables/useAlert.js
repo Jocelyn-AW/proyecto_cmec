@@ -6,10 +6,14 @@ const alertState = ref({
     title: '',
     type: 'success',
     duration: 0,
-    buttonText: 'Aceptar'
+    buttonText: 'Aceptar',
+    cancelText: null,
+    onConfirm: null,
+    onCancel: null
 })
 
 export function useAlert() {
+
     const showAlert = (message, type = 'success', options = {}) => {
         alertState.value = {
             show: true,
@@ -17,7 +21,10 @@ export function useAlert() {
             type,
             title: options.title || '',
             duration: options.duration || 0,
-            buttonText: options.buttonText || 'Aceptar'
+            buttonText: options.buttonText || 'Aceptar',
+            cancelText: options.cancelText || null,
+            onConfirm: options.onConfirm || null,
+            onCancel: options.onCancel || null
         }
     }
 
@@ -25,36 +32,31 @@ export function useAlert() {
         alertState.value.show = false
     }
 
-    // Métodos de conveniencia
     const success = (message, options = {}) => {
         showAlert(message, 'success', {
             title: options.title || 'Operación exitosa',
-            buttonText: options.buttonText || 'Aceptar',
-            duration: options.duration || 0
+            ...options
         })
     }
 
-    const error = (message, options = {}) => {
+    const errorA = (message, options = {}) => {
         showAlert(message, 'error', {
             title: options.title || 'Error',
-            buttonText: options.buttonText || 'Aceptar',
-            duration: options.duration || 0
+            ...options
         })
     }
 
     const warning = (message, options = {}) => {
         showAlert(message, 'warning', {
             title: options.title || 'Advertencia',
-            buttonText: options.buttonText || 'Aceptar',
-            duration: options.duration || 0
+            ...options
         })
     }
 
     const info = (message, options = {}) => {
         showAlert(message, 'info', {
             title: options.title || 'Información',
-            buttonText: options.buttonText || 'Aceptar',
-            duration: options.duration || 0
+            ...options
         })
     }
 
@@ -63,7 +65,7 @@ export function useAlert() {
         showAlert,
         hideAlert,
         success,
-        error,
+        errorA,
         warning,
         info
     }

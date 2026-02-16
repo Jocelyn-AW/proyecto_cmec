@@ -19,8 +19,8 @@ const props = defineProps({
     }
 })
 
-
-const { alertState, success, error, warning, info } = useAlert()
+const bannerToDelete = ref(null)
+const { alertState, success, errorA, warning, info } = useAlert()
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const enabled = ref(true)
@@ -91,7 +91,7 @@ const saveOrder = async () => {
 
     } catch (error) {
         console.error(error)
-        alert('Error actualizando el orden')
+        errorA('Error actualizando el orden')
     }
 }
 
@@ -99,17 +99,34 @@ const cancelChanges = () => {
     list.value = original.value.map(b => ({ ...b }))
 }
 
-const deleteBanner = (id) => {
-    if (!confirm('¿Eliminar banner?')) return
 
-    router.delete(`/banners/${id}`, {
-        preserveScroll: true,
-        onSuccess: () => {
+const deleteBanner = (id) => {
+
+    warning('¿Estás seguro de eliminar este banner?', {
+        title: 'Eliminar banner',
+        buttonText: 'Eliminar',
+        cancelText: 'Cancelar',
+        onConfirm: async () => {
+            await axios.delete(`/banners/${id}`)
             list.value = list.value.filter(b => b.id !== id)
-            original.value = original.value.filter(b => b.id !== id)
+            success('Banner eliminado correctamente')
         }
     })
+
 }
+
+
+const handleConfirm = () => {
+    alertState.value.onConfirm?.()
+    alertState.value.show = false
+}
+
+const handleCancel = () => {
+    alertState.value.onCancel?.()
+    alertState.value.show = false
+}
+
+
 
 /* MODAL CREAR */
 const openCreateModal = () => {
@@ -135,6 +152,15 @@ const resetCreateForm = () => {
 const handleCreateImageChange = (event) => {
     const file = event.target.files[0]
     if (file) {
+        // VALIDAR tamaño (1MB = 1024 * 1024 bytes)
+        const maxSize = 1024 * 1024 // 1MB en bytes
+
+        if (file.size > maxSize) {
+            warning('La imagen no debe superar 1MB')
+            event.target.value = '' // Limpiar el input
+            return
+        }
+
         createForm.value.image = file
 
         // preview
@@ -148,7 +174,7 @@ const handleCreateImageChange = (event) => {
 
 const createBanner = async () => {
     if (!createForm.value.image) {
-        alert('Por favor selecciona una imagen')
+        info('Por favor selecciona una imagen')
         return
     }
 
@@ -178,8 +204,7 @@ const createBanner = async () => {
 
     } catch (error) {
         console.error('Error creando banner:', error)
-        //alert(error.response?.data?.message || 'Error al crear el banner')
-        alert('Error al crear el banner')
+        errorA('Error al crear el banner')
     } finally {
         isSubmitting.value = false
     }
@@ -190,7 +215,7 @@ const openEditModal = (id) => {
     const banner = list.value.find(b => b.id === id)
 
     if (!banner) {
-        alert('Banner no encontrado')
+        warning('Banner no encontrado')
         return
     }
 
@@ -225,6 +250,15 @@ const resetEditForm = () => {
 const handleEditImageChange = (event) => {
     const file = event.target.files[0]
     if (file) {
+        // VALIDAR tamaño (1MB = 1024 * 1024 bytes)
+        const maxSize = 1024 * 1024 // 1MB en bytes
+
+        if (file.size > maxSize) {
+            warning('La imagen no debe superar 1MB')
+            event.target.value = '' // Limpiar el input
+            return
+        }
+
         editForm.value.image = file
 
         const reader = new FileReader()
@@ -260,11 +294,12 @@ const updateBanner = async () => {
         if (response.data.message === 'success') {
             closeEditModal()
             router.reload({ only: ['banners'] })
+            success('El banner ha sido actualizado correctamente')
         }
 
     } catch (error) {
         console.error('Error actualizando banner:', error)
-        alert('Error al actualizar el banner')
+        errorA('Error al actualizar el banner')
     } finally {
         isSubmitting.value = false
     }
@@ -276,43 +311,48 @@ const updateBanner = async () => {
 
         <Head title="Banners" />
 
-        <Alerta
-            :show="alertState.show"
-            :message="alertState.message"
-            :title="alertState.title"
-            :type="alertState.type"
-            :duration="alertState.duration"
-            :buttonText="alertState.buttonText"
-            @close="alertState.show = false"
-        />
 
         <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
             <div class="space-y-5">
                 <div
                     class="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
+
                     <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Banners</h3>
                             <p class="text-sm text-gray-500">Arrastra las filas para reordenar y pulsa "Guardar orden"
                             </p>
+                            <!-- <p class="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                                ⚠️ Las imágenes deben pesar máximo 1MB
+                            </p> -->
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 mb-4">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <button @click="cancelChanges"
+                                class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                                Cancelar
+                            </button>
+                            <button @click="saveOrder"
+                                class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-zinc-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-zinc-800 transition-colors">
+                                Guardar orden
+                            </button>
                         </div>
 
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <div>
-                                <button @click="cancelChanges"
-                                    class="inline-flex h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                    Cancelar
-                                </button>
-                                <button @click="saveOrder"
-                                    class="inline-flex h-10 items-center gap-2 rounded-lg bg-zinc-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-zinc-800 ml-2">
-                                    Guardar orden
-                                </button>
-                                <button @click="openCreateModal"
-                                    class="inline-flex h-10 items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-green-700 ml-2">
-                                    Nuevo
-                                </button>
-                            </div>
-                        </div>
+
+                        <p class="text-sm text-amber-600 dark:text-amber-500">
+                            ⚠️ Las imágenes deben pesar máximo 1MB
+                        </p>
+                        <button @click="openCreateModal"
+                            class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-green-700 transition-colors shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                class="w-5 h-5">
+                                <path
+                                    d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                            </svg>
+                            Nuevo banner
+                        </button>
                     </div>
 
                     <div class="block px-5 pb-4">
@@ -321,7 +361,8 @@ const updateBanner = async () => {
                                 item-key="id" @start="startDrag" @end="endDrag">
                                 <template #item="{ element, index }">
                                     <div :key="element.id"
-                                        class="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex items-center gap-4">
+                                        class="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex items-center gap-4 hover:shadow-sm transition-shadow">
+
                                         <div class="w-28 h-20 flex-shrink-0 overflow-hidden rounded">
                                             <img v-if="element.image" :src="element.image"
                                                 class="w-full h-full object-cover" />
@@ -330,7 +371,8 @@ const updateBanner = async () => {
                                         <div class="flex-1 min-w-0">
                                             <div
                                                 class="text-base font-medium leading-6 text-gray-800 dark:text-white/90 truncate">
-                                                {{ element.name }}</div>
+                                                {{ element.name }}
+                                            </div>
                                             <div v-if="element.link" class="text-sm text-blue-600 truncate max-w-full">
                                                 <a :href="element.link" target="_blank" class="hover:underline">{{
                                                     element.link }}</a>
@@ -338,16 +380,26 @@ const updateBanner = async () => {
                                             <div v-else class="text-sm text-gray-400">— sin link —</div>
                                         </div>
 
-                                        <div class="flex-shrink-0 flex flex-col gap-2">
-                                            <button @click="openEditModal(element.id)"
-                                                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-blue-600 hover:bg-blue-700 px-3 py-2 text-sm font-medium text-white">
-                                                Editar
+                                        <div class="flex-shrink-0 flex items-center gap-2">
+                                            <button @click="openEditModal(element.id)" title="Editar"
+                                                class="p-2.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors border border-blue-100 hover:border-blue-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                                </svg>
                                             </button>
-                                            <button @click="deleteBanner(element.id)"
-                                                class="inline-flex items-center gap-2 rounded-lg bg-red-600 text-white px-3 py-2 text-sm font-medium hover:bg-red-700">
-                                                Eliminar
+
+                                            <button @click="deleteBanner(element.id)" title="Eliminar"
+                                                class="p-2.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-100 hover:border-red-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                                </svg>
                                             </button>
                                         </div>
+
                                     </div>
                                 </template>
                             </draggable>
@@ -379,7 +431,7 @@ const updateBanner = async () => {
                         @change="handleCreateImageChange"
                         class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
                     <p class="mt-1 text-xs text-gray-500">
-                        JPG, PNG, WEBP (máx. 5MB)
+                        Formato permitido: JPG, PNG, WEBP (Peso máx. 1MB)
                     </p>
                 </div>
 
@@ -436,7 +488,7 @@ const updateBanner = async () => {
                         @change="handleEditImageChange"
                         class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
                     <p class="mt-1 text-xs text-gray-500">
-                        JPG, PNG, WEBP (máx. 5MB). Deja vacío para mantener la imagen actual.
+                        Formato permitido: JPG, PNG, WEBP (Peso máx. 1MB). Deja vacío para mantener la imagen actual.
                     </p>
                 </div>
 
@@ -467,6 +519,12 @@ const updateBanner = async () => {
                 </button>
             </template>
         </Modal>
+
+
+
+        <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+            :buttonText="alertState.buttonText" :cancelText="alertState.cancelText" @confirm="handleConfirm"
+            @cancel="handleCancel" @close="alertState.show = false" />
     </div>
 </template>
 

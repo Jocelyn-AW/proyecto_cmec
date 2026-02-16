@@ -87,7 +87,7 @@ class BannersController extends Controller
             $data = $request->validate([
                 'order' => 'required|numeric',
                 'link' => 'nullable|string|max:255|url:http,https',
-                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:1024',
                 'is_active' => 'boolean'
             ]);
 
@@ -136,7 +136,7 @@ class BannersController extends Controller
             $data = $request->validate([
                 'order' => 'required|numeric',
                 'link' => 'nullable|string|max:255|url:http,https',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:1024',
                 'is_active' => 'boolean'
             ]);
 

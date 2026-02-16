@@ -26,10 +26,14 @@ const props = defineProps({
     buttonText: {
         type: String,
         default: 'Aceptar'
-    }
+    },
+    cancelText: {
+        type: String,
+        default: null
+    },
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'confirm', 'cancel'])
 
 const visible = ref(false)
 let timer = null
@@ -56,14 +60,26 @@ watch(
     { immediate: true }
 )
 
-const close = () => {
+const close = (isConfirm = false) => {
     visible.value = false
     clearTimeout(timer)
     document.body.style.overflow = ''
+
     setTimeout(() => {
-        emit('close')
+
+        if (isConfirm) {
+            emit('confirm')
+        } else {
+            if (props.cancelText) {
+                emit('cancel')
+            } else {
+                emit('close')
+            }
+        }
+
     }, 200)
 }
+
 
 const alertConfig = computed(() => {
     const configs = {
@@ -161,13 +177,23 @@ const alertConfig = computed(() => {
 
                         <!-- Footer -->
                         <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                            <button type="button" @click="close" :class="[
-                                alertConfig.buttonBg,
-                                'inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto'
-                            ]">
+
+                            <!-- Confirm -->
+                            <button type="button" @click="$emit('confirm')"
+                                :class="[alertConfig.buttonBg,
+                                    'inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm sm:ml-3 sm:w-auto']">
                                 {{ buttonText }}
                             </button>
+
+                            <!-- Cancel -->
+                            <button v-if="cancelText" type="button" @click="$emit('cancel')"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                                {{ cancelText }}
+                            </button>
+
                         </div>
+
+
                     </div>
                 </Transition>
             </div>
