@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             /* Route::prefix('banners') // para cuando quiera probar desde insomnia
                 ->name('banners.')
                 ->group(base_path('routes/banner_routes.php')); */
+            Route::middleware(['web', 'auth'])
+                ->prefix('publicity')
+                ->name('publicity.')
+                ->group(base_path('routes/publicity_routes.php'));
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {

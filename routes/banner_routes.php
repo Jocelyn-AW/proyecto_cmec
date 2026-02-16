@@ -1,11 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\BannersController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-
-
 
 Route::post('/reorder', [BannersController::class, 'reorder'])->name('reorder');
 Route::get('/', [BannersController::class, 'index'])->name('index');

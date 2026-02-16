@@ -167,7 +167,8 @@ import {
     TableIcon,
     ListIcon,
     PlugInIcon,
-    BoxCubeIcon
+    BoxCubeIcon,
+    Message2Line,
 } from "../icons"
 import { useSidebar, useSidebarProvider } from "@/composables/useSidebar";
 import { usePage } from "@inertiajs/vue3";
@@ -191,6 +192,11 @@ const menuGroups = [
                 icon: BoxCubeIcon,
                 name: "Banners",
                 path: "/banners",
+            },
+            {
+                icon: Message2Line,
+                name: "Publicidad",
+                path: "/publicity",
             },
             {
                 icon: CalenderIcon,
