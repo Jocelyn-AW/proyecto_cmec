@@ -314,20 +314,18 @@ const updateBanner = async () => {
 
         <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
             <div class="space-y-5">
-                <div
-                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
-
-                    <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Banners</h3>
-                            <p class="text-sm text-gray-500">Arrastra las filas para reordenar y pulsa "Guardar orden"
-                            </p>
-                            <!-- <p class="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Banners</h3>
+                        <p class="text-sm text-gray-500">Arrastra las filas para reordenar y pulsa "Guardar orden"
+                        </p>
+                        <!-- <p class="text-sm text-amber-600 dark:text-amber-500 mt-1">
                                 ⚠️ Las imágenes deben pesar máximo 1MB
                             </p> -->
-                        </div>
                     </div>
-
+                </div>
+                <div
+                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 mb-4">
                         <div class="flex items-center gap-2 w-full sm:w-auto">
                             <button @click="cancelChanges"

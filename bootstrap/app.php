@@ -22,6 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->prefix('publicity')
                 ->name('publicity.')
                 ->group(base_path('routes/publicity_routes.php'));
+            /* Route::prefix('users') // para cuando quiera probar desde insomnia
+                ->name('users.')
+                ->group(base_path('routes/user_routes.php')); */
+            Route::middleware(['web', 'auth'])
+                ->prefix('users')
+                ->name('users.')
+                ->group(base_path('routes/user_routes.php'));
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
