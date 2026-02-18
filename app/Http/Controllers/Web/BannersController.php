@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Mail\TestMail;
 use App\Models\Banner;
 use App\Models\Media;
 use Exception;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
-
+use App\Http\Controllers\Mail\MailsController;
 use function Psy\debug;
 
 class BannersController extends Controller
@@ -34,6 +35,10 @@ class BannersController extends Controller
      */
     public function index(Request $request): Response
     {
+
+        /* $mailsController = new MailsController();
+        $mailsController->testMail(); */
+
         $banners = Banner::with('media')
             ->orderBy('order')
             ->get()

@@ -11,10 +11,21 @@ use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
+use App\Services\MailService;
+
 
 
 class UsersController extends Controller
 {
+
+    private MailService $mailService;
+
+    public function __construct(MailService $mailService)
+    {
+        $this->mailService = $mailService;
+    }
+
+
     /**
      * Display a listing of the resource.
      */
@@ -75,6 +86,21 @@ class UsersController extends Controller
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),  //MIN. 8 CARACTERES
             ]);
+
+            // Enviar correo
+        $this->mailService->sendCustomEmail(
+            to: $user->email,
+            subject: 'Bienvenido al sistema',
+            viewName: 'emails.welcome_user',
+            viewData: [
+                'subject' => 'Bienvenido',
+                'headerTitle' => 'Bienvenido al sistema',
+                'name' => $user->name,
+                'email' => $user->email,
+                'password' => $data['password'],
+                'loginUrl' => url('/login'),
+            ]
+        );
 
             return response()->json([
                 'message' => 'success',
