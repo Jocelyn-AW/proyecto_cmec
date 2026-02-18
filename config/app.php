@@ -56,6 +56,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    | This URL is used to generate links to the frontend application, such as
+    | in email notifications. You should set this to the root of your frontend application.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    'logo_url' => env('APP_LOGO_URL', null),
+
+    'address' => env('APP_ADDRESS', 'México'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

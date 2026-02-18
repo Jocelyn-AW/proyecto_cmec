@@ -9,7 +9,24 @@ use Illuminate\Support\Facades\Log;
 class MailService
 {
     /**
-     * Enviar correo genérico con archivos adjuntos
+     * Crear instancia de correo (SIN enviarlo)
+     */
+    public function make(
+        string $subject,
+        string $viewName,
+        array $viewData = [],
+        array $attachments = []
+    ): BaseMail {
+        return new BaseMail(
+            subject: $subject,
+            viewName: $viewName,
+            viewData: $viewData,
+            attachmentPaths: $attachments
+        );
+    }
+
+    /**
+     * Enviar correo
      */
     public function sendCustomEmail(
         string $to,
@@ -17,20 +34,23 @@ class MailService
         string $viewName,
         array $viewData = [],
         array $attachments = []
-    ) {
+    ): bool {
         try {
-            $mail = new BaseMail(
+
+            $mail = $this->make(
                 subject: $subject,
                 viewName: $viewName,
                 viewData: $viewData,
-                attachmentPaths: $attachments
+                attachments: $attachments
             );
 
             Mail::to($to)->send($mail);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Error enviando correo personalizado: ' . $e->getMessage());
+
+            Log::error('Error enviando correo: ' . $e->getMessage());
+
             return false;
         }
     }

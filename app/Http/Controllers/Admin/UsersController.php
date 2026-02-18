@@ -88,19 +88,19 @@ class UsersController extends Controller
             ]);
 
             // Enviar correo
-        $this->mailService->sendCustomEmail(
-            to: $user->email,
-            subject: 'Bienvenido al sistema',
-            viewName: 'emails.welcome_user',
-            viewData: [
-                'subject' => 'Bienvenido',
-                'headerTitle' => 'Bienvenido al sistema',
-                'name' => $user->name,
-                'email' => $user->email,
-                'password' => $data['password'],
-                'loginUrl' => url('/login'),
-            ]
-        );
+            $this->mailService->sendCustomEmail(
+                to: $user->email,
+                subject: 'Bienvenido al sistema',
+                viewName: 'emails.welcome_user',
+                viewData: [
+                    'subject' => 'Bienvenido',
+                    'headerTitle' => 'Bienvenido al sistema',
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'password' => $data['password'],
+                    'loginUrl' => url('/login'),
+                ]
+            );
 
             return response()->json([
                 'message' => 'success',
@@ -186,6 +186,9 @@ class UsersController extends Controller
 
 
 
+    /**
+     * Cambia el estado activo/inactivo del usuario.
+     */
     public function statusChange(int $id)
     {
         try {

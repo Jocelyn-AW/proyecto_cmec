@@ -11,27 +11,32 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
         then: function () {
-            Route::middleware(['web', 'auth'])
+            Route::middleware(['web', 'auth', 'role:administrador'])
                 ->prefix('banners')
                 ->name('banners.')
                 ->group(base_path('routes/banner_routes.php'));
             /* Route::prefix('banners') // para cuando quiera probar desde insomnia
                 ->name('banners.')
                 ->group(base_path('routes/banner_routes.php')); */
-            Route::middleware(['web', 'auth'])
+            Route::middleware(['web', 'auth', 'role:administrador'])
                 ->prefix('publicity')
                 ->name('publicity.')
                 ->group(base_path('routes/publicity_routes.php'));
             /* Route::prefix('users') // para cuando quiera probar desde insomnia
                 ->name('users.')
                 ->group(base_path('routes/user_routes.php')); */
-            Route::middleware(['web', 'auth'])
+            Route::middleware(['web', 'auth', 'role:administrador'])
                 ->prefix('users')
                 ->name('users.')
                 ->group(base_path('routes/user_routes.php'));
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,

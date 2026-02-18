@@ -175,34 +175,44 @@ import { usePage } from "@inertiajs/vue3";
 import ApplicationLogo from "@/Components/ApplicationLogo.vue";
 import { Link } from '@inertiajs/vue3';
 
-const route = usePage();
+
+const page = usePage()
+const isAdmin = computed(() => page.props.auth.user.role === 'administrador')
 
 const { isExpanded, isMobileOpen, isHovered, openSubmenu } = useSidebar();
 
-const menuGroups = [
+const menuGroups = computed(() => [
+
     {
         title: "Menu",
         items: [
+
             {
                 icon: GridIcon,
                 name: "Dashboard",
-                subItems: [{ name: "Ecommerce", path: "/dashboard", pro: false }],
+                subItems: [{ name: "Ecommerce", path: "/dashboard" }],
             },
-            {
-                icon: BoxCubeIcon,
-                name: "Banners",
-                path: "/banners",
-            },
-            {
-                icon: Message2Line,
-                name: "Publicidad",
-                path: "/publicity",
-            },
-            {
-                icon: DocsIcon,
-                name: "Administración de Usuarios",
-                path: "/users"
-            },
+
+            ...(isAdmin.value ? [
+
+                {
+                    icon: BoxCubeIcon,
+                    name: "Banners",
+                    path: "/banners",
+                },
+                {
+                    icon: Message2Line,
+                    name: "Publicidad",
+                    path: "/publicity",
+                },
+                {
+                    icon: DocsIcon,
+                    name: "Administración de Usuarios",
+                    path: "/users"
+                }
+
+            ] : []),
+
             {
                 icon: CalenderIcon,
                 name: "Calendar",
@@ -213,66 +223,13 @@ const menuGroups = [
                 name: "User Profile",
                 path: "/profile",
             },
+        ]
+    }
 
-            {
-                name: "Forms",
-                icon: ListIcon,
-                subItems: [
-                    { name: "Form Elements", path: "/form-elements", pro: false },
-                ],
-            },
-            {
-                name: "Tables",
-                icon: TableIcon,
-                subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-            },
-            {
-                name: "Pages",
-                icon: PageIcon,
-                subItems: [
-                    { name: "Black Page", path: "/blank", pro: false },
-                    { name: "404 Page", path: "/error-404", pro: false },
-                ],
-            },
-        ],
-    },
-    {
-        title: "Others",
-        items: [
-            {
-                icon: PieChartIcon,
-                name: "Charts",
-                subItems: [
-                    { name: "Line Chart", path: "/line-chart", pro: false },
-                    { name: "Bar Chart", path: "/bar-chart", pro: false },
-                ],
-            },
-            {
-                icon: BoxCubeIcon,
-                name: "Ui Elements",
-                subItems: [
-                    { name: "Alerts", path: "/alerts", pro: false },
-                    { name: "Avatars", path: "/avatars", pro: false },
-                    { name: "Badge", path: "/badge", pro: false },
-                    { name: "Buttons", path: "/buttons", pro: false },
-                    { name: "Images", path: "/images", pro: false },
-                    { name: "Videos", path: "/videos", pro: false },
-                ],
-            },
-            {
-                icon: PlugInIcon,
-                name: "Authentication",
-                subItems: [
-                    { name: "Signin", path: "/signin", pro: false },
-                    { name: "Signup", path: "/signup", pro: false },
-                ],
-            },
-            // ... Add other menu items here
-        ],
-    },
-];
+])
 
-const isActive = (path) => route.url === path;
+
+const isActive = (path) => page.url === path;
 
 const toggleSubmenu = (groupIndex, itemIndex) => {
     const key = `${groupIndex}-${itemIndex}`;
@@ -280,7 +237,7 @@ const toggleSubmenu = (groupIndex, itemIndex) => {
 };
 
 const isAnySubmenuRouteActive = computed(() => {
-    return menuGroups.some((group) =>
+    return menuGroups.value.some((group) =>
         group.items.some(
             (item) =>
                 item.subItems && item.subItems.some((subItem) => isActive(subItem.path))
@@ -295,9 +252,10 @@ const isSubmenuOpen = (groupIndex, itemIndex) => {
     return (
         openSubmenu.value === key ||
         (isAnySubmenuRouteActive.value &&
-            menuGroups[groupIndex].items[itemIndex].subItems?.some((subItem) =>
-                isActive(subItem.path)
-            ))
+            menuGroups.value[groupIndex].items[itemIndex]
+                .subItems?.some((subItem) =>
+                    isActive(subItem.path)
+                ))
     );
 };
 
