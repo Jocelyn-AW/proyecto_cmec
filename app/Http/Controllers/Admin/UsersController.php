@@ -13,18 +13,14 @@ use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use App\Services\MailService;
 
-
-
 class UsersController extends Controller
 {
-
     private MailService $mailService;
 
     public function __construct(MailService $mailService)
     {
         $this->mailService = $mailService;
     }
-
 
     /**
      * Display a listing of the resource.
@@ -45,7 +41,7 @@ class UsersController extends Controller
                 ];
             });
 
-        return Inertia::render('User/User', [
+        return Inertia::render('Users/Index', [
             'users' => $users
         ]);
     }
@@ -84,7 +80,7 @@ class UsersController extends Controller
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'password' => Hash::make($data['password']),  //MIN. 8 CARACTERES
+                'password' => Hash::make($data['password']),
             ]);
 
             // Enviar correo
@@ -102,16 +98,20 @@ class UsersController extends Controller
                 ]
             );
 
-            return response()->json([
+            /* return response()->json([
                 'message' => 'success',
                 'data' => [
                     'user' => $user
                 ]
-            ], 200);
+            ], 200); */
+            return redirect()->route('users.index');
         } catch (Exception $e) {
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 
@@ -134,23 +134,26 @@ class UsersController extends Controller
             $user->email = $data['email'];
             $user->role = $data['role'];
 
-            // Solo actualizar la contraseña si se da una
             if (!empty($data['password'])) {
                 $user->password = Hash::make($data['password']);
             }
 
             $user->save();
 
-            return response()->json([
+            /* return response()->json([
                 'message' => 'success',
                 'data' => [
                     'user' => $user
                 ]
-            ], 200);
+            ], 200); */
+            return redirect()->route('users.index');
         } catch (Exception $e) {
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 
@@ -160,31 +163,25 @@ class UsersController extends Controller
     public function delete(int $id)
     {
         try {
-
             if (Auth::id() === $id) {
-                return response()->json([
-                    'message' => 'No puedes eliminar tu propio usuario',
-                ], 403);
+                return redirect()->back()->withErrors([
+                    'message' => 'No puedes eliminar tu propio usuario'
+                ]);
             }
 
             $user = User::findOrFail($id);
             $user->delete();
 
-            return response()->json([
-                'message' => 'success',
-                'data' => [
-                    'deleted_id' => $id
-                ]
-            ], 200);
+            return redirect()->route('users.index');
         } catch (Exception $e) {
-
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
-
-
 
     /**
      * Cambia el estado activo/inactivo del usuario.
@@ -192,23 +189,24 @@ class UsersController extends Controller
     public function statusChange(int $id)
     {
         try {
-
             $user = User::findOrFail($id);
-
             $user->is_active = !$user->is_active;
             $user->save();
 
-            return response()->json([
+            return redirect()->route('users.index');
+            /* return response()->json([
                 'message' => 'success',
                 'data' => [
                     'user' => $user
                 ]
-            ], 200);
+            ], 200); */
         } catch (Exception $e) {
-
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 }
