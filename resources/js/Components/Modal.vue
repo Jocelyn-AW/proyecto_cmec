@@ -1,123 +1,112 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps({
     show: {
         type: Boolean,
-        default: false,
+        default: false
     },
     maxWidth: {
         type: String,
-        default: '2xl',
+        default: '2xl'
     },
     closeable: {
         type: Boolean,
-        default: true,
-    },
-});
+        default: true
+    }
+})
 
-const emit = defineEmits(['close']);
-const dialog = ref();
-const showSlot = ref(props.show);
+const emit = defineEmits(['close'])
+
+const visible = ref(false)
 
 watch(
     () => props.show,
-    () => {
-        if (props.show) {
-            document.body.style.overflow = 'hidden';
-            showSlot.value = true;
-
-            dialog.value?.showModal();
+    (value) => {
+        if (value) {
+            visible.value = true
+            document.body.style.overflow = 'hidden'
         } else {
-            document.body.style.overflow = '';
-
+            document.body.style.overflow = ''
             setTimeout(() => {
-                dialog.value?.close();
-                showSlot.value = false;
-            }, 200);
+                visible.value = false
+            }, 300)
         }
     },
-);
+    { immediate: true }
+)
 
 const close = () => {
-    if (props.closeable) {
-        emit('close');
-    }
-};
+    if (!props.closeable) return
+    emit('close')
+}
 
 const closeOnEscape = (e) => {
-    if (e.key === 'Escape') {
-        e.preventDefault();
-
-        if (props.show) {
-            close();
-        }
+    if (e.key === 'Escape' && props.show) {
+        close()
     }
-};
+}
 
-onMounted(() => document.addEventListener('keydown', closeOnEscape));
+onMounted(() => {
+    window.addEventListener('keydown', closeOnEscape)
+})
 
 onUnmounted(() => {
-    document.removeEventListener('keydown', closeOnEscape);
-
-    document.body.style.overflow = '';
-});
+    window.removeEventListener('keydown', closeOnEscape)
+    document.body.style.overflow = ''
+})
 
 const maxWidthClass = computed(() => {
     return {
-        sm: 'sm:max-w-sm',
-        md: 'sm:max-w-md',
-        lg: 'sm:max-w-lg',
-        xl: 'sm:max-w-xl',
-        '2xl': 'sm:max-w-2xl',
-    }[props.maxWidth];
-});
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-lg',
+        xl: 'max-w-xl',
+        '2xl': 'max-w-2xl',
+    }[props.maxWidth]
+})
 </script>
 
 <template>
-    <dialog
-        class="z-50 m-0 min-h-full min-w-full overflow-y-auto bg-transparent backdrop:bg-transparent"
-        ref="dialog"
-    >
-        <div
-            class="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0"
-            scroll-region
-        >
-            <Transition
-                enter-active-class="ease-out duration-300"
-                enter-from-class="opacity-0"
-                enter-to-class="opacity-100"
-                leave-active-class="ease-in duration-200"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-            >
-                <div
-                    v-show="show"
-                    class="fixed inset-0 transform transition-all"
-                    @click="close"
-                >
-                    <div
-                        class="absolute inset-0 bg-gray-500 opacity-75"
-                    />
-                </div>
-            </Transition>
+    <Teleport to="body">
+        <Transition enter-active-class="transition-opacity duration-300" enter-from-class="opacity-0"
+            enter-to-class="opacity-100" leave-active-class="transition-opacity duration-300"
+            leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <div v-if="visible"
+                class="fixed inset-0 z-[9999] grid h-screen w-screen place-items-center bg-black/60 backdrop-blur-sm"
+                @click.self="close">
 
-            <Transition
-                enter-active-class="ease-out duration-300"
-                enter-from-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                enter-to-class="opacity-100 translate-y-0 sm:scale-100"
-                leave-active-class="ease-in duration-200"
-                leave-from-class="opacity-100 translate-y-0 sm:scale-100"
-                leave-to-class="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            >
-                <div
-                    v-show="show"
-                    class="mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full"
-                    :class="maxWidthClass"
-                >
-                    <slot v-if="showSlot" />
-                </div>
-            </Transition>
-        </div>
-    </dialog>
+                <Transition enter-active-class="transition-all duration-300"
+                    enter-from-class="opacity-0 -translate-y-28 scale-90 pointer-events-none"
+                    enter-to-class="opacity-100 translate-y-0 scale-100"
+                    leave-active-class="transition-all duration-300"
+                    leave-from-class="opacity-100 translate-y-0 scale-100"
+                    leave-to-class="opacity-0 -translate-y-28 scale-90 pointer-events-none">
+
+                    <div v-show="props.show" class="relative m-4 p-4 w-full rounded-lg bg-white shadow-sm"
+                        :class="maxWidthClass">
+
+                        <div v-if="$slots.title" class="flex shrink-0 items-center justify-between pb-4">
+                            <h3 class="text-xl font-medium text-slate-800">
+                                <slot name="title" />
+                            </h3>
+
+                            <button v-if="closeable" @click="close"
+                                class="text-slate-400 hover:text-slate-600 text-2xl leading-none px-2">
+                                &times;
+                            </button>
+                        </div>
+
+                        <div class="relative py-4 leading-normal text-slate-600 font-light">
+                            <slot />
+                        </div>
+
+                        <div v-if="$slots.footer" class="flex shrink-0 flex-wrap items-center pt-4 justify-end gap-2">
+                            <slot name="footer" />
+                        </div>
+                    </div>
+                </Transition>
+            </div>
+        </Transition>
+    </Teleport>
 </template>

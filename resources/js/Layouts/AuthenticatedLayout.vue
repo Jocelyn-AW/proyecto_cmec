@@ -17,16 +17,10 @@ useSidebarProvider();
 <template>
     <div>
         <div class="min-h-screen bg-gray-100 xl:flex">
-            <!-- <button class="bg-[red] text-white p-10 text-5xl">
-    ¿ME VEO ROJO Y GIGANTE?
-</button> -->
-            <MainMenu class="px-8 mr-8 bg-white rounded-lg text-zinc-600"/>
-            <Sidebar/>
-            
+            <Sidebar />
             <div class="flex-1">
-                
-                <nav class="border-b border-gray-100 bg-white ">
 
+                <nav class="border-b border-gray-100 bg-white ">
 
                     <!-- Primary Navigation Menu -->
                     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
