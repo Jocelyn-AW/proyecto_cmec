@@ -11,22 +11,17 @@
     ]" @mouseenter="!isExpanded && (isHovered = true)" @mouseleave="isHovered = false">
         <div :class="[
             'py-8 flex',
-            !isExpanded && !isHovered ? 'justify-center' : 'justify-start',
+            !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
         ]">
-            <Link href="/" class="group flex items-center  py-3">
-                <ApplicationLogo class="h-15 w-15 fill-current text-gray-500" />
+            <Link v-if="isExpanded || isHovered || isMobileOpen" href="/" >
+                <ApplicationLogo class="h-10 pt-3 w-auto fill-current text-gray-500 hidden" alt="Logo" height="40" />
             </Link>
-            <!-- <router-link to="/">
-                <ApplicationLogo /> -->
-            <!-- <img v-if="isExpanded || isHovered || isMobileOpen" class="dark:hidden" src="/images/logo/logo.svg"
-                    alt="Logo" width="150" height="40" /> -->
-            <!-- <img v-if="isExpanded || isHovered || isMobileOpen" class="hidden dark:block"
-                    src="/images/logo/logo-dark.svg" alt="Logo" width="150" height="40" />
-                <img v-else src="/images/logo/logo-icon.svg" alt="Logo" width="32" height="32" /> -->
-            <!-- </router-link> -->
+            <Link v-else href="/" >
+                <ApplicationLogo class="h-10 w-auto fill-current text-gray-500" alt="Logo" height="32"/>
+            </Link>
         </div>
         <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-            <nav class="mb-6">
+            <nav class="mb-6 mt-6">
                 <div class="flex flex-col gap-4">
                     <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
                         <h2 :class="[
@@ -145,7 +140,6 @@
                     </div>
                 </div>
             </nav>
-            <!-- <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" /> -->
         </div>
     </aside>
 </template>
