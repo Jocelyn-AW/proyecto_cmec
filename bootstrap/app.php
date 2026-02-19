@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 Route::prefix('banners')->name('banners.')->group(base_path('routes/banner_routes.php'));
                 Route::prefix('publicity')->name('publicity.')->group(base_path('routes/publicity_routes.php'));
                 Route::prefix('users')->name('users.')->group(base_path('routes/user_routes.php'));
+                //Route::prefix('news')->name('news.')->group(base_path('routes/news_routes.php'));
             });
 
             /* Route::prefix('banners') // para cuando quiera probar desde insomnia
@@ -23,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             /* Route::prefix('users') // para cuando quiera probar desde insomnia
                 ->name('users.')
                 ->group(base_path('routes/user_routes.php')); */
+                Route::prefix('news') // para cuando quiera probar desde insomnia
+                ->name('news.')
+                ->group(base_path('routes/news_routes.php'));
             
         }
     )
