@@ -11,23 +11,21 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__ . '/../routes/console.php',
         health: '/up',
         then: function () {
-            Route::middleware(['web', 'auth', 'role:administrador'])->group(function () {
-                Route::prefix('banners')->name('banners.')->group(base_path('routes/banner_routes.php'));
-                Route::prefix('publicity')->name('publicity.')->group(base_path('routes/publicity_routes.php'));
-                Route::prefix('users')->name('users.')->group(base_path('routes/user_routes.php'));
-                //Route::prefix('news')->name('news.')->group(base_path('routes/news_routes.php'));
-            });
 
-            /* Route::prefix('banners') // para cuando quiera probar desde insomnia
-                ->name('banners.')
-                ->group(base_path('routes/banner_routes.php')); */
-            /* Route::prefix('users') // para cuando quiera probar desde insomnia
-                ->name('users.')
-                ->group(base_path('routes/user_routes.php')); */
-                Route::prefix('news') // para cuando quiera probar desde insomnia
-                ->name('news.')
-                ->group(base_path('routes/news_routes.php'));
-            
+            $middleware = env('ROUTES_USE_MIDDLEWARE')
+                ? ['web', 'auth', 'role:administrador']
+                : [];
+
+            Route::middleware($middleware)->group(function () {
+                Route::prefix('banners')->name('banners.')
+                    ->group(base_path('routes/banner_routes.php'));
+                Route::prefix('publicity')->name('publicity.')
+                    ->group(base_path('routes/publicity_routes.php'));
+                Route::prefix('users')->name('users.')
+                    ->group(base_path('routes/user_routes.php'));
+                Route::prefix('news')->name('news.')
+                    ->group(base_path('routes/news_routes.php'));
+            });
         }
     )
     ->withMiddleware(function (Middleware $middleware): void {

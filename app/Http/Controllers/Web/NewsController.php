@@ -6,13 +6,49 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\News;
 use Exception;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class NewsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request): Response
+    {
+        $paginator = News::with('media')
+            ->orderBy('created_at', 'desc')
+            ->paginate(9);
+
+        $news = $paginator->getCollection()->map(function ($item) {
+            return [
+                'id'         => $item->id,
+                'title'      => $item->title,
+                'content'    => $item->content,
+                'extract'    => $item->extract,
+                'link'       => $item->link,
+                'type'       => $item->type,
+                'is_active'  => $item->is_active,
+                'image'      => $item->getFirstMediaUrl('news_images'),
+                'pdf'        => $item->getFirstMediaUrl('news_pdfs'),
+                'updated_at' => $item->updated_at->format('d/m/Y'),
+            ];
+        });
+
+        return Inertia::render('News/News', [
+            'news' => $news,
+            'pagination' => [
+                'total'        => $paginator->total(),
+                'from'         => $paginator->firstItem(),
+                'to'           => $paginator->lastItem(),
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+            ]
+        ]);
+    }
+    
+    
+    /* public function index()
     {
         try {
             $news = News::with('media')
@@ -42,7 +78,14 @@ class NewsController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    } */
+
+    // NewsController
+    public function create(): Response
+    {
+        return Inertia::render('News/NewsCreate');
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -58,12 +101,12 @@ class NewsController extends Controller
 
             $data = $request->validate([
                 'title'    => 'required|string|max:255',
-                'content'  => 'required|string|max:500',
+                'content'  => 'required|string|max:2000',
                 'extract'  => 'nullable|string|max:500',
                 'link'     => 'nullable|string|max:255|url:http,https',
                 'type'     => 'required|in:sesion,noticia',
                 'is_active' => 'boolean',
-                'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
                 'pdf'      => 'nullable|mimes:pdf|max:10240', // max 10MB
             ]);
 
@@ -79,16 +122,18 @@ class NewsController extends Controller
                     ->toMediaCollection('news_pdfs');
             }
 
-            return response()->json([
+            /* return response()->json([
                 'message' => 'success',
                 'data'    => [
                     'news' => $news->load('media')
                 ]
-            ], 200);
+            ], 200); */
+            return redirect()->route('news.index');
         } catch (Exception $e) {
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->route('news.index')->with('error', $e->getMessage());
         }
     }
 
@@ -141,7 +186,7 @@ class NewsController extends Controller
                 'link'     => 'nullable|string|max:255|url:http,https',
                 'type'     => 'required|in:sesion,noticia',
                 'is_active' => 'boolean',
-                'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
                 'pdf'      => 'nullable|mimes:pdf|max:10240',
             ]);
 
