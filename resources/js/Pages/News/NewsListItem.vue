@@ -41,7 +41,7 @@ const stripHtml = (html) => {
                     : 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400'">
                     {{ item.type }}
                 </span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">{{ item.updated_at }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">Última actualización: {{ item.updated_at }}</span>
             </div>
 
             <!-- titulo -->

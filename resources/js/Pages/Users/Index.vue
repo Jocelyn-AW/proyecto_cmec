@@ -13,10 +13,8 @@ defineOptions({
 })
 
 const props = defineProps({
-    users: {
-        type: Array,
-        default: () => []
-    }
+    users: Object,
+    filters: Object
 })
 
 const { alertState, success, errorA, warning } = useAlert()
@@ -26,44 +24,18 @@ const showEditModal = ref(false)
 const userToEdit = ref(null)
 
 // busqueda y paginacion
-const search = ref('')
-const perPage = ref(10)
-const currentPage = ref(1)
+const search = ref(props.filters?.search || '')
+const perPage = ref(props.filters?.perPage || 10)
 
-// filtrado y paginacion automatico
-const filteredUsers = computed(() => {
-    const q = search.value.toLowerCase()
-    return props.users.filter(u =>
-        u.name.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
-        u.role.toLowerCase().includes(q) ||
-        (u.is_active ? 'activo' : 'inactivo').includes(q)
-    )
+watch([search, perPage], ([newSearch, newPerPage]) => {
+    router.get('/users', {
+        search: newSearch,
+        perPage: newPerPage
+    }, {
+        preserveState: true,
+        replace: true
+    })
 })
-
-const totalPages = computed(() => Math.ceil(filteredUsers.value.length / Number(perPage.value)))
-
-const paginatedUsers = computed(() => {
-    const start = (currentPage.value - 1) * perPage.value
-    return filteredUsers.value.slice(start, start + perPage.value)
-})
-
-const showingFrom = computed(() => {
-    if (filteredUsers.value.length === 0) return 0
-    return (currentPage.value - 1) * perPage.value + 1
-})
-
-const showingTo = computed(() =>
-    Math.min(currentPage.value * perPage.value, filteredUsers.value.length)
-)
-
-const visiblePages = computed(() => {
-    const pages = []
-    for (let i = 1; i <= totalPages.value; i++) pages.push(i)
-    return pages
-})
-
-watch([search, perPage], () => { currentPage.value = 1 })
 
 // acciones
 const openEditModal = (user) => {
@@ -200,13 +172,13 @@ const handleCancel = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-if="paginatedUsers.length === 0">
+                                <tr v-if="users.data.length === 0">
                                     <td colspan="5"
                                         class="px-4 py-8 text-center text-sm text-gray-400 border border-gray-100 dark:border-white/[0.05]">
                                         No se encontraron usuarios
                                     </td>
                                 </tr>
-                                <UserListItem v-for="user in paginatedUsers" :key="user.id" :user="user"
+                                <UserListItem v-for="user in users.data" :key="user.id" :user="user"
                                     @edit="openEditModal" @delete="deleteUser" @status-change="statusChange" />
                             </tbody>
                         </table>
@@ -216,33 +188,15 @@ const handleCancel = () => {
                     <div class="border border-t-0 rounded-b-xl border-gray-100 py-4 px-4 dark:border-white/[0.05]">
                         <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
                             <p class="text-sm text-center text-gray-500 dark:text-gray-400 xl:text-left">
-                                Mostrando {{ showingFrom }} a {{ showingTo }} de {{ filteredUsers.length }} entradas
+                                Mostrando {{ users.from || 0 }} a {{ users.to || 0 }} de {{ users.total }} entradas
                             </p>
                             <div class="flex items-center justify-center gap-1">
-                                <button @click="currentPage--" :disabled="currentPage === 1"
-                                    class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-                                    <svg class="fill-current" width="18" height="18" viewBox="0 0 20 20" fill="none">
-                                        <path fill-rule="evenodd" clip-rule="evenodd"
-                                            d="M2.58301 9.99868C2.58272 10.1909 2.65588 10.3833 2.80249 10.53L7.79915 15.5301C8.09194 15.8231 8.56682 15.8233 8.85981 15.5305C9.15281 15.2377 9.15297 14.7629 8.86018 14.4699L5.14009 10.7472L16.6675 10.7472C17.0817 10.7472 17.4175 10.4114 17.4175 9.99715C17.4175 9.58294 17.0817 9.24715 16.6675 9.24715L5.14554 9.24715L8.86017 5.53016C9.15297 5.23717 9.15282 4.7623 8.85983 4.4695C8.56684 4.1767 8.09197 4.17685 7.79917 4.46984L2.84167 9.43049C2.68321 9.568 2.58301 9.77087 2.58301 9.99715C2.58301 9.99766 2.58301 9.99817 2.58301 9.99868Z" />
-                                    </svg>
-                                </button>
-
-                                <button v-for="page in visiblePages" :key="page" @click="currentPage = page"
-                                    class="flex h-9 w-9 items-center justify-center rounded-lg text-sm font-medium transition-colors"
-                                    :class="currentPage === page
-                                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                                        : 'text-gray-700 dark:text-gray-400 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-400'">
-                                    {{ page }}
-                                </button>
-
-                                <button @click="currentPage++"
-                                    :disabled="currentPage === totalPages || totalPages === 0"
-                                    class="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
-                                    <svg class="fill-current" width="18" height="18" viewBox="0 0 20 20" fill="none">
-                                        <path fill-rule="evenodd" clip-rule="evenodd"
-                                            d="M17.4175 9.9986C17.4178 10.1909 17.3446 10.3832 17.198 10.53L12.2013 15.5301C11.9085 15.8231 11.4337 15.8233 11.1407 15.5305C10.8477 15.2377 10.8475 14.7629 11.1403 14.4699L14.8604 10.7472L3.33301 10.7472C2.91879 10.7472 2.58301 10.4114 2.58301 9.99715C2.58301 9.58294 2.91879 9.24715 3.33301 9.24715L14.8549 9.24715L11.1403 5.53016C10.8475 5.23717 10.8477 4.7623 11.1407 4.4695C11.4336 4.1767 11.9085 4.17685 12.2013 4.46984L17.1588 9.43049C17.3173 9.568 17.4175 9.77087 17.4175 9.99715C17.4175 9.99763 17.4175 9.99812 17.4175 9.9986Z" />
-                                    </svg>
-                                </button>
+                                <button v-for="link in users.links" :key="link.label" @click="router.visit(link.url)"
+                                    v-html="link.label" :disabled="!link.url"
+                                    class="px-3 py-1 text-sm rounded-lg border" :class="{
+                                        'bg-blue-500 text-white': link.active,
+                                        'opacity-40 cursor-not-allowed': !link.url
+                                    }" />
                             </div>
                         </div>
                     </div>

@@ -25,11 +25,29 @@ class UsersController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+
+    public function index(Request $request): Response
     {
-        $users = User::orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($user) {
+        $search  = $request->input('search');
+        $perPage = $request->input('perPage', 10);
+
+        $users = User::query()
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('role', 'like', "%{$search}%")
+                        ->orWhereRaw("
+                        CASE 
+                            WHEN is_active = 1 THEN 'activo'
+                            ELSE 'inactivo'
+                        END LIKE ? ", ["%{$search}%"]);
+                });
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -42,7 +60,11 @@ class UsersController extends Controller
             });
 
         return Inertia::render('Users/Index', [
-            'users' => $users
+            'users' => $users,
+            'filters' => [
+                'search' => $search,
+                'perPage' => $perPage,
+            ]
         ]);
     }
 
