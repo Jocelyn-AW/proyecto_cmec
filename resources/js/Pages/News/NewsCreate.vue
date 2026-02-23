@@ -114,14 +114,9 @@ const submit = () => {
             success('Noticia creada correctamente')
         },
         onError: (errors) => {
-            if (errors.link) {
-                errorA(errors.link)
-            } else if (errors.title) {
-                errorA(errors.title)
-            } else if (errors.content) {
-                errorA(errors.content)
-            } else {
-                errorA('Error al crear la noticia')
+            if (errors) {
+                const listaErrores = Object.values(errors).flat().join('\n');
+                errorA(listaErrores);
             }
         },
         onFinish: () => {
