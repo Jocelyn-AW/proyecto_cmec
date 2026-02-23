@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import Alerta from '@/Components/Alerta.vue'
 import { useAlert } from '@/composables/useAlert'
 import { useImageUpload } from '@/composables/useImageUpload'
 
@@ -9,7 +10,7 @@ defineOptions({
     layout: AuthenticatedLayout
 })
 
-const { success, errorA, warning } = useAlert()
+const { alertState, success, errorA, warning } = useAlert()
 
 const isSubmitting = ref(false)
 
@@ -66,6 +67,16 @@ const removeImage = () => {
     resetImage()
 }
 
+const handleConfirm = () => {
+    alertState.value.onConfirm?.()
+    alertState.value.show = false
+}
+
+const handleCancel = () => {
+    alertState.value.onCancel?.()
+    alertState.value.show = false
+}
+
 // validacion de campos
 const canSubmit = computed(() => {
     return form.value.title.trim() !== '' &&
@@ -103,7 +114,15 @@ const submit = () => {
             success('Noticia creada correctamente')
         },
         onError: (errors) => {
-            errorA(errors?.message || 'Error al crear la noticia')
+            if (errors.link) {
+                errorA(errors.link)
+            } else if (errors.title) {
+                errorA(errors.title)
+            } else if (errors.content) {
+                errorA(errors.content)
+            } else {
+                errorA('Error al crear la noticia')
+            }
         },
         onFinish: () => {
             isSubmitting.value = false
@@ -454,6 +473,9 @@ const submit = () => {
                 </div>
             </div>
         </div>
+        <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+            :buttonText="alertState.buttonText" :cancelText="alertState.cancelText" @confirm="handleConfirm"
+            @cancel="handleCancel" @close="alertState.show = false" />
     </div>
 </template>
 <style scoped>

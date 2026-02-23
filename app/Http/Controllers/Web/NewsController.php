@@ -16,9 +16,54 @@ class NewsController extends Controller
      */
     public function index(Request $request): Response
     {
-        $paginator = News::with('media')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        $query = News::with('media')->orderBy('created_at', 'desc');
+
+        /* FILTROS */
+        // tipo
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        // estado
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        // texto (titulo y link)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('link', 'like', "%{$search}%");
+            });
+        }
+
+        // imagen
+        if ($request->filled('has_image')) {
+            $query->whereHas('media', function ($q) {
+                $q->where('collection_name', 'news_images');
+            }, $request->has_image === 'yes' ? '>=' : '<', 1);
+        }
+
+        // PDF
+        if ($request->filled('has_pdf')) {
+            $query->whereHas('media', function ($q) {
+                $q->where('collection_name', 'news_pdfs');
+            }, $request->has_pdf === 'yes' ? '>=' : '<', 1);
+        }
+
+        // url
+        if ($request->filled('has_link')) {
+            if ($request->has_link === 'yes') {
+                $query->whereNotNull('link')->where('link', '!=', '');
+            } else {
+                $query->where(function ($q) {
+                    $q->whereNull('link')->orWhere('link', '');
+                });
+            }
+        }
+
+        $paginator = $query->paginate(9)->withQueryString();
 
         $news = $paginator->getCollection()->map(function ($item) {
             return [
@@ -35,19 +80,20 @@ class NewsController extends Controller
             ];
         });
 
-        return Inertia::render('News/News', [
+        return Inertia::render('News/Index', [
             'news' => $news,
             'pagination' => [
                 'total'        => $paginator->total(),
-                'from'         => $paginator->firstItem(),
-                'to'           => $paginator->lastItem(),
+                'from'         => $paginator->firstItem() ?? 0,
+                'to'           => $paginator->lastItem() ?? 0,
                 'current_page' => $paginator->currentPage(),
                 'last_page'    => $paginator->lastPage(),
-            ]
+            ],
+            'filters' => $request->only(['search', 'type', 'status', 'has_image', 'has_pdf', 'has_link'])
         ]);
     }
-    
-    
+
+
     /* public function index()
     {
         try {
@@ -92,49 +138,59 @@ class NewsController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            $request->mergeIfMissing([
-                'is_active' => true,
-                'link'      => null,
-                'extract'   => null,
-            ]);
+        $request->mergeIfMissing([
+            'is_active' => true,
+            'link'      => null,
+            'extract'   => null,
+        ]);
 
-            $data = $request->validate([
-                'title'    => 'required|string|max:255',
-                'content'  => 'required|string|max:2000',
-                'extract'  => 'nullable|string|max:500',
-                'link'     => 'nullable|string|max:255|url:http,https',
-                'type'     => 'required|in:sesion,noticia',
-                'is_active' => 'boolean',
-                'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
-                'pdf'      => 'nullable|mimes:pdf|max:10240', // max 10MB
-            ]);
+        $messages = [
+            'title.required'    => 'El campo de título es obligatorio para el registro.',
+            'title.max'         => 'El título excede la longitud permitida (máximo 255 caracteres).',
+            'content.required'  => 'Debe ingresar la descripción o el cuerpo del contenido.',
+            'content.max'       => 'El contenido ha superado el límite de caracteres permitido.',
+            'extract.max'       => 'El resumen es demasiado extenso; por favor redúzcalo.',
+            'link.url'          => 'El formato del enlace es inválido. Debe incluir http:// o https://',
+            'type.required'     => 'Debe seleccionar una categoría: Sesión o Noticia.',
+            'type.in'           => 'La opción seleccionada no es válida dentro de las categorías permitidas.',
+            'is_active.boolean' => 'El estado de activación solo admite valores lógicos (verdadero/falso).',
+            'image.image'       => 'El archivo seleccionado no es una imagen válida.',
+            'image.mimes'       => 'Solo se permiten formatos de imagen institucionales: JPG, PNG o WebP.',
+            'image.max'         => 'La imagen excede el límite de tamaño permitido (1MB).',
+            'pdf.mimes'         => 'El archivo adjunto debe ser estrictamente en formato PDF.',
+            'pdf.max'           => 'El documento PDF excede el peso máximo permitido de 10MB.',
+        ];
 
-            $news = News::create($data);
+        $data = $request->validate([
+            'title'     => 'required|string|max:255',
+            'content'   => 'required|string|max:2000',
+            'extract'   => 'nullable|string|max:500',
+            'link'      => 'nullable|string|max:255|url:http,https',
+            'type'      => 'required|in:sesion,noticia',
+            'is_active' => 'boolean',
+            'image'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
+            'pdf'       => 'nullable|mimes:pdf|max:10240',
+        ], $messages);
 
-            if ($request->hasFile('image')) {
-                $news->addMediaFromRequest('image')
-                    ->toMediaCollection('news_images');
-            }
+        $news = News::create($data);
 
-            if ($request->hasFile('pdf')) {
-                $news->addMediaFromRequest('pdf')
-                    ->toMediaCollection('news_pdfs');
-            }
+        if ($request->hasFile('image')) {
+            $news->addMediaFromRequest('image')
+                ->toMediaCollection('news_images');
+        }
 
-            /* return response()->json([
+        if ($request->hasFile('pdf')) {
+            $news->addMediaFromRequest('pdf')
+                ->toMediaCollection('news_pdfs');
+        }
+
+        /* return response()->json([
                 'message' => 'success',
                 'data'    => [
                     'news' => $news->load('media')
                 ]
             ], 200); */
-            return redirect()->route('news.index');
-        } catch (Exception $e) {
-            /* return response()->json([
-                'message' => $e->getMessage(),
-            ], 500); */
-            return redirect()->route('news.index')->with('error', $e->getMessage());
-        }
+        return to_route('news.index')->with('success', 'Noticia creada correctamente');
     }
 
     /**
@@ -205,16 +261,18 @@ class NewsController extends Controller
                     ->toMediaCollection('news_pdfs');
             }
 
-            return response()->json([
+            /* return response()->json([
                 'message' => 'success',
                 'data'    => [
                     'news' => $news->load('media')
                 ]
-            ], 200);
+            ], 200); */
+            return redirect()->route('news.index');
         } catch (Exception $e) {
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->route('news.index')->with('error', $e->getMessage());
         }
     }
 
@@ -230,16 +288,18 @@ class NewsController extends Controller
             $news->clearMediaCollection('news_pdfs');
             $news->delete();
 
-            return response()->json([
+            /* return response()->json([
                 'message' => 'success',
                 'data'    => [
                     'deleted_id' => $id
                 ]
-            ], 200);
+            ], 200); */
+            return redirect()->route('news.index')->with('success', 'Noticia eliminada correctamente');
         } catch (Exception $e) {
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->route('news.index')->with('error', $e->getMessage());
         }
     }
 
@@ -253,16 +313,18 @@ class NewsController extends Controller
             $news->is_active = !$news->is_active;
             $news->save();
 
-            return response()->json([
+            /* return response()->json([
                 'message' => 'success',
                 'data'    => [
                     'news' => $news
                 ]
-            ], 200);
+            ], 200); */
+            return redirect()->route('news.index');
         } catch (Exception $e) {
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->route('news.index')->with('error', $e->getMessage());
         }
     }
 }
