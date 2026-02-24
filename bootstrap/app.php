@@ -25,6 +25,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->group(base_path('routes/user_routes.php'));
                 Route::prefix('news')->name('news.')
                     ->group(base_path('routes/news_routes.php'));
+                Route::prefix('bankdetails')->name('bankdetails.')
+                    ->group(base_path('routes/bankdetails_routes.php'));
             });
         }
     )

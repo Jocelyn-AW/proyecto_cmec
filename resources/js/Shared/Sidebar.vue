@@ -171,6 +171,7 @@ import {
     PresentationIcon,
     WebinarIcon,
     Message2Line,
+    BankIcon,
 } from "../icons"
 import { useSidebar, useSidebarProvider } from "@/composables/useSidebar";
 import { usePage } from "@inertiajs/vue3";
@@ -274,7 +275,12 @@ const menuGroups = computed(() => [
                         { name: "Usuarios", path: "/users", pro: false },
                         
                     ],
-                }
+                },
+                {
+                    icon: BankIcon,
+                    name: "Gestión de Datos de Bancarios",
+                    path: "/bankdetails",
+                },
 
             ] : []),
 
