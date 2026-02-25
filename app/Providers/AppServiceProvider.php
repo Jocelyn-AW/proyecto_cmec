@@ -23,6 +23,7 @@ use App\Models\Membership;
 use App\Models\User;
 use App\Models\Webinar;
 use App\Models\Conference;
+use App\Models\News;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,6 +58,7 @@ class AppServiceProvider extends ServiceProvider
             'post' => Post::class,
             'user' => User::class,
             'webinar' => Webinar::class,
+            'news' => News::class,
         ]);
 
         Vite::prefetch(concurrency: 3);

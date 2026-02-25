@@ -9,8 +9,6 @@ use Exception;
 use Inertia\Inertia;
 use Inertia\Response;
 
-use function Psy\debug;
-
 class PublicityController extends Controller
 {
     /**
@@ -32,7 +30,7 @@ class PublicityController extends Controller
                 ];
             });
 
-        return Inertia::render('Publicity/Publicity', [
+        return Inertia::render('Publicity/Index', [
             'posts' => $posts
         ]);
     }
@@ -62,17 +60,15 @@ class PublicityController extends Controller
                     ->toMediaCollection('posts');
             }
 
-            return response()->json([
-                'message' => 'success',
-                'data' => [
-                    'post' => $post
-                ]
-            ], 200);
+            return redirect()->route('publicity.index');
         } catch (Exception $e) {
 
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 
@@ -85,12 +81,11 @@ class PublicityController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Update the specified resource in storage.
      */
     public function edit(Request $request, int $id)
     {
         try {
-
             $request->mergeIfMissing([
                 'is_active' => true,
                 'link' => null
@@ -108,24 +103,21 @@ class PublicityController extends Controller
             $post->update($data);
 
             if ($request->hasFile('image')) {
-
                 $post->clearMediaCollection('posts');
 
                 $post->addMediaFromRequest('image')
                     ->toMediaCollection('posts');
             }
 
-            return response()->json([
-                'message' => 'success',
-                'data' => [
-                    'post' => $post->load('media')
-                ]
-            ], 200);
+            return redirect()->route('publicity.index');
         } catch (Exception $e) {
 
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 
@@ -141,17 +133,15 @@ class PublicityController extends Controller
 
             $post->delete();
 
-            return response()->json([
-                'message' => 'success',
-                'data' => [
-                    'deleted_id' => $id
-                ]
-            ], 200);
+            return redirect()->route('publicity.index');
         } catch (Exception $e) {
 
-            return response()->json([
+            /* return response()->json([
                 'message' => $e->getMessage(),
-            ], 500);
+            ], 500); */
+            return redirect()->back()->withErrors([
+                'message' => $e->getMessage()
+            ]);
         }
     }
 
@@ -171,8 +161,6 @@ class PublicityController extends Controller
                 ->update(['order' => $item['order']]);
         }
 
-        return response()->json([
-            'message' => 'Orden actualizado'
-        ]);
+        return redirect()->route('publicity.index');
     }
 }
