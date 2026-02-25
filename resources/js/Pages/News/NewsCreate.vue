@@ -140,7 +140,7 @@ const submit = () => {
 
         <Head title="Nueva noticia" />
 
-        <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
+        <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:p-8">
             <div class="space-y-6 max-w-5xl mx-auto">
 
                 <div class="flex items-center justify-between">
