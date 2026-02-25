@@ -30,6 +30,8 @@ export function useAlert() {
 
     const hideAlert = () => {
         alertState.value.show = false
+        alertState.value.onConfirm = null
+        alertState.value.onCancel = null
     }
 
     const success = (message, options = {}) => {

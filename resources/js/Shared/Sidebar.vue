@@ -238,7 +238,7 @@ const menuGroups = computed(() => [
                     name: "Webinars",
                     subItems: [
                         { name: "Listado", path: "/list", pro: false},
-                        { name: "Asistentes Registrados", path: "/webinarAttendees", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/webinar", pro: false },
                         
                     ],
                 },
@@ -246,8 +246,8 @@ const menuGroups = computed(() => [
                     icon: PresentationIcon,
                     name: "Cursos",
                     subItems: [
-                        { name: "Listado", path: "/list", pro: false },
-                        { name: "Asistentes Registrados", path: "/courseAttendees", pro: false },
+                        { name: "Listado", path: "/courses", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/course", pro: false },
                         
                     ],
                 },
@@ -255,8 +255,8 @@ const menuGroups = computed(() => [
                     icon: PresentationIcon,
                     name: "Congresos",
                     subItems: [
-                        { name: "Listado", path: "/list", pro: false },
-                        { name: "Asistentes Registrados", path: "/conferenceAttendees", pro: false },
+                        { name: "Listado", path: "/conferences", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/conference", pro: false },
                         
                     ],
                 },
