@@ -5,7 +5,7 @@ namespace App\Http\Helpers;
 class Constants {
     
     //tablas
-    const TABLE_ATTENDEEES = 'attendees';
+    const TABLE_ATTENDEES = 'attendees';
     const TABLE_BANK_DETAILS = 'bank_details';
     const TABLE_BANNERS = 'banners';
     const TABLE_CANDIDATES = 'candidates';

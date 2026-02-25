@@ -15,7 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
                 Route::prefix('banners')->name('banners.')->group(base_path('routes/banner_routes.php'));
                 Route::prefix('publicity')->name('publicity.')->group(base_path('routes/publicity_routes.php'));
                 Route::prefix('users')->name('users.')->group(base_path('routes/user_routes.php'));
+                Route::prefix('courses')->name('courses.')->group(base_path('routes/course_routes.php'));
+                Route::prefix('attendees')->name('attendees.')->group(base_path('routes/attendees_routes.php'));
             });
+
+            // Route::prefix('courses')->name('courses.')->group(base_path('routes/course_routes.php'));
 
             /* Route::prefix('banners') // para cuando quiera probar desde insomnia
                 ->name('banners.')
