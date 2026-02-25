@@ -87,7 +87,7 @@ const handleCancel = () => {
 
         <Head title="Usuarios" />
 
-        <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
+        <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:p-8">
             <div class="space-y-5">
 
                 <div>

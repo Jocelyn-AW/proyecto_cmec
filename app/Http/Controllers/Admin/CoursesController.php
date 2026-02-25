@@ -35,6 +35,7 @@ class CoursesController extends Controller
     public function store(Request $request)
     {
         try {
+            //todo: add payment_methods
             $this->mergeNullableFields($request);
 
             $validationRules = $this->getValidationArray();
@@ -67,7 +68,8 @@ class CoursesController extends Controller
 
     public function edit($id)
     {
-        $course = Course::with('bankDetails')->findOrFail($id);
+        $course = Course::findOrFail($id);
+        //todo: load payment_methods
 
         return Inertia::render('Courses/CourseEdit', [
             'course' => $course

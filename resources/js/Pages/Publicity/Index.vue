@@ -126,7 +126,7 @@ const handleCancel = () => {
 
         <Head title="Publicidad" />
 
-        <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:ml-[290px]">
+        <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:p-8">
             <div class="space-y-5">
                 <div class="flex flex-col gap-5 px-6 mb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
