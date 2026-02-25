@@ -52,8 +52,6 @@ const page = usePage();
 
 
 onMounted(() => {
-    console.log(page.props);
-    
     if (page.props.success || props.flash.success) {
         success(page.props.success || props.flash.success)
     }

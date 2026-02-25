@@ -86,7 +86,6 @@ const saveOrder = async () => {
 
         original.value = list.value.map(p => ({ ...p }))
 
-        console.log('Orden actualizado exitosamente')
         success('Orden actualizado correctamente')
 
     } catch (error) {
