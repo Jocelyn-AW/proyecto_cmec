@@ -68,12 +68,10 @@ const handleSubmit = () => {
         formData.program_pdf = pdf.file.value;
     }
 
-    console.log("Form submitted with data:", formData);
     router.post("/courses/new", formData);
 };
 
 const handleCancel = () => {
-    console.log("Form cancelled");
     router.get('/courses');
 };
 

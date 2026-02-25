@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Models\Webinar;
 use App\Models\Conference;
 use App\Models\News;
+use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -40,6 +41,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Schema::defaultStringLength(191);
+
         Relation::enforceMorphMap([
             'attendee' => Attendee::class,
             'bank_detail' => BankDetail::class,

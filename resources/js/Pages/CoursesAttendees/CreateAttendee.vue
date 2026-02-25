@@ -46,9 +46,6 @@ const emit = defineEmits(['close', 'success', 'error'])
 
 
 onMounted(() => {
-    console.log(props);
-    
-    
     if (page.props.success || props.flash.success) {
         success(page.props.success || props.flash.success)
     }
@@ -120,7 +117,7 @@ const submitCreate = () => {
             emit('success');
         },
         onError: () => {
-            console.log('errores');
+            //
         }
     })
 }

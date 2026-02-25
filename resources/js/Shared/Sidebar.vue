@@ -303,7 +303,6 @@ const isAnySubmenuRouteActive = computed(() => {
 
 const isSubmenuOpen = (groupIndex, itemIndex) => {
     const key = `${groupIndex}-${itemIndex}`;
-    // console.log(openSubmenu);
 
     return (
         openSubmenu.value === key ||

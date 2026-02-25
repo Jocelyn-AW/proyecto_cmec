@@ -51,8 +51,6 @@ const handleOnCreate = () => {
 }
 
 const handleOnEdit = (course) => {
-    console.log('editar curso', course.id);
-    
     router.get(route('courses.edit', course.id), {}, {
         preserveState: false
     });

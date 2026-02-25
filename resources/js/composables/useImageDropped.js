@@ -44,8 +44,6 @@ export function useFileUpload({
     const validateFile = (selected) => {
         if (!selected) return false;
 
-        console.log('validando tipo:', selected.type, 'aceptados:', acceptedTypes)
-
         if (
             acceptedTypes.length > 0 &&
             !acceptedTypes.includes(selected.type)
@@ -132,7 +130,6 @@ export function useFileUpload({
      * Maneja el evento change de un input[type="file"].
      */
     const handleChange = async (event) => {
-        console.log('handleChange llamado', event.target.files)
         if (multiple) {
             await processFiles(event.target.files);
             event.target.value = "";

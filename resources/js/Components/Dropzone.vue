@@ -33,9 +33,7 @@ import { computed, ref } from 'vue'
 /**
  * Determina si un preview es una imagen (string base64/url) o un archivo (objeto con metadata).
  */
-const isImagePreview = (preview) => {   
-    console.log('preview', preview);
-     
+const isImagePreview = (preview) => {
     return typeof preview === 'string'
 }
 // const isImagePreview = () => {

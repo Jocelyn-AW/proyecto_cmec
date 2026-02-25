@@ -142,7 +142,6 @@ const handleSubmit = () => {
 };
 
 const handleCancel = () => {
-    console.log("Form cancelled");
     router.get('/courses');
 };
 
