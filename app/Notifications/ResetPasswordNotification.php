@@ -24,10 +24,12 @@ class ResetPasswordNotification extends Notification
 
     public function toMail(object $notifiable)
     {
-        $frontendUrl = config('app.frontend_url') . '/reset-password';
+        // $frontendUrl = config('app.frontend_url') . '/reset-password';
 
-        $resetUrl = $frontendUrl . '/' . $this->token .
-            '?email=' . urlencode($notifiable->email);
+        // $resetUrl = $frontendUrl . '/' . $this->token .
+        //     '?email=' . urlencode($notifiable->email);
+
+        $resetUrl = route('password.reset', $this->token);
 
 
         $mailService = app(MailService::class);
