@@ -264,8 +264,8 @@ const chevronSvg = `<svg class="stroke-current" width="16" height="16" viewBox="
 
                 <!-- Grid de cards -->
                 <div v-if="props.news.length > 0" class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                    <NewsListItem v-for="item in props.news" :key="item.id" :item="item" @edit="openEditDrawer"
-                        @delete="deleteNews" @status-change="statusChange" />
+                        <NewsListItem v-for="item in props.news" :key="item.id" :item="item" @edit="openEditDrawer"
+                            @delete="deleteNews" @status-change="statusChange" />
                 </div>
 
                 <!-- Sin resultados -->

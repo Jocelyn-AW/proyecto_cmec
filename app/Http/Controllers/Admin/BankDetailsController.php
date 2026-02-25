@@ -107,64 +107,54 @@ class BankDetailsController extends Controller
     /**
      * Actualiza un registro bancario existente.
      */
-    public function edit(Request $request, int $id): JsonResponse
+    public function edit(Request $request, int $id)
     {
-        try {
-            $bankDetail = BankDetail::findOrFail($id);
+        $bankDetail = BankDetail::findOrFail($id);
 
-            $messages = [
-                'bank.required'                   => 'Es obligatorio especificar el nombre de la institución bancaria.',
-                'bank.string'                     => 'El nombre del banco debe contener caracteres válidos.',
-                'bank.max'                        => 'El nombre del banco es demasiado extenso.',
-                'account_number.required_without' => 'Debe proporcionar el número de cuenta o tarjeta si el campo CLABE está vacío.',
-                'account_number.regex'            => 'El número de cuenta/tarjeta debe contener únicamente números.',
-                'account_number.between'          => 'Para cuenta bancaria use 10-11 dígitos. Para tarjeta de débito/crédito use 16 dígitos.',
-                'clabe_number.required_without'   => 'Debe proporcionar la clave interbancaria (CLABE) si el número de cuenta está vacío.',
-                'clabe_number.regex'              => 'La CLABE debe contener únicamente dígitos numéricos.',
-                'clabe_number.size'               => 'La clave interbancaria (CLABE) debe tener exactamente 18 dígitos.',
-                'reference.string'                => 'La referencia debe ser un texto válido.',
-                'beneficiary.string'              => 'El nombre del beneficiario debe ser un texto válido.',
-                'subsidiary.string'               => 'El nombre de la sucursal debe ser un texto válido.',
-            ];
+        $messages = [
+            'bank.required'                   => 'Es obligatorio especificar el nombre de la institución bancaria.',
+            'bank.string'                     => 'El nombre del banco debe contener caracteres válidos.',
+            'bank.max'                        => 'El nombre del banco es demasiado extenso.',
+            'account_number.required_without' => 'Debe proporcionar el número de cuenta o tarjeta si el campo CLABE está vacío.',
+            'account_number.regex'            => 'El número de cuenta/tarjeta debe contener únicamente números.',
+            'account_number.between'          => 'Para cuenta bancaria use 10-11 dígitos. Para tarjeta de débito/crédito use 16 dígitos.',
+            'clabe_number.required_without'   => 'Debe proporcionar la clave interbancaria (CLABE) si el número de cuenta está vacío.',
+            'clabe_number.regex'              => 'La CLABE debe contener únicamente dígitos numéricos.',
+            'clabe_number.size'               => 'La clave interbancaria (CLABE) debe tener exactamente 18 dígitos.',
+            'reference.string'                => 'La referencia debe ser un texto válido.',
+            'beneficiary.string'              => 'El nombre del beneficiario debe ser un texto válido.',
+            'subsidiary.string'               => 'El nombre de la sucursal debe ser un texto válido.',
+        ];
 
-            $data = $request->validate([
-                'bank'           => ['required', 'string', 'max:255'],
-                'account_number' => [
-                    'nullable',
-                    'string',
-                    'required_without:clabe_number',
-                    'regex:/^[0-9]+$/',
-                    'between:10,16',
-                ],
-                'clabe_number' => [
-                    'nullable',
-                    'string',
-                    'required_without:account_number',
-                    'regex:/^[0-9]+$/',
-                    'size:18',
-                ],
-                'reference'   => ['nullable', 'string'],
-                'beneficiary' => ['nullable', 'string'],
-                'subsidiary'  => ['nullable', 'string'],
-            ], $messages);
+        $data = $request->validate([
+            'bank'           => ['required', 'string', 'max:255'],
+            'account_number' => [
+                'nullable',
+                'string',
+                'required_without:clabe_number',
+                'regex:/^[0-9]+$/',
+                'between:10,16',
+            ],
+            'clabe_number' => [
+                'nullable',
+                'string',
+                'required_without:account_number',
+                'regex:/^[0-9]+$/',
+                'size:18',
+            ],
+            'reference'   => ['nullable', 'string'],
+            'beneficiary' => ['nullable', 'string'],
+            'subsidiary'  => ['nullable', 'string'],
+        ], $messages);
 
-            //die($bankDetail);
-            $bankDetail->update($data);
+        //die($bankDetail);
+        $bankDetail->update($data);
+        return redirect()->route('bankdetails.index');
 
-            return response()->json([
+        /* return response()->json([
                 'message' => 'Cuenta bancaria actualizada correctamente',
                 'data'    => $bankDetail->load('updatedBy')
-            ], 200);
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Error de validación',
-                'errors'  => $e->errors()
-            ], 422);
-        } catch (Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+            ], 200); */
     }
 
     /**
