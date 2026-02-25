@@ -50,20 +50,20 @@ class BankDetail extends Model
      * asignar automaticamente el usuario autenticado
      * al crear o actualizar el registro
      */
-    /* protected static function booted()
+    protected static function booted()
     {
         static::saving(function ($model) {
             if (Auth::check()) {
                 $model->updated_by = Auth::id();
             }
         });
-    } */
-    protected static function booted()
+    }
+    /* protected static function booted()
     {
         static::saving(function ($model) {
             $model->updated_by = Auth::check() ? Auth::id() : 1;
         });
-    }
+    } */
 
     /*
     |-----------------------

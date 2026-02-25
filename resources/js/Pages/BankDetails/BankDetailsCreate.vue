@@ -29,6 +29,17 @@ const BANCOS = [
     'Banbajío',
     'Mifel',
     'Multiva',
+    'Azteca',
+    'BanBajío',
+    'Compartamos',
+    'Consubanco',
+    'Famsa',
+    'Intercam',
+    'Invex',
+    'Ixe',
+    'Monexcb',
+    'Sabadell',
+    'Ve por Más (BX+)',
     'Otro',
 ]
 
