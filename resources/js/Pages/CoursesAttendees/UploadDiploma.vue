@@ -2,6 +2,7 @@
 import Modal from '@/Components/Modal.vue';
 import Dropzone from '@/Components/Dropzone.vue';
 import { useFileUpload } from '@/composables/useImageDropped';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     show: {
