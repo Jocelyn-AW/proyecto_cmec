@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Http\Helpers\Constants;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as BaseMedia;
 use Illuminate\Support\Facades\Storage;
 
 class Media extends BaseMedia
 {
-    protected $table = 'media';
+    protected $table = Constants::TABLE_MEDIA;
 
     protected $casts = [
         'manipulations'        => 'array',

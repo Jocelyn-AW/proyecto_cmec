@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-
+use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
@@ -17,7 +17,7 @@ class Post extends Model implements HasMedia
      *
      * @var string
      */
-    protected $table = 'posts';
+    protected $table = Constants::TABLE_POSTS;
 
 
     /**

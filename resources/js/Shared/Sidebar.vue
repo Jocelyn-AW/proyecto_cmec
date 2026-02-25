@@ -238,7 +238,7 @@ const menuGroups = computed(() => [
                     icon: WebinarIcon,
                     name: "Webinars",
                     subItems: [
-                        { name: "Listado", path: "/list", pro: false},
+                        { name: "Listado", path: "/webinars", pro: false},
                         { name: "Asistentes Registrados", path: "/attendees/webinar", pro: false },
                         
                     ],
