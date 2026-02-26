@@ -200,7 +200,7 @@ class AttendeesController extends Controller
             'cmec_member_id.required' => 'El ID de miembro CMEC es obligatorio para participantes que son miembros.',
             'phone.min' => 'El teléfono debe tener minimo :min digitos',
             'phone.max' => 'El teléfono debe tener maximo :max digitos',
-
+            '*.required' => 'Este campo es obligatorio',
         ];
     }
 

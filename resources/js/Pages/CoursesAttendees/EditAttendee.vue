@@ -121,7 +121,7 @@ const cleanForm = () => {
     createForm.status = '';
     createForm.cmec_member_id = null;
     createForm.price = '';
-    selectedEvent.value = null;
+    selectedEvent.value = '';
     selectedCity.value = '';
     selectedState.value = '';
 }
@@ -146,6 +146,8 @@ const setDataToForm = () => {
 }
 
 const submitCreate = () => {
+
+    createForm.event_id = selectedEvent?.value?.id;    
     switch (createForm.event_type) {
         case 'curso':
             createForm.event_type = 'course';
@@ -220,6 +222,7 @@ watch(selectedState, (value, old) => {
                     <option value="">Seleccionar curso</option>
                     <option v-for="event in events" :key="event.id" :value="event">{{ event.name || event.topic }}</option>
                 </select>
+                <span v-if="errors?.event_id" class="text-red-500 text-xs flex justify-end">{{ errors?.event_id }}</span>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre médico (se mostrará en el diploma)</label>
