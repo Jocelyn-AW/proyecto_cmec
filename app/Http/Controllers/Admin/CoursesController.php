@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\BankDetail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Course;
+use function Illuminate\Log\log;
 
 class CoursesController extends Controller
 {
@@ -29,13 +31,17 @@ class CoursesController extends Controller
 
     public function new()
     {
-        return Inertia::render('Courses/CourseCreate');
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
+                        ->get();
+
+        return Inertia::render('Courses/CourseCreate', [
+            'bank_details' => $bankDetails
+        ]);
     }
 
     public function store(Request $request)
     {
         try {
-            //todo: add payment_methods
             $this->mergeNullableFields($request);
 
             $validationRules = $this->getValidationArray();
@@ -69,10 +75,12 @@ class CoursesController extends Controller
     public function edit($id)
     {
         $course = Course::findOrFail($id);
-        //todo: load payment_methods
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
+                        ->get();
 
         return Inertia::render('Courses/CourseEdit', [
-            'course' => $course
+            'course' => $course,
+            'bank_details' => $bankDetails
         ]);
     }
 
@@ -226,6 +234,7 @@ class CoursesController extends Controller
             'guest_price' => 'nullable|numeric',
             'resident_price' => 'nullable|numeric',
             'link' => 'nullable|url',
+            'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
@@ -246,6 +255,7 @@ class CoursesController extends Controller
             '*.numeric' => 'El campo debe ser un número.',
             '*.date' => 'El campo debe ser una fecha válida.',
             '*.url' => 'El campo debe ser una URL válida.',
+            'bank_detail_id.exists' => 'Seleccione una cuenta válida'
         ];
     }
 
@@ -263,8 +273,9 @@ class CoursesController extends Controller
 
     private function formatDateTime($date, $time)
     {
+        $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
     }
 
-    
+
 }
