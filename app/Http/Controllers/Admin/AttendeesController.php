@@ -45,6 +45,8 @@ class AttendeesController extends Controller
                 ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
         }
 
+        $attendees->where('event_type', $event_type);
+
         return $attendees->paginate($perPage)->withQueryString();
     }
 
