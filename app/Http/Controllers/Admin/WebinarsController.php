@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use function Illuminate\Log\log;
 use Illuminate\Http\Request;
+use App\Models\BankDetail;
 use App\Models\Webinar;
 use Inertia\Inertia;
 
@@ -29,7 +31,11 @@ class WebinarsController extends Controller
 
     public function new()
     {
-        return Inertia::render('Webinars/WebinarCreate');
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
+            ->get();
+        return Inertia::render('Webinars/WebinarCreate', [
+            'bank_details' => $bankDetails
+        ]);
     }
 
     public function store(Request $request)
@@ -68,9 +74,12 @@ class WebinarsController extends Controller
     {
         $webinar = Webinar::findOrFail($id);
         //todo: load payment_methods
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
+            ->get();
 
         return Inertia::render('Webinars/WebinarEdit', [
-            'webinar' => $webinar
+            'webinar' => $webinar,
+            'bank_details' => $bankDetails
         ]);
     }
 
@@ -222,6 +231,7 @@ class WebinarsController extends Controller
             'guest_price' => 'nullable|numeric',
             'resident_price' => 'nullable|numeric',
             'link' => 'nullable|url',
+            'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
@@ -241,6 +251,7 @@ class WebinarsController extends Controller
             '*.max' => 'El campo no debe exceder los :max caracteres.',
             '*.numeric' => 'El campo debe ser un número.',
             '*.date' => 'El campo debe ser una fecha válida.',
+            'bank_detail_id.exists' => 'Seleccione una cuenta válida',
             '*.url' => 'El campo debe ser una URL válida.',
         ];
     }

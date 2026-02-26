@@ -6,7 +6,6 @@ import { computed, onMounted, watch } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
-import { data } from 'autoprefixer';
 
 defineOptions({
     layout: AuthenticatedLayout

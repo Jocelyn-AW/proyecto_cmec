@@ -31,6 +31,7 @@ class Webinar extends Model implements HasMedia
         'guest_price',
         'resident_price',
         'member_price',
+        'bank_detail_id',
     ];
 
     protected $dates = [

@@ -18,6 +18,7 @@ const emit = defineEmits(['close', 'success', 'error', 'warning'])
 
 const isSubmitting = ref(false)
 const editEditorRef = ref(null)
+const editCurrentPdf = ref(null)
 
 const editForm = ref({
     title: '',
@@ -34,6 +35,32 @@ const editCurrentImage = ref(null)
 const editPdfFile = ref(null)
 const editPdfName = ref('')
 
+/* DRAG AND DROP DE LA IMAGEN */
+const isEditImageDragging = ref(false)
+
+const onEditImageDragOver = (e) => { e.preventDefault(); isEditImageDragging.value = true }
+const onEditImageDragLeave = (e) => { e.preventDefault(); isEditImageDragging.value = false }
+const onEditImageDrop = (e) => {
+    e.preventDefault()
+    isEditImageDragging.value = false
+    const files = e.dataTransfer.files
+    if (!files?.length) return
+    onEditImageChange({ target: { files } })
+}
+
+/* DRAG AND DROP DEL PDF */
+const isEditPdfDragging = ref(false)
+
+const onEditPdfDragOver = (e) => { e.preventDefault(); isEditPdfDragging.value = true }
+const onEditPdfDragLeave = (e) => { e.preventDefault(); isEditPdfDragging.value = false }
+const onEditPdfDrop = (e) => {
+    e.preventDefault()
+    isEditPdfDragging.value = false
+    const files = e.dataTransfer.files
+    if (!files?.length) return
+    onEditPdfChange({ target: { files } })
+}
+
 // Poblar formulario cuando cambia el item
 watch(() => props.newsItem, (item) => {
     if (!item) return
@@ -46,6 +73,7 @@ watch(() => props.newsItem, (item) => {
         is_active: item.is_active,
     }
     editCurrentImage.value = item.image || null
+    editCurrentPdf.value = item.pdf || null
     editImageFile.value = null
     editImagePreview.value = null
     editPdfFile.value = null
@@ -84,6 +112,18 @@ const onEditPdfChange = (event) => {
     editPdfName.value = file.name
 }
 
+const removeEditImage = () => {
+    editImagePreview.value = null
+    editImageFile.value = null
+    editCurrentImage.value = null
+}
+
+const removeEditPdf = () => {
+    editPdfFile.value = null
+    editPdfName.value = ''
+    editCurrentPdf.value = null
+}
+
 const execEditCmd = (command, value = null) => {
     editEditorRef.value?.focus()
     document.execCommand(command, false, value)
@@ -112,6 +152,13 @@ const submitEdit = () => {
     if (editImageFile.value) formData.append('image', editImageFile.value)
     if (editPdfFile.value) formData.append('pdf', editPdfFile.value)
 
+    if (!editCurrentImage.value && !editImageFile.value) {
+        formData.append('remove_image', '1')
+    }
+    if (!editCurrentPdf.value && !editPdfFile.value) {
+        formData.append('remove_pdf', '1')
+    }
+
     router.post(`/news/${props.newsItem.id}`, formData, {
         forceFormData: true,
         preserveScroll: true,
@@ -133,7 +180,7 @@ const submitEdit = () => {
     <TransitionRoot as="template" :show="show">
         <Dialog class="relative z-50" @close="close">
 
-            <!-- Overlay -->
+            <!-- overlay -->
             <TransitionChild as="template" enter="ease-in-out duration-300" enter-from="opacity-0"
                 enter-to="opacity-100" leave="ease-in-out duration-300" leave-from="opacity-100" leave-to="opacity-0">
                 <div class="fixed inset-0 bg-gray-500/60 dark:bg-gray-900/70 transition-opacity" />
@@ -151,7 +198,7 @@ const submitEdit = () => {
                             <DialogPanel class="pointer-events-auto w-screen max-w-xl">
                                 <div class="flex h-full flex-col bg-white dark:bg-gray-900 shadow-xl overflow-y-auto">
 
-                                    <!-- Header -->
+                                    <!-- header -->
                                     <div
                                         class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-0 z-10">
                                         <div>
@@ -170,10 +217,10 @@ const submitEdit = () => {
                                         </button>
                                     </div>
 
-                                    <!-- Contenido -->
+                                    <!-- contenido -->
                                     <div class="flex-1 px-6 py-5 space-y-5">
 
-                                        <!-- Título -->
+                                        <!-- titulo -->
                                         <div>
                                             <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -187,7 +234,7 @@ const submitEdit = () => {
                                                 {{ editForm.title.length }}/255</p>
                                         </div>
 
-                                        <!-- Tipo y Estado -->
+                                        <!-- tipo y estado -->
                                         <div class="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label
@@ -230,7 +277,7 @@ const submitEdit = () => {
                                             </div>
                                         </div>
 
-                                        <!-- Editor de contenido -->
+                                        <!-- editor de contenido -->
                                         <div>
                                             <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -239,7 +286,7 @@ const submitEdit = () => {
                                             <div
                                                 class="rounded-lg border border-gray-300 dark:border-gray-700 overflow-hidden">
 
-                                                <!-- Toolbar -->
+                                                <!-- toolbar -->
                                                 <div
                                                     class="flex flex-wrap items-center gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                                                     <div class="flex items-center gap-0.5">
@@ -333,14 +380,14 @@ const submitEdit = () => {
                                                     </div>
                                                 </div>
 
-                                                <!-- Área editable -->
+                                                <!-- area editable -->
                                                 <div ref="editEditorRef" contenteditable="true"
                                                     @input="onEditEditorInput" placeholder="Escribe el contenido..."
                                                     class="min-h-[200px] px-3 py-2.5 text-sm text-gray-800 dark:text-white/90 dark:bg-gray-800 focus:outline-none leading-relaxed prose prose-sm max-w-none" />
                                             </div>
                                         </div>
 
-                                        <!-- Extracto -->
+                                        <!-- extracto -->
                                         <div>
                                             <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -354,7 +401,7 @@ const submitEdit = () => {
                                                 {{ editForm.extract.length }}/500</p>
                                         </div>
 
-                                        <!-- Link -->
+                                        <!-- link -->
                                         <div>
                                             <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -375,41 +422,74 @@ const submitEdit = () => {
                                             </div>
                                         </div>
 
-                                        <!-- Imagen -->
+                                        <!-- imagen -->
                                         <div>
                                             <label
                                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 Imagen <span class="text-gray-400 text-xs">(opcional)</span>
                                             </label>
-                                            <div v-if="editImagePreview || editCurrentImage" class="mb-3 relative">
+
+                                            <!-- preview con overlay al hover -->
+                                            <div v-if="editImagePreview || editCurrentImage"
+                                                class="mb-3 relative group">
                                                 <img :src="editImagePreview || editCurrentImage"
                                                     class="w-full h-36 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                                                     alt="Preview">
-                                                <button
-                                                    @click="editImagePreview = null; editImageFile = null; editCurrentImage = null"
-                                                    class="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                                        class="w-3 h-3">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
+                                                <div
+                                                    class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                                    <button @click="removeEditImage()"
+                                                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors shadow">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                            class="w-3.5 h-3.5">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                        Eliminar imagen
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div v-else
-                                                class="mb-3 w-full h-28 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center gap-2 bg-gray-50 dark:bg-gray-800/50">
+
+                                            <!-- drag and drop -->
+                                            <div v-else @dragover="onEditImageDragOver"
+                                                @dragleave="onEditImageDragLeave" @drop="onEditImageDrop"
+                                                @click="$refs.editImageInput.click()" :class="[
+                                                    'mb-3 w-full h-28 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-all',
+                                                    isEditImageDragging
+                                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10'
+                                                        : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                ]">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                     stroke-width="1.5" stroke="currentColor"
-                                                    class="w-7 h-7 text-gray-300">
+                                                    :class="['w-7 h-7 transition-colors', isEditImageDragging ? 'text-blue-400' : 'text-gray-300']">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                                 </svg>
-                                                <span class="text-xs text-gray-400">Sin imagen</span>
+                                                <div class="text-center">
+                                                    <p class="text-xs font-medium transition-colors"
+                                                        :class="isEditImageDragging ? 'text-blue-500' : 'text-blue-400'">
+                                                        {{ isEditImageDragging ? 'Suelta la imagen aquí' : 'Haz clic o arrastra una imagen' }}
+                                                    </p>
+                                                    <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP · Máx. 1MB
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp"
-                                                @change="onEditImageChange"
-                                                class="block w-full text-xs text-gray-500 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 focus:outline-none">
-                                            <p class="mt-1 text-xs text-gray-400">JPG, PNG, WEBP · Máx. 1MB</p>
+
+                                            <!-- nombre archivo seleccionado -->
+                                            <p v-if="editImageFile"
+                                                class="mt-1 text-xs text-gray-500 truncate flex items-center gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke-width="1.5" stroke="currentColor"
+                                                    class="w-3.5 h-3.5 text-blue-500 shrink-0">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M4.5 12.75l6 6 9-13.5" />
+                                                </svg>
+                                                {{ editImageFile.name }}
+                                            </p>
+
+                                            <input ref="editImageInput" type="file"
+                                                accept="image/jpeg,image/png,image/jpg,image/webp"
+                                                @change="onEditImageChange" class="hidden">
                                         </div>
 
                                         <!-- PDF -->
@@ -418,7 +498,9 @@ const submitEdit = () => {
                                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 Documento PDF <span class="text-gray-400 text-xs">(opcional)</span>
                                             </label>
-                                            <div v-if="editPdfName || newsItem?.pdf"
+
+                                            <!-- PDF seleccionado o existente -->
+                                            <div v-if="editPdfName || editCurrentPdf"
                                                 class="mb-3 flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                     stroke-width="1.5" stroke="currentColor"
@@ -435,20 +517,41 @@ const submitEdit = () => {
                                                         {{ editPdfName ? 'Nuevo PDF seleccionado' : 'PDF existente' }}
                                                     </p>
                                                 </div>
+                                                <button @click="removeEditPdf()"
+                                                    class="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 transition-colors"
+                                                    title="Quitar PDF">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                        class="w-3.5 h-3.5">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
                                             </div>
-                                            <div v-else
-                                                class="mb-3 w-full h-14 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center gap-2 bg-gray-50 dark:bg-gray-800/50">
+
+                                            <!-- Zona drag & drop PDF -->
+                                            <div v-else @dragover="onEditPdfDragOver" @dragleave="onEditPdfDragLeave"
+                                                @drop="onEditPdfDrop" @click="$refs.editPdfInput.click()" :class="[
+                                                    'mb-3 w-full h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all',
+                                                    isEditPdfDragging
+                                                        ? 'border-red-400 bg-red-50 dark:bg-red-500/10'
+                                                        : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                                ]">
                                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                                     stroke-width="1.5" stroke="currentColor"
-                                                    class="w-5 h-5 text-gray-300">
+                                                    :class="['w-5 h-5 transition-colors', isEditPdfDragging ? 'text-red-400' : 'text-gray-300']">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
                                                         d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                                 </svg>
-                                                <span class="text-xs text-gray-400">Sin documento adjunto</span>
+                                                <p class="text-xs font-medium transition-colors"
+                                                    :class="isEditPdfDragging ? 'text-red-500' : 'text-red-400'">
+                                                    {{ isEditPdfDragging ? 'Suelta el PDF aquí' : 'Haz clic o arrastra un PDF' }}
+                                                </p>
+                                                <p class="text-xs text-gray-400">Solo PDF · Máx. 10MB</p>
                                             </div>
-                                            <input type="file" accept="application/pdf" @change="onEditPdfChange"
-                                                class="block w-full text-xs text-gray-500 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-800 focus:outline-none">
-                                            <p class="mt-1 text-xs text-gray-400">Solo PDF · Máx. 10MB</p>
+
+                                            <input ref="editPdfInput" type="file" accept="application/pdf"
+                                                @change="onEditPdfChange" class="hidden">
                                         </div>
                                     </div>
 

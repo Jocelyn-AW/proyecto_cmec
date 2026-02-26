@@ -109,6 +109,18 @@ const openGallery = (course) => {
                 :allow-actions="true" :allow-edit="true" :allow-delete="true" @create="handleOnCreate"
                 @edit="handleOnEdit" @delete="handleOnDelete" :only="['webinars']">
 
+                <template #cell-topic="{ item }">
+                    <span :title="item.topic" class="block max-w-[200px] truncate">
+                        {{ item.topic }}
+                    </span>
+                </template>
+
+                <template #cell-description="{ item }">
+                    <span :title="item.description" class="block max-w-[200px] truncate">
+                        {{ item.description }}
+                    </span>
+                </template>
+                
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
                 </template>

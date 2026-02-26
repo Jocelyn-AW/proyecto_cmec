@@ -175,8 +175,9 @@ const onEditSuccess = () => {
                 </template>
 
                 <template #cell-event_name="{ item }">
-                    {{ (item.event.topic || item.event.name) ?? 'N/A' }}
-
+                    <span :title="item.topic" class="block max-w-[200px] truncate">
+                        {{ (item.event?.topic || item.event?.name) ?? 'N/A' }}
+                    </span>
                 </template>
 
                 <template #actionButtons="{ item }">
