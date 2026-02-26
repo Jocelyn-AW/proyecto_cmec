@@ -215,8 +215,8 @@ class CoursesController extends Controller
     {
         return [
             'topic' => 'required|string|max:255',
-            'description' => 'required|string',
-            'objectives' => 'nullable|string',
+            'description' => 'required|string|max:500',
+            'objectives' => 'nullable|string|max:1000',
             'date' => 'required|date',
             'time' => 'required|date_format:H:i',
             'duration' => 'required|numeric|max:255',

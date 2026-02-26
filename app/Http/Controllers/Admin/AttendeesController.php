@@ -158,9 +158,9 @@ class AttendeesController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'state' => 'required|string|max:100',
-            'city' => 'required|string|max:100',
+            'phone' => 'required|numeric|max:20',
+            'state' => 'required|string|max:50',
+            'city' => 'required|string|max:50',
             'status' => 'required|in:paid,pending,cancelled',
             'price' => 'nullable|numeric|min:0',
             'did_attend' => 'boolean',

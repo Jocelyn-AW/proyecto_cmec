@@ -83,6 +83,11 @@ const openGallery = (course) => {
     router.get(route('courses.gallery', course.id));
 }
 
+const truncate = (text, max = 50) => {
+    if (!text) return '';
+    return text.length > max ? text.substring(0, max) + '...' : text;
+}
+
 </script>
 <template>
     <Head title="Cursos" />
@@ -102,8 +107,8 @@ const openGallery = (course) => {
                     { label: 'Duración', key: 'duration' },
                     { label: 'Organiza', key: 'organized_by' },
                     { label: 'Costo Miembro', key: 'member_price' },
-                    // { label: 'Costo Residente', key: 'resident_price' },
-                    // { label: 'Costo Invitado', key: 'guest_price' },
+                    { label: 'Costo Residente', key: 'resident_price' },
+                    { label: 'Costo Invitado', key: 'guest_price' },
                     { label: 'Link', key: 'link' }
                 ]"
                 :paginator="props.courses"
@@ -119,6 +124,14 @@ const openGallery = (course) => {
                 @delete="handleOnDelete"
                 :only="['courses']"
                 >
+
+                <template #cell-topic="{item}">
+                    {{ truncate(item.topic, 25) }}
+                </template>
+
+                <template #cell-description="{item}">
+                    {{ truncate(item.description, 40) }}
+                </template>
 
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
@@ -142,7 +155,7 @@ const openGallery = (course) => {
                 </template>
 
                 <template #cell-link="{ item }">
-                    <a :href="item.link" class="text-blue-800">{{ item.link }}</a>
+                    <a :href="item.link" class="text-blue-800">{{ truncate(item.link, 20) }}</a>
 
                 </template>
 
