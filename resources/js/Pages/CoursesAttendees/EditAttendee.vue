@@ -7,12 +7,19 @@ import Alerta from '@/Components/Alerta.vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
 import { data } from 'autoprefixer';
+import states from '@/composables/useStatesAndCities';
 
 defineOptions({
     layout: AuthenticatedLayout
 })
 
 const { alertState, success, errorA, warning, hideAlert } = useAlert()
+const selectedState = ref('')
+const selectedCity = ref('')
+
+const cities = computed(() => {
+    return selectedState.value ? states[selectedState.value] : []
+})
 
 const props = defineProps({
     events: {
@@ -117,6 +124,8 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     selectedEvent.value = null;
+    selectedCity.value = '';
+    selectedState.value = '';
 }
 
 const setDataToForm = () => {
@@ -134,6 +143,8 @@ const setDataToForm = () => {
     createForm.cmec_member_id = props.data.cmec_member_id || null;
     createForm.price = props.data.price || '';
     selectedEvent.value = props.events.find(e => e.id === createForm.event_id)
+    selectedState.value = props.data.state || '';
+    selectedCity.value = props.data.city || '';
 }
 
 const submitCreate = () => {
@@ -177,11 +188,24 @@ watch(price, (val) => {
 
 
 watch(() => props.show, (newVal) => {
-    if (newVal) {        
-        cleanForm();
+    cleanForm();
+    if (newVal) {     
         setDataToForm();
     }
 })
+
+watch(selectedCity, (value) => {
+    createForm.city = value
+})
+
+watch(selectedState, (value, old) => {
+    if (old !== '' && old !== createForm.state) {
+        selectedCity.value = ''
+    }
+    createForm.state = value
+})
+
+
 
 </script>
 <template>
@@ -229,18 +253,17 @@ watch(() => props.show, (newVal) => {
             <div >
                 <label class="block text-sm font-medium text-gray-700 mb-1">Origen</label>
                 <div class="flex gap-2 w-full">
-                    <input
-                        v-model="createForm.city"
-                        type="text"
-                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ciudad"
-                    />
-                    <input
-                        v-model="createForm.state"
-                        type="text"
-                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Estado"
-                    />
+                    <select name="state" id="state" v-model="selectedState" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar estado</option>
+                        <option v-for="state in Object.keys(states)" :key="state" :value="state">{{ state }}</option>
+                    </select>
+
+                    <select name="event_id" id="event_id" v-model="selectedCity" :disabled="!selectedState"
+                        :class="!selectedState ? 'cursor-not-allowed' : ''"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar ciudad</option>
+                        <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
+                    </select>
                 </div>
                 <span v-if="errors?.city || errors?.state" class="text-red-500 text-xs flex justify-end">{{ errors?.city || errors?.state }}</span>
             </div>

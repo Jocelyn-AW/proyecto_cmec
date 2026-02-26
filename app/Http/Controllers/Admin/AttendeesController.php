@@ -160,7 +160,7 @@ class AttendeesController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'required|numeric|max:20',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20',
             'state' => 'required|string|max:50',
             'city' => 'required|string|max:50',
             'status' => 'required|in:paid,pending,cancelled',
@@ -198,6 +198,9 @@ class AttendeesController extends Controller
             'city.required' => 'La ciudad es obligatoria',
             'phone.required' => 'El teléfono es obligatorio',
             'cmec_member_id.required' => 'El ID de miembro CMEC es obligatorio para participantes que son miembros.',
+            'phone.min' => 'El teléfono debe tener minimo :min digitos',
+            'phone.max' => 'El teléfono debe tener maximo :max digitos',
+
         ];
     }
 
