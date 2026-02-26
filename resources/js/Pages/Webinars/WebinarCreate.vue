@@ -68,18 +68,18 @@ const handleSubmit = () => {
     }
 
     const data = new FormData()
-    data.append('topic',          formData.topic)
-    data.append('description',    formData.description)
-    data.append('objectives',     formData.objectives     ?? '')
-    data.append('date',           formData.date)
-    data.append('time',           formData.time)
-    data.append('duration',       formData.duration)
-    data.append('organized_by',   formData.organized_by)
-    data.append('member_price',   formData.member_price)
+    data.append('topic', formData.topic)
+    data.append('description', formData.description)
+    data.append('objectives', formData.objectives ?? '')
+    data.append('date', formData.date)
+    data.append('time', formData.time)
+    data.append('duration', formData.duration)
+    data.append('organized_by', formData.organized_by)
+    data.append('member_price', formData.member_price)
     data.append('resident_price', formData.resident_price ?? '')
-    data.append('guest_price',    formData.guest_price    ?? '')
-    data.append('link',           formData.link           ?? '')
-    data.append('cover_image',    cover.file.value)
+    data.append('guest_price', formData.guest_price ?? '')
+    data.append('link', formData.link ?? '')
+    data.append('cover_image', cover.file.value)
 
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value)
@@ -151,7 +151,7 @@ const flatpickrTimeConfig = {
                                 @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
                                 @remove="cover.reset" />
 
-                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                            <span v-if="errors.cover_image" class="text-red-500 text-sm flex justify-start">{{
                                 errors.cover_image }}</span>
                         </div>
 
@@ -161,8 +161,8 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.topic" class="text-red-500 text-xs flex justify-end">{{ errors.topic
-                            }}</span>
+                            <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
+                                }}</span>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -170,8 +170,16 @@ const flatpickrTimeConfig = {
                             </label>
                             <textarea type="text" v-model="formData.description" rows="4"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.description" class="text-red-500 text-xs flex justify-end">{{
-                                errors.description }}</span>
+                            <div class="flex justify-between items-center mt-1">
+                                <div class="flex-1">
+                                    <span v-if="errors.description" class="text-red-500 text-sm font-medium">
+                                        {{ errors.description }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-400">
+                                    {{ formData.description.length }}/500
+                                </p>
+                            </div>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -179,6 +187,16 @@ const flatpickrTimeConfig = {
                             </label>
                             <textarea type="text" v-model="formData.objectives" rows="4"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                            <div class="flex justify-between items-center mt-1">
+                                <div class="flex-1">
+                                    <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
+                                        {{ errors.objectives }}
+                                    </span>
+                                </div>
+                                <p class="text-xs text-gray-400">
+                                    {{ formData.objectives.length }}/1000
+                                </p>
+                            </div>
                         </div>
 
                         <div>
@@ -190,7 +208,7 @@ const flatpickrTimeConfig = {
                                     <flat-pickr v-model="formData.date" :config="flatpickrConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una fecha" />
-                                    <span v-if="errors.date" class="text-red-500 text-xs flex justify-end">{{
+                                    <span v-if="errors.date" class="text-red-500 text-sm flex justify-start">{{
                                         errors.date }}</span>
                                 </div>
                                 <div>
@@ -206,7 +224,7 @@ const flatpickrTimeConfig = {
                                                 fill="" />
                                         </svg>
                                     </span>
-                                    <span v-if="errors.time" class="text-red-500 text-xs flex justify-end">{{
+                                    <span v-if="errors.time" class="text-red-500 text-sm flex justify-start">{{
                                         errors.time }}</span>
                                 </div>
                             </div>
@@ -217,7 +235,7 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="number" v-model="formData.duration" min="1"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.duration" class="text-red-500 text-xs flex justify-end">{{
+                            <span v-if="errors.duration" class="text-red-500 text-sm flex justify-start">{{
                                 errors.duration }}</span>
                         </div>
                         <div>
@@ -226,7 +244,7 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="text" v-model="formData.organized_by"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.organized_by" class="text-red-500 text-xs flex justify-end">{{
+                            <span v-if="errors.organized_by" class="text-red-500 text-sm flex justify-start">{{
                                 errors.organized_by }}</span>
                         </div>
                         <div>
@@ -237,8 +255,8 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="text" v-model="formData.link"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.link" class="text-red-500 text-xs flex justify-end">{{ errors.link
-                            }}</span>
+                            <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
+                                }}</span>
                         </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -252,7 +270,7 @@ const flatpickrTimeConfig = {
                                 @drag-enter="pdf.handleDragEnter" @drag-leave="pdf.handleDragLeave"
                                 @remove="pdf.reset" />
 
-                            <span v-if="errors.pdf_file" class="text-red-500 text-xs flex justify-end">{{
+                            <span v-if="errors.pdf_file" class="text-red-500 text-sm flex justify-start">{{
                                 errors.pdf_file }}</span>
                         </div>
                     </div>
@@ -276,7 +294,7 @@ const flatpickrTimeConfig = {
                             <input v-model="formData.member_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="errors.member_price" class="text-red-500 text-xs flex justify-end">{{
+                        <span v-if="errors.member_price" class="text-red-500 text-sm flex justify-start">{{
                             errors.member_price }}</span>
                     </div>
                     <div>

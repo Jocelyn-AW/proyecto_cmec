@@ -237,7 +237,7 @@ class NewsController extends Controller
 
             $data = $request->validate([
                 'title'    => 'required|string|max:255',
-                'content'  => 'required|string',
+                'content'  => 'required|string|max:2000',
                 'extract'  => 'nullable|string|max:500',
                 'link'     => 'nullable|string|max:255|url:http,https',
                 'type'     => 'required|in:sesion,noticia',
