@@ -3,10 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
 import { computed, onMounted, watch } from 'vue';
-import Alerta from '@/Components/Alerta.vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
-import { data } from 'autoprefixer';
 import states from '@/composables/useStatesAndCities';
 
 defineOptions({
