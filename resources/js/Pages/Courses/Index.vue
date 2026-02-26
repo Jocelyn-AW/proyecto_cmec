@@ -143,15 +143,27 @@ const truncate = (text, max = 50) => {
                 </template>
 
                 <template #cell-member_price="{ item }">
-                    ${{ item.member_price ?? '' }}
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.member_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-indigo-200 text-indigo-700'"
+                        >
+                        {{ item.member_price === '0.00' ? 'Gratis' : '$' + item.member_price }}
+                    </span>
                 </template>
 
                 <template #cell-resident_price="{ item }">
-                    ${{ item.resident_price ?? '' }}
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.resident_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
+                        >
+                        {{ item.resident_price === '0.00' ? 'Gratis' : '$' + item.resident_price }}
+                    </span>
                 </template>
 
                 <template #cell-guest_price="{ item }">
-                    ${{ item.guest_price ?? '' }}
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.guest_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
+                        >
+                        {{ item.guest_price === '0.00' ? 'Gratis' : '$' + item.guest_price }}
+                    </span>
                 </template>
 
                 <template #cell-link="{ item }">
