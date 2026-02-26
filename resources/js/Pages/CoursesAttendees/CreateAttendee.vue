@@ -43,6 +43,19 @@ const props = defineProps({
 const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
 const emit = defineEmits(['close', 'success', 'error'])
+const selectedEvent = ref(null)
+
+const price = computed(() => {    
+    if (!selectedEvent.value || !createForm.person_type) return ''
+    
+    const priceMap = {
+        'member':   selectedEvent.value.member_price,
+        'guest':    selectedEvent.value.guest_price,
+        'resident': selectedEvent.value.resident_price,
+    }
+    
+    return priceMap[createForm.person_type] ?? createForm.price
+})
 
 
 onMounted(() => {
@@ -95,6 +108,7 @@ const cleanForm = () => {
     createForm.status = '';
     createForm.cmec_member_id = null;
     createForm.price = '';
+    selectedEvent.value = null;
 }
 
 const submitCreate = () => {
@@ -132,6 +146,10 @@ watch(() => createForm.person_type, (newVal) => {
     }
 })
 
+watch(price, (val) => {
+    createForm.price = val
+})
+
 
 watch(() => props.show, (newVal) => {
     if (newVal) {
@@ -150,9 +168,9 @@ watch(() => props.show, (newVal) => {
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo participante</h3>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ props.eventName }}</label>
-                <select name="event_id" id="event_id" v-model="createForm.event_id" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select name="event_id" id="event_id" v-model="selectedEvent" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Seleccionar curso</option>
-                    <option v-for="key,event in events" :key="event" :value="event">{{ key }}</option>
+                    <option v-for="event in events" :key="event.id" :value="event">{{ event.name || event.topic }}</option>
                 </select>
             </div>
             <div>
@@ -206,7 +224,7 @@ watch(() => props.show, (newVal) => {
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="" selected>Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
-                    <option value="resident">Residente del colegio</option>
+                    <option value="resident">Residente</option>
                     <option value="guest">No miembro (invitado)</option>
                 </select>
                 <span v-if="errors?.person_type" class="text-red-500 text-xs flex justify-end">{{ errors?.person_type }}</span>
@@ -222,10 +240,10 @@ watch(() => props.show, (newVal) => {
             </div>
             <hr class="my-2">
             <div >
-                <label class="block text-sm font-medium text-gray-700 mb-1">Estatus de Pago</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Detalles de Pago</label>
                 <div class="flex gap-2 w-full">
                     <input
-                        v-model="createForm.price"
+                        :value="price"
                         type="number" min="0" step="0.01"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Cantidad a pagar"

@@ -47,6 +47,12 @@ class Course extends Model implements HasMedia
         'program_url',
     ];
 
+    protected $casts = [
+        'resident_price' => 'decimal:2',
+        'guest_price' => 'decimal:2',
+        'member_price' => 'decimal:2'
+    ];
+
     public function attendees()
     {
         return $this->morphMany(Attendee::class, 'event');

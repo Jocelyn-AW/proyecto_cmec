@@ -231,8 +231,8 @@ class CoursesController extends Controller
             'organized_by' => 'required|string|max:255',
             'sponsored_by' => 'nullable|string|max:255',
             'member_price' => 'required|numeric',
-            'guest_price' => 'nullable|numeric',
-            'resident_price' => 'nullable|numeric',
+            'guest_price' => 'required|numeric',
+            'resident_price' => 'required|numeric',
             'link' => 'nullable|url',
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             //Archivos
@@ -265,8 +265,8 @@ class CoursesController extends Controller
             'description' => 'No disponible',
             'objectives' => null,
             'sponsored_by' => null,
-            'guest_price' => null,
-            'resident_price' => null,
+            'guest_price' => 0,
+            'resident_price' => 0,
             'link' => null
         ]);
     }

@@ -52,24 +52,26 @@ class AttendeesController extends Controller
         switch ($event_type) {
             case Constants::EVENT_COURSE:
                 $eventName = 'Curso';
-                $events = Course::pluck('topic', 'id');
+                $events = Course::select('id', 'topic');
                 break;
             case Constants::EVENT_CONFERENCE:
                 $eventName = 'Congreso';
-                $events = Conference::pluck('name', 'id');
+                $events = Conference::select('id', 'name');
                 break;
             case Constants::EVENT_WEBINAR:
                 $eventName = 'Webinar';
-                $events = Webinar::pluck('topic', 'id');
+                $events = Webinar::select('id', 'topic');
                 break;
             default:
                 $eventName = 'Evento';
                 $events = [];
         }
 
+        $events->addSelect('member_price', 'guest_price', 'resident_price');
+        
         return [
             'eventName' => $eventName,
-            'events' => $events
+            'events' => $events->get()
         ];
     }
 

@@ -77,7 +77,7 @@ const handleOnCreate = () => {
     showCreateDrawer.value = true;
 }
 
-const handleOnEdit = (attendee) => {
+const handleOnEdit = (attendee) => { 
     selectedItem.value = attendee;
     showEditDrawer.value = true;
 }
