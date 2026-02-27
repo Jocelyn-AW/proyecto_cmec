@@ -43,8 +43,20 @@ const formData = reactive({
     member_price: "",
     resident_price: "",
     guest_price: "",
-    bank_detail_id: ""
+    bank_detail_id: "",
+    sessions: [
+        { date: '', time: '' }  // inicia con una sesión vacía
+    ]
 });
+
+
+const addSession = () => {
+    formData.sessions.push({ date: '', time: '' })
+}
+
+const removeSession = (index) => {
+    formData.sessions.splice(index, 1)
+}
 
 //una imagen
 const cover = useImageUpload({
@@ -246,17 +258,17 @@ const flatpickrTimeConfig = {
                             />
                             
                             <span v-if="errors.pdf_file" class="text-red-500 text-xs flex justify-end">{{ errors.pdf_file }}</span>
-                        </div>
+                        </div>                     
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-                            >
-                                Fecha y Hora de Inicio
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                Horarios
                             </label>
-                            <div class="relative grid grid-cols-2 gap-4">
+                            <div v-for="(session, index) in formData.sessions"
+                                :key="index"
+                                class="relative grid grid-cols-2 gap-4 max-w-9/10  my-3" >
                                 <div>
                                     <flat-pickr
-                                        v-model="formData.time"
+                                        v-model="session.time"
                                         :config="flatpickrTimeConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una hora"
@@ -272,20 +284,43 @@ const flatpickrTimeConfig = {
                                             </path>
                                         </svg>
                                     </span>
-                                    <span v-if="errors.time" class="text-red-500 text-xs flex justify-end">{{ errors.time }}</span>
+                                    <span v-if="errors[`sessions.${index}.time`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.time`] }}
+                                    </span>
                                 </div>
                                 <div>
                                     <flat-pickr
-                                        v-model="formData.date"
+                                        v-model="session.date"
                                         :config="flatpickrConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una fecha"
                                     />
-                                    <span v-if="errors.date" class="text-red-500 text-xs flex justify-end">{{ errors.date }}</span>
+                                    <span v-if="errors[`sessions.${index}.date`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.date`] }}
+                                    </span>
                                 </div>
+                                <button
+                                    v-if="formData.sessions.length > 1"
+                                    @click="removeSession(index)"
+                                    type="button"
+                                    class="absolute -right-6 top-3 text-red-400 hover:text-red-600"
+                                    >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                                 
                             </div>
+                            <!-- Agregar sesión -->
+                            <button
+                                @click="addSession"
+                                type="button"
+                                class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1"
+                                >
+                                + Agregar fecha
+                            </button>
                         </div>
+                        
                         <div>
                             <label
                                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"

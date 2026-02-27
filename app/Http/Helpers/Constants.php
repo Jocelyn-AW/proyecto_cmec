@@ -23,6 +23,7 @@ class Constants {
     const TABLE_POSTS = 'posts';
     const TABLE_USERS = 'users';
     const TABLE_WEBINARS = 'webinars';
+    const TABLE_EVENT_SESSIONS = 'event_sessions';
 
 
     //tipos de evento

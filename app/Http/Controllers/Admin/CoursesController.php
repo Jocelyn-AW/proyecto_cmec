@@ -21,6 +21,7 @@ class CoursesController extends Controller
                 $query->where('topic', 'like', '%' . $search . '%')
                     ->orWhere('description', 'like', '%' . $search . '%');
             })
+            ->with('sessions')
             ->paginate($perPage)
             ->withqueryString();
 
@@ -48,11 +49,9 @@ class CoursesController extends Controller
             $validationRules['cover_image'] = 'required|image|mimes:jpeg,png,jpg,webp';
 
             $data = $request->validate($validationRules, $this->getValidatonMessages());
-
-            $data['date'] = $this->formatDateTime($data['date'], $data['time']);
-            unset($data['time']);
-
             $course = Course::create($data);
+
+            $course->sessions()->createMany($request->sessions);
 
             $this->updateCourseMedia($course, $request);
 
@@ -64,7 +63,7 @@ class CoursesController extends Controller
 
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-
+            log('e', array($e->getMessage()));
             return redirect()
             ->back()
             ->with('error', 'Hubo un error al crear el curso. Por favor intenta de nuevo.')
@@ -79,7 +78,7 @@ class CoursesController extends Controller
                         ->get();
 
         return Inertia::render('Courses/CourseEdit', [
-            'course' => $course,
+            'course' => $course->load('sessions'),
             'bank_details' => $bankDetails
         ]);
     }
@@ -91,11 +90,13 @@ class CoursesController extends Controller
             $validationRules = $this->getValidationArray();
             $data = $request->validate($validationRules, $this->getValidatonMessages());
 
-            $data['date'] = $this->formatDateTime($data['date'], $data['time']);
-            unset($data['time']);
-
             $course = Course::findOrFail($request->id);
             $course->update($data);
+
+            if (!empty($course->sessions)) {
+                $course->sessions()->delete();
+            }
+            $course->sessions()->createMany($request->sessions);
 
             $this->updateCourseMedia($course, $request);
 
@@ -107,6 +108,7 @@ class CoursesController extends Controller
 
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
+            log('e', array($e->getMessage()));
 
             return redirect()
             ->back()
@@ -241,8 +243,6 @@ class CoursesController extends Controller
             'topic' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
             'objectives' => 'nullable|string|max:2000',
-            'date' => 'required|date',
-            'time' => 'required|date_format:H:i',
             'duration' => 'required|numeric|max:255',
             'organized_by' => 'required|string|max:255',
             'sponsored_by' => 'nullable|string|max:255',
@@ -251,6 +251,10 @@ class CoursesController extends Controller
             'resident_price' => 'required|numeric',
             'link' => 'nullable|url',
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
+            //Horarios
+            'sessions'         => 'required|array|min:1',
+            'sessions.*.date'  => 'required|date',
+            'sessions.*.time'  => 'required|date_format:H:i',            
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
@@ -269,7 +273,8 @@ class CoursesController extends Controller
             '*.string' => 'El campo debe ser una cadena de texto.',
             '*.max' => 'El campo no debe exceder los :max caracteres.',
             '*.numeric' => 'El campo debe ser un número.',
-            '*.date' => 'El campo debe ser una fecha válida.',
+            'sessions.*.date' => 'El campo debe ser una fecha válida.',
+            'sessions.*.time' => 'Selecciona un horario válido',
             '*.url' => 'El campo debe ser una URL válida.',
             'bank_detail_id.exists' => 'Seleccione una cuenta válida'
         ];
