@@ -13,10 +13,11 @@ return new class extends Migration
     {
         Schema::table('webinars', function (Blueprint $table) {
             $table->foreignId('bank_detail_id')
+                ->nullable()                    
+                ->default(null)                 
                 ->after('sponsored_by')
                 ->constrained('bank_details')
-                ->onDelete('cascade')
-                ->default(null);
+                ->onDelete('cascade');
         });
     }
 
@@ -26,6 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('webinars', function (Blueprint $table) {
+            $table->dropForeign(['bank_detail_id']);
             $table->dropColumn('bank_detail_id');
         });
     }

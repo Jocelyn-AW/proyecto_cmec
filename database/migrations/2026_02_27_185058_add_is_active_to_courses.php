@@ -12,12 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('courses', function (Blueprint $table) {
-            $table->foreignId('bank_detail_id')
-                ->nullable()                    
-                ->default(null)                 
-                ->after('sponsored_by')
-                ->constrained('bank_details')
-                ->onDelete('cascade');
+            $table->boolean('is_active')->default(true);
         });
     }
 
@@ -27,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('courses', function (Blueprint $table) {
-            $table->dropForeign(['bank_detail_id']);
-            $table->dropColumn('bank_detail_id');
+            $table->dropColumn('is_active');
         });
     }
 };

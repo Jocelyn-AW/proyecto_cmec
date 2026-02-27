@@ -134,6 +134,22 @@ class CoursesController extends Controller
         }
     }
 
+    public function changeStatus ($id) {
+        try {
+            $course = Course::findOrFail($id);
+
+            $course->is_active = !$course->is_active;
+            $course->update();
+
+            return redirect()->route('courses.index');
+
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('courses.index')
+                ->with('error', 'Hubo un error al actualizar el curso. Intenta de nuevo más tarde.');
+        }
+    }
+
     public function gallery($id)
     {
         $course = Course::findOrFail($id);

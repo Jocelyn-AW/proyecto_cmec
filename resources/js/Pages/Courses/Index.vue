@@ -88,6 +88,28 @@ const truncate = (text, max = 50) => {
     return text.length > max ? text.substring(0, max) + '...' : text;
 }
 
+const onChangeStatus = (course) => {
+    let action = 'desactivar'
+    let title = 'Desactivar'
+    let message = 'Al hacerlo ya no podrá registrar más asistentes.'
+
+    if (!course.is_active) {
+        action = 'activar'
+        title = 'Activar'
+        message = 'Al hacerlo podrá volver a registrar asistentes.'
+    }
+
+    warning(`¿Confirma que desea ${action} este curso? ${message} `, {
+        title: `${title} curso`,
+        buttonText: `Sí, ${action}`,
+        cancelText: 'Cancelar',
+        onConfirm: () => {
+            hideAlert();
+            router.get(route('courses.change-status', course.id));
+        }
+    })
+}
+
 </script>
 <template>
     <Head title="Cursos" />
@@ -108,7 +130,8 @@ const truncate = (text, max = 50) => {
                     { label: 'Costo Miembro', key: 'member_price' },
                     { label: 'Costo Residente', key: 'resident_price' },
                     { label: 'Costo Invitado', key: 'guest_price' },
-                    { label: 'Link', key: 'link' }
+                    { label: 'Link', key: 'link' },
+                    { label: 'Estatus', key: 'is_active' }
                 ]"
                 :paginator="props.courses"
                 :searchable="true"
@@ -168,6 +191,17 @@ const truncate = (text, max = 50) => {
                 <template #cell-link="{ item }">
                     <a :href="item.link" class="text-blue-800">{{ truncate(item.link, 20) }}</a>
 
+                </template>
+
+                <template #cell-is_active="{ item }">
+                    <span role="button" @click="onChangeStatus(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.is_active 
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
+                    >
+                        {{ item.is_active ? 'Activo' : 'Inactivo' }}
+                    </span>
                 </template>
 
                 <template #actionButtons="{ item }">

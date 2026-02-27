@@ -9,6 +9,7 @@ Route::post('/new', [CoursesController::class, 'store'])->name('store');
 Route::get('/{id}', [CoursesController::class, 'edit'])->name('edit');
 Route::put('/{id}', [CoursesController::class, 'update'])->name('update');
 Route::delete('/{id}', [CoursesController::class, 'delete'])->name('delete');
+Route::get('/changeStaus/{id}', [CoursesController::class, 'changeStatus'])->name('change-status');
 
 Route::get('/{id}/gallery', [CoursesController::class, 'gallery'])->name('gallery');
 Route::post('/{id}/gallery', [CoursesController::class, 'updateGallery'])->name('gallery.update');

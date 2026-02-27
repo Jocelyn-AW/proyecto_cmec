@@ -31,7 +31,8 @@ class Course extends Model implements HasMedia
         'guest_price',
         'resident_price',
         'member_price',
-        'bank_detail_id'
+        'bank_detail_id',
+        'is_active'
     ];
 
     protected $dates = [
@@ -50,7 +51,8 @@ class Course extends Model implements HasMedia
     protected $casts = [
         'resident_price' => 'decimal:2',
         'guest_price' => 'decimal:2',
-        'member_price' => 'decimal:2'
+        'member_price' => 'decimal:2',
+        'is_active' => 'boolean'
     ];
 
     public function attendees()

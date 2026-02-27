@@ -87,7 +87,8 @@ class AttendeesController extends Controller
                 $events = [];
         }
 
-        $events->addSelect('member_price', 'guest_price', 'resident_price');
+        $events->addSelect('member_price', 'guest_price', 'resident_price')
+                ->where('is_active', '1');
         
         return [
             'eventName' => $eventName,
