@@ -5,10 +5,11 @@ import flatPickr from "vue-flatpickr-component";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
 import Dropzone from "@/Components/Dropzone.vue";
-import { reactive } from "vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue'
 import { useAlert } from '@/composables/useAlert'
+import { reactive, ref } from "vue";
+
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -34,7 +35,7 @@ defineProps({
 });
 
 const { alertState, success, errorA, warning } = useAlert()
-
+const isSubmitting = ref(false);
 const formData = reactive({
     topic: "",
     date: "",
@@ -65,10 +66,15 @@ const pdf = useFileUpload({
 });
 
 const handleSubmit = () => {
+
+    if (isSubmitting.value) return;
+
     if (!cover.file.value) {
         warning("Por favor selecciona una imagen de portada para el webinar");
         return;
     }
+
+    isSubmitting.value = true;
 
     const data = new FormData()
     data.append('topic', formData.topic)
@@ -93,6 +99,9 @@ const handleSubmit = () => {
         forceFormData: true,
         preserveScroll: true,
         preserveState: true,
+        onFinish: () => {
+            isSubmitting.value = false;
+        }
     })
 }
 
@@ -174,7 +183,7 @@ const flatpickrTimeConfig = {
                                 <span v-if="errors.description" class="text-red-500 text-sm font-medium">
                                     {{ errors.description }}
                                 </span>
-                                <p class="text-xs text-gray-400 ml-auto">{{ formData.description.length }}/500</p>
+                                <p class="text-xs text-gray-400 ml-auto">{{ formData.description.length }}/5000</p>
                             </div>
                         </div>
 
@@ -188,7 +197,7 @@ const flatpickrTimeConfig = {
                                 <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
                                     {{ errors.objectives }}
                                 </span>
-                                <p class="text-xs text-gray-400 ml-auto">{{ formData.objectives.length }}/1000</p>
+                                <p class="text-xs text-gray-400 ml-auto">{{ formData.objectives.length }}/2000</p>
                             </div>
                         </div>
 
@@ -382,9 +391,10 @@ const flatpickrTimeConfig = {
                             class="rounded-lg border border-gray-300 bg-transparent px-4 mx-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Cancelar
                         </button>
-                        <button @click="handleSubmit"
-                            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
-                            Guardar Webinar
+                        <button @click="handleSubmit" :disabled="isSubmitting"
+                            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span v-if="isSubmitting">Guardando...</span>
+                            <span v-else>Guardar Webinar</span>
                         </button>
                     </div>
                 </div>

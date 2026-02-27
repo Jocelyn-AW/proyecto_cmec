@@ -32,6 +32,7 @@ class Webinar extends Model implements HasMedia
         'resident_price',
         'member_price',
         'bank_detail_id',
+        'is_active',
     ];
 
     protected $dates = [
@@ -50,7 +51,8 @@ class Webinar extends Model implements HasMedia
     protected $casts = [
         'resident_price' => 'decimal:2',
         'guest_price' => 'decimal:2',
-        'member_price' => 'decimal:2'
+        'member_price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
     public function attendees()

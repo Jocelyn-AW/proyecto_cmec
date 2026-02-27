@@ -203,6 +203,7 @@ watch(searchQuery, (value) => {
                             />
                         </div>
                     </div>
+                    
 
                     <div v-if="allowCreate">
                         <button
