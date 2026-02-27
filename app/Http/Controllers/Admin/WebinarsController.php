@@ -262,14 +262,15 @@ class WebinarsController extends Controller
             'description' => 'No disponible',
             'objectives' => null,
             'sponsored_by' => null,
-            'guest_price' => null,
-            'resident_price' => null,
+            'guest_price' => 0,
+            'resident_price' => 0,
             'link' => null
         ]);
     }
 
     private function formatDateTime($date, $time)
     {
+        $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
     }
 }

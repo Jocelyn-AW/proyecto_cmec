@@ -28,15 +28,14 @@ defineProps({
         default: () => ({}),
     },
     bank_details: {
-        type: Object,
-        default: () => ({}),
-    }
+        type: Array,
+        default: () => [],
+    },
 });
 
 const { alertState, success, errorA, warning } = useAlert()
 
 const formData = reactive({
-    example: "",
     topic: "",
     date: "",
     time: "",
@@ -44,13 +43,13 @@ const formData = reactive({
     duration: "",
     objectives: "",
     organized_by: "",
+    link: "",
     member_price: "",
     resident_price: "",
     guest_price: "",
     bank_detail_id: "",
 });
 
-//una imagen
 const cover = useImageUpload({
     maxSizeMB: 1,
     acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
@@ -63,8 +62,7 @@ const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
     onError: (msg) => warning(msg)
-})
-
+});
 
 const handleSubmit = () => {
     if (!cover.file.value) {
@@ -132,20 +130,16 @@ const flatpickrTimeConfig = {
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">
-                    Nuevo Webinar
-                </h3>
-                <p class="text-sm text-gray-500">
-                    Crea un nuevo webinar desde esta sección
-                </p>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo Webinar</h3>
+                <p class="text-sm text-gray-500">Crea un nuevo webinar desde esta sección</p>
             </div>
 
+            <!-- DATOS GENERALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
                     <div class="">
-                        <span class="text-sm text-gray-700">
-                            Datos Generales</span>
+                        <span class="text-sm text-gray-700">Datos Generales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
                         <div>
@@ -156,7 +150,6 @@ const flatpickrTimeConfig = {
                                 hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
                                 @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
                                 @remove="cover.reset" />
-
                             <span v-if="errors.cover_image" class="text-red-500 text-sm flex justify-start">{{
                                 errors.cover_image }}</span>
                         </div>
@@ -168,82 +161,37 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
-                            }}</span>
+                                }}</span>
                         </div>
+
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Descripcion
                             </label>
-                            <textarea type="text" v-model="formData.description" rows="4"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                            <textarea v-model="formData.description" rows="2" maxlength="500"
+                                class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <div class="flex-1">
-                                    <span v-if="errors.description" class="text-red-500 text-sm font-medium">
-                                        {{ errors.description }}
-                                    </span>
-                                </div>
-                                <p class="text-xs text-gray-400">
-                                    {{ formData.description.length }}/500
-                                </p>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Objetivos
-                            </label>
-                            <textarea type="text" v-model="formData.objectives" rows="4"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <div class="flex justify-between items-center mt-1">
-                                <div class="flex-1">
-                                    <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
-                                        {{ errors.objectives }}
-                                    </span>
-                                </div>
-                                <p class="text-xs text-gray-400">
-                                    {{ formData.objectives.length }}/1000
-                                </p>
+                                <span v-if="errors.description" class="text-red-500 text-sm font-medium">
+                                    {{ errors.description }}
+                                </span>
+                                <p class="text-xs text-gray-400 ml-auto">{{ formData.description.length }}/500</p>
                             </div>
                         </div>
 
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Fecha y Hora de Inicio
+                                Objetivos
                             </label>
-                            <div class="relative grid grid-cols-2 gap-4">
-                                <div>
-                                    <flat-pickr v-model="formData.date" :config="flatpickrConfig"
-                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                                        placeholder="Selecciona una fecha" />
-                                    <span v-if="errors.date" class="text-red-500 text-sm flex justify-start">{{
-                                        errors.date }}</span>
-                                </div>
-                                <div>
-                                    <flat-pickr v-model="formData.time" :config="flatpickrTimeConfig"
-                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                                        placeholder="Selecciona una hora" />
-                                    <span
-                                        class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 dark:text-gray-400">
-                                        <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none"
-                                            xmlns="http://www.w3.org/2000/svg">
-                                            <path fill-rule="evenodd" clip-rule="evenodd"
-                                                d="M3.04175 9.99984C3.04175 6.15686 6.1571 3.0415 10.0001 3.0415C13.8431 3.0415 16.9584 6.15686 16.9584 9.99984C16.9584 13.8428 13.8431 16.9582 10.0001 16.9582C6.1571 16.9582 3.04175 13.8428 3.04175 9.99984ZM10.0001 1.5415C5.32867 1.5415 1.54175 5.32843 1.54175 9.99984C1.54175 14.6712 5.32867 18.4582 10.0001 18.4582C14.6715 18.4582 18.4584 14.6712 18.4584 9.99984C18.4584 5.32843 14.6715 1.5415 10.0001 1.5415ZM9.99998 10.7498C9.58577 10.7498 9.24998 10.4141 9.24998 9.99984V5.4165C9.24998 5.00229 9.58577 4.6665 9.99998 4.6665C10.4142 4.6665 10.75 5.00229 10.75 5.4165V9.24984H13.3334C13.7476 9.24984 14.0834 9.58562 14.0834 9.99984C14.0834 10.4141 13.7476 10.7498 13.3334 10.7498H10.0001H9.99998Z"
-                                                fill="" />
-                                        </svg>
-                                    </span>
-                                    <span v-if="errors.time" class="text-red-500 text-sm flex justify-start">{{
-                                        errors.time }}</span>
-                                </div>
+                            <textarea v-model="formData.objectives" rows="3" maxlength="1000"
+                                class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                            <div class="flex justify-between items-center mt-1">
+                                <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
+                                    {{ errors.objectives }}
+                                </span>
+                                <p class="text-xs text-gray-400 ml-auto">{{ formData.objectives.length }}/1000</p>
                             </div>
                         </div>
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Duracion (en horas)
-                            </label>
-                            <input type="number" v-model="formData.duration" min="1"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.duration" class="text-red-500 text-sm flex justify-start">{{
-                                errors.duration }}</span>
-                        </div>
+
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Organizado por
@@ -253,6 +201,18 @@ const flatpickrTimeConfig = {
                             <span v-if="errors.organized_by" class="text-red-500 text-sm flex justify-start">{{
                                 errors.organized_by }}</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETALLES ADICIONALES -->
+            <div
+                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="grid grid-cols-4 gap-4 p-6">
+                    <div class="">
+                        <span class="text-sm text-gray-700">Detalles Adicionales</span>
+                    </div>
+                    <div class="col-span-3 space-y-6">
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Link de conexión
@@ -262,8 +222,9 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.link"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
-                            }}</span>
+                                }}</span>
                         </div>
+
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Programa del Webinar
@@ -275,18 +236,61 @@ const flatpickrTimeConfig = {
                                 hint="PDF (max. 5MB)" @change="pdf.handleChange" @drop="pdf.handleDrop"
                                 @drag-enter="pdf.handleDragEnter" @drag-leave="pdf.handleDragLeave"
                                 @remove="pdf.reset" />
-
                             <span v-if="errors.pdf_file" class="text-red-500 text-sm flex justify-start">{{
                                 errors.pdf_file }}</span>
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                Fecha y Hora de Inicio
+                            </label>
+                            <div class="relative grid grid-cols-2 gap-4">
+                                <div>
+                                    <flat-pickr v-model="formData.time" :config="flatpickrTimeConfig"
+                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                        placeholder="Selecciona una hora" />
+                                    <span
+                                        class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 dark:text-gray-400">
+                                        <svg width="20" height="20" viewBox="0 0 20 20"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="text-stone-800 dark:text-stone-200">
+                                            <path fill="currentColor"
+                                                d="M5.673 0a.7.7 0 0 1 .7.7v1.309h7.517v-1.3a.7.7 0 0 1 1.4 0v1.3H18a2 2 0 0 1 2 1.999v13.993A2 2 0 0 1 18 20H2a2 2 0 0 1-2-1.999V4.008a2 2 0 0 1 2-1.999h2.973V.699a.7.7 0 0 1 .7-.699ZM1.4 7.742v10.259a.6.6 0 0 0 .6.6h16a.6.6 0 0 0 .6-.6V7.756zm5.267 6.877v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zm-8.333-3.977v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zM4.973 3.408H2a.6.6 0 0 0-.6.6v2.335l17.2.014V4.008a.6.6 0 0 0-.6-.6h-2.71v.929a.7.7 0 0 1-1.4 0v-.929H6.373v.92a.7.7 0 0 1-1.4 0z">
+                                            </path>
+                                        </svg>
+                                    </span>
+                                    <span v-if="errors.time" class="text-red-500 text-sm flex justify-start">{{
+                                        errors.time }}</span>
+                                </div>
+                                <div>
+                                    <flat-pickr v-model="formData.date" :config="flatpickrConfig"
+                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                        placeholder="Selecciona una fecha" />
+                                    <span v-if="errors.date" class="text-red-500 text-sm flex justify-start">{{
+                                        errors.date }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                Duracion (en horas)
+                            </label>
+                            <input type="number" v-model="formData.duration" min="1"
+                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                            <span v-if="errors.duration" class="text-red-500 text-sm flex justify-start">{{
+                                errors.duration }}</span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- COSTOS + DETALLES DE PAGO -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
                     <div class="">
-                        <span class="text-sm text-gray-700"> Costos</span>
+                        <span class="text-sm text-gray-700">Costos</span>
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -315,8 +319,10 @@ const flatpickrTimeConfig = {
                             <input v-model="formData.resident_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
+                        <span v-if="errors.resident_price" class="text-red-500 text-xs flex justify-end">{{
+                            errors.resident_price }}</span>
                     </div>
-                    <div>
+                    <div class="mb-3">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                             Para no miembros (invitados)
                         </label>
@@ -328,12 +334,11 @@ const flatpickrTimeConfig = {
                             <input v-model="formData.guest_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
+                        <span v-if="errors.guest_price" class="text-red-500 text-xs flex justify-end">{{
+                            errors.guest_price }}</span>
                     </div>
-                </div>
-            </div>
-            <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="grid grid-cols-4 gap-4 p-6">
+
+                    <!-- Detalles de pago dentro de la misma card -->
                     <div class="">
                         <span class="text-sm text-gray-700">Detalles de pago</span>
                     </div>
@@ -364,6 +369,8 @@ const flatpickrTimeConfig = {
                     </div>
                 </div>
             </div>
+
+            <!-- ACCIONES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
@@ -372,17 +379,18 @@ const flatpickrTimeConfig = {
                     </div>
                     <div class="col-span-2 flex justify-end items-center">
                         <button @click="handleCancel"
-                            class="rounded-lg border border-gray-300 bg-transparent px-4 mx-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 ">
+                            class="rounded-lg border border-gray-300 bg-transparent px-4 mx-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Cancelar
                         </button>
                         <button @click="handleSubmit"
-                            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 ">
+                            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600">
                             Guardar Webinar
                         </button>
                     </div>
                 </div>
             </div>
         </div>
+
         <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
             :buttonText="alertState.buttonText" :cancelText="alertState.cancelText" @confirm="handleConfirm"
             @close="alertState.show = false" />

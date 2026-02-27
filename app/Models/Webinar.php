@@ -47,6 +47,12 @@ class Webinar extends Model implements HasMedia
         'program_url',
     ];
 
+    protected $casts = [
+        'resident_price' => 'decimal:2',
+        'guest_price' => 'decimal:2',
+        'member_price' => 'decimal:2'
+    ];
+
     public function attendees()
     {
         return $this->morphMany(Attendee::class, 'event');
@@ -106,5 +112,10 @@ class Webinar extends Model implements HasMedia
             $media = $this->getFirstMedia('webinars_program');
             return $media ? $media->getUrl() : null;
         });
+    }
+
+    public function bankDetails()
+    {
+        return $this->morphOne(BankDetail::class, 'event');
     }
 }

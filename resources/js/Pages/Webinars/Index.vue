@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import DataTable from '@/Components/DataTable.vue';
 
@@ -40,7 +40,6 @@ onMounted(() => {
     if (page.props.error || props.flash.error) {
         errorA(page.props.error || props.flash.error)
     }
-
     if (page.props.warning || props.flash.warning) {
         warning(page.props.warning || props.flash.warning)
     }
@@ -50,27 +49,27 @@ const handleOnCreate = () => {
     router.get(route('webinars.new'));
 }
 
-const handleOnEdit = (course) => {
-    router.get(route('webinars.edit', course.id), {}, {
+const handleOnEdit = (webinar) => {
+    router.get(route('webinars.edit', webinar.id), {}, {
         preserveState: false
     });
 }
 
-const handleOnDelete = (courseId) => {
+const handleOnDelete = (webinarId) => {
     warning('¿Confirma que desea eliminar este webinar? Esta acción no se puede deshacer.', {
         title: 'Eliminar webinar',
         buttonText: 'Sí, eliminar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
-            router.delete(route('webinars.delete', courseId));
+            router.delete(route('webinars.delete', webinarId));
         }
     })
 }
 
-const openPdf = (course) => {
-    if (course.program_url) {
-        window.open(course.program_url, '_blank');
+const openPdf = (webinar) => {
+    if (webinar.program_url) {
+        window.open(webinar.program_url, '_blank');
     } else {
         warning('Este webinar no tiene un programa PDF asociado.', {
             title: 'Sin programa',
@@ -79,11 +78,11 @@ const openPdf = (course) => {
     }
 }
 
-const openGallery = (course) => {
-    router.get(route('webinars.gallery', course.id));
+const openGallery = (webinar) => {
+    router.get(route('webinars.gallery', webinar.id));
 }
-
 </script>
+
 <template>
 
     <Head title="Webinars" />
@@ -102,8 +101,8 @@ const openGallery = (course) => {
                 { label: 'Duración', key: 'duration' },
                 { label: 'Organiza', key: 'organized_by' },
                 { label: 'Costo Miembro', key: 'member_price' },
-                // { label: 'Costo Residente', key: 'resident_price' },
-                // { label: 'Costo Invitado', key: 'guest_price' },
+                { label: 'Costo Residente', key: 'resident_price' },
+                { label: 'Costo Invitado', key: 'guest_price' },
                 { label: 'Link', key: 'link' }
             ]" :paginator="props.webinars" :searchable="true" :per-page-options="[5, 10, 15]" :allow-create="true"
                 :allow-actions="true" :allow-edit="true" :allow-delete="true" @create="handleOnCreate"
@@ -120,31 +119,41 @@ const openGallery = (course) => {
                         {{ item.description }}
                     </span>
                 </template>
-                
+
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
                 </template>
 
                 <template #cell-duration="{ item }">
                     {{ item.duration }} {{ item.duration > 1 ? 'horas' : 'hora' }}
-
                 </template>
 
                 <template #cell-member_price="{ item }">
-                    ${{ item.member_price ?? '' }}
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.member_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-indigo-200 text-indigo-700'">
+                        {{ item.member_price === '0.00' ? 'Gratis' : '$' + item.member_price }}
+                    </span>
                 </template>
 
                 <template #cell-resident_price="{ item }">
-                    ${{ item.resident_price ?? '' }}
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.resident_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'">
+                        {{ item.resident_price === '0.00' ? 'Gratis' : '$' + item.resident_price }}
+                    </span>
                 </template>
 
                 <template #cell-guest_price="{ item }">
-                    ${{ item.guest_price ?? '' }}
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.guest_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'">
+                        {{ item.guest_price === '0.00' ? 'Gratis' : '$' + item.guest_price }}
+                    </span>
                 </template>
 
                 <template #cell-link="{ item }">
-                    <a :href="item.link" class="text-blue-800">{{ item.link }}</a>
-
+                    <a v-if="item.link" :href="item.link" target="_blank" class="text-blue-800 hover:underline">
+                        {{ item.link.length > 25 ? item.link.substring(0, 25) + '...' : item.link }}
+                    </a>
+                    <span v-else class="text-gray-400 text-xs">—</span>
                 </template>
 
                 <template #actionButtons="{ item }">
@@ -159,7 +168,7 @@ const openGallery = (course) => {
                         </svg>
                     </button>
                     <button title="Ver galería" @click="openGallery(item)"
-                        class="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
+                        class="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600">
                         <svg width="18" height="18" fill="currentColor" class="text-8xl w-4 h-4" viewBox="0 0 17 17"
                             xmlns="http://www.w3.org/2000/svg">
                             <path
@@ -170,9 +179,9 @@ const openGallery = (course) => {
                 </template>
 
             </DataTable>
-
         </div>
     </div>
+
     <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
         :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"
         @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"

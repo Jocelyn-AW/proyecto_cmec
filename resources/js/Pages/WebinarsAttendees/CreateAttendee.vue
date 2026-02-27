@@ -1,22 +1,25 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, usePage } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted, watch } from 'vue';
-import Alerta from '@/Components/Alerta.vue';
+import { computed, watch } from 'vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
+import states from '@/composables/useStatesAndCities';
 
-defineOptions({
-    layout: AuthenticatedLayout
+const { warning } = useAlert()
+
+const selectedState = ref('')
+const selectedCity = ref('')
+const selectedEvent = ref(null)
+
+const cities = computed(() => {
+    return selectedState.value ? states[selectedState.value] : []
 })
-
-const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
 const props = defineProps({
     events: {
-        type: Object,
-        default: () => ({})
+        type: Array,
+        default: () => []
     },
     eventName: {
         type: String,
@@ -25,14 +28,6 @@ const props = defineProps({
     show: {
         type: Boolean,
         default: false
-    },
-    flash: {
-        type: Object,
-        default: () => ({})
-    },
-    auth: {
-        type: Object,
-        default: () => ({})
     },
     errors: {
         type: Object,
@@ -44,18 +39,17 @@ const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
 const emit = defineEmits(['close', 'success', 'error'])
 
+// precio segun evento y tipo de participante (solo lectura)
+const price = computed(() => {
+    if (!selectedEvent.value || !createForm.person_type) return ''
 
-onMounted(() => {
-    if (page.props.success || props.flash.success) {
-        success(page.props.success || props.flash.success)
-    }
-    if (page.props.error || props.flash.error) {
-        errorA(page.props.error || props.flash.error)
+    const priceMap = {
+        'member': selectedEvent.value.member_price,
+        'guest': selectedEvent.value.guest_price,
+        'resident': selectedEvent.value.resident_price,
     }
 
-    if (page.props.warning || props.flash.warning) {
-        warning(page.props.warning || props.flash.warning)
-    }
+    return priceMap[createForm.person_type] ?? ''
 })
 
 const generateRandomString = (length = 5) => {
@@ -72,7 +66,7 @@ const createForm = reactive({
     email: '',
     phone: '',
     event_id: '',
-    event_type: props.eventName.toLowerCase(), // Asumiendo que eventName es algo como "Curso" o "Congreso"
+    event_type: 'webinar',
     state: '',
     city: '',
     person_type: '',
@@ -87,7 +81,7 @@ const cleanForm = () => {
     createForm.email = '';
     createForm.phone = '';
     createForm.event_id = '';
-    createForm.event_type = props.eventName.toLowerCase();
+    createForm.event_type = 'webinar';
     createForm.state = '';
     createForm.city = '';
     createForm.person_type = '';
@@ -95,43 +89,39 @@ const cleanForm = () => {
     createForm.status = '';
     createForm.cmec_member_id = null;
     createForm.price = '';
+    selectedEvent.value = null;
+    selectedState.value = '';
+    selectedCity.value = '';
 }
 
 const submitCreate = () => {
-    switch (createForm.event_type) {
-        case 'curso':
-            createForm.event_type = 'course';
-            break;
-        case 'congreso':
-            createForm.event_type = 'conference';
-            break;
-        case 'webinar':
-            createForm.event_type = 'webinar';
-            break;
-        default:
-            createForm.event_type = 'webinar'; // Valor por defecto
-    }
+    createForm.event_id = selectedEvent?.value?.id;
+    createForm.event_type = 'webinar';
+    createForm.price = price.value;
+
     router.post(route('attendees.store'), createForm, {
         onSuccess: () => {
             cleanForm();
             emit('success');
         },
         onError: () => {
-            console.log('errores');
+            //
         }
     })
 }
 
-watch(() => createForm.person_type, (newVal) => {
-    if (newVal) {
-        if (newVal === 'member') {
-            createForm.cmec_member_id = '';
-        } else {
-            createForm.cmec_member_id = null;
-        }
-    }
+// sync precio con el computed (solo lectura)
+watch(price, (val) => {
+    createForm.price = val
 })
 
+watch(() => createForm.person_type, (newVal) => {
+    if (newVal === 'member') {
+        createForm.cmec_member_id = '';
+    } else {
+        createForm.cmec_member_id = null;
+    }
+})
 
 watch(() => props.show, (newVal) => {
     if (newVal) {
@@ -139,19 +129,34 @@ watch(() => props.show, (newVal) => {
     }
 })
 
+watch(selectedState, (value) => {
+    selectedCity.value = ''
+    createForm.state = value
+})
+
+watch(selectedCity, (value) => {
+    createForm.city = value
+})
 </script>
+
 <template>
     <Drawer :show="show" size="xl" @close="emit('close')">
         <div class="space-y-4">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo participante</h3>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ props.eventName }}</label>
-                <select name="event_id" id="event_id" v-model="createForm.event_id"
+                <select v-model="selectedEvent"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Seleccionar webinar</option>
-                    <option v-for="key, event in events" :key="event" :value="event">{{ key }}</option>
+                    <option :value="null">Seleccionar webinar</option>
+                    <option v-for="event in events" :key="event.id" :value="event">
+                        {{ event.topic }}
+                    </option>
                 </select>
+                <span v-if="errors?.event_id" class="text-red-500 text-xs flex justify-end">{{ errors?.event_id
+                }}</span>
             </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre médico (se mostrará en el
                     diploma)</label>
@@ -159,73 +164,93 @@ watch(() => props.show, (newVal) => {
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span v-if="errors?.name" class="text-red-500 text-xs flex justify-end">{{ errors?.name }}</span>
             </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
                 <input v-model="createForm.email" type="email"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span v-if="errors?.email" class="text-red-500 text-xs flex justify-end">{{ errors?.email }}</span>
             </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                 <input v-model="createForm.phone" type="text"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
             </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Origen</label>
                 <div class="flex gap-2 w-full">
-                    <input v-model="createForm.city" type="text"
-                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ciudad" />
-                    <input v-model="createForm.state" type="text"
-                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Estado" />
+                    <select v-model="selectedState"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar estado</option>
+                        <option v-for="state in Object.keys(states)" :key="state" :value="state">{{ state }}</option>
+                    </select>
+                    <select v-model="selectedCity" :disabled="!selectedState"
+                        :class="!selectedState ? 'cursor-not-allowed opacity-60' : ''"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccionar ciudad</option>
+                        <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
+                    </select>
                 </div>
-                <span v-if="errors?.city || errors?.state" class="text-red-500 text-xs flex justify-end">{{ errors?.city
-                    || errors?.state }}</span>
+                <span v-if="errors?.city || errors?.state" class="text-red-500 text-xs flex justify-end">{{
+                    errors?.city || errors?.state }}</span>
             </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de participante</label>
-                <select name="person_type" id="person_type" v-model="createForm.person_type"
+                <select v-model="createForm.person_type"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="" selected>Seleccionar tipo</option>
+                    <option value="">Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
-                    <option value="resident">Residente del colegio</option>
+                    <option value="resident">Residente</option>
                     <option value="guest">No miembro (invitado)</option>
                 </select>
                 <span v-if="errors?.person_type" class="text-red-500 text-xs flex justify-end">{{ errors?.person_type
-                    }}</span>
+                }}</span>
             </div>
-            <div v-if="createForm.person_type == 'member'">
+
+            <div v-if="createForm.person_type === 'member'">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Folio de miembro CMEC</label>
                 <input v-model="createForm.cmec_member_id" type="text"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span v-if="errors?.cmec_member_id" class="text-red-500 text-xs flex justify-end">{{
                     errors?.cmec_member_id }}</span>
             </div>
+
             <hr class="my-2">
+
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Estatus de Pago</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Detalles de Pago</label>
                 <div class="flex gap-2 w-full">
-                    <input v-model="createForm.price" type="number" min="0" step="0.01"
-                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Cantidad a pagar" />
-                    <select name="status" id="status" v-model="createForm.status"
+                    <!-- lectura precio calculado por webinar + tipo de participante -->
+                    <div class="relative grow">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                        <input :value="price" type="number" readonly disabled
+                            class="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-3 py-2 text-sm text-gray-500 cursor-not-allowed"
+                            placeholder="Selecciona webinar y tipo" />
+                    </div>
+                    <select v-model="createForm.status"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" selected>Seleccionar estatus</option>
+                        <option value="">Seleccionar estatus</option>
                         <option value="paid">Pagado</option>
                         <option value="pending">Pendiente</option>
                     </select>
                 </div>
+                <p v-if="!selectedEvent || !createForm.person_type" class="text-xs text-gray-400 mt-1">
+                    El precio se calculará al seleccionar el webinar y tipo de participante.
+                </p>
                 <span v-if="errors?.status" class="text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
             </div>
+
             <hr class="my-2">
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Folio de Acceso</label>
                 <input v-model="createForm.folio" type="text" disabled
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 cursor-not-allowed" />
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-100 cursor-not-allowed" />
             </div>
-
         </div>
 
         <template #footer>
