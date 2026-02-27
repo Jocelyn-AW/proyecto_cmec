@@ -25,6 +25,7 @@ const form = ref({
 })
 
 const isSubmitting = ref(false)
+const isDragging = ref(false)
 
 const { file: imageFile, preview: imagePreview, handleChange: onImageChange, reset: resetImage } = useImageUpload({
     maxSizeMB: 1,
@@ -56,6 +57,29 @@ const close = () => {
 const handleImageChange = (event) => {
     onImageChange(event)
 }
+
+/* DRAG AND DROP DE LA IMAGEN */
+const onDragOver = (e) => {
+    e.preventDefault()
+    isDragging.value = true
+}
+
+const onDragLeave = (e) => {
+    e.preventDefault()
+    isDragging.value = false
+}
+
+const onDrop = (e) => {
+    e.preventDefault()
+    isDragging.value = false
+
+    const files = e.dataTransfer.files
+    if (!files || files.length === 0) return
+
+    const syntheticEvent = { target: { files } }
+    onImageChange(syntheticEvent)
+}
+/* ------------------- */
 
 const submit = async () => {
     if (!props.banner) return
@@ -98,61 +122,72 @@ const submit = async () => {
         </template>
 
         <div class="p-6 space-y-4">
+            <!-- imagen actual o nueva -->
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     {{ imagePreview ? 'Nueva imagen' : 'Imagen actual' }}
                 </label>
                 <div class="w-full h-48 overflow-hidden rounded-lg border border-gray-300">
-                    <img
-                        :src="imagePreview || form.currentImage"
-                        class="w-full h-full object-cover"
-                        alt="Banner actual"
-                    >
+                    <img :src="imagePreview || form.currentImage" class="w-full h-full object-cover"
+                        alt="Banner actual">
                 </div>
             </div>
 
+            <!-- drag and drop -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Cambiar imagen (opcional)
                 </label>
-                <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/jpg,image/webp"
-                    @change="handleImageChange"
-                    class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
-                >
-                <p class="mt-1 text-xs text-gray-500">
-                    Formato permitido: JPG, PNG, WEBP (Peso max. 1MB). Deja vacio para mantener la imagen actual.
+
+                <div @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop" @click="$refs.fileInput.click()"
+                    :class="[
+                        'relative flex flex-col items-center justify-center w-full h-36 rounded-lg border-2 border-dashed cursor-pointer transition-all',
+                        isDragging
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400'
+                    ]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mb-2 text-gray-400" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4" />
+                    </svg>
+
+                    <p class="text-sm text-gray-500">
+                        <span class="font-medium text-blue-600">Haz clic para seleccionar</span>
+                        &nbsp;o arrastra y suelta aquí
+                    </p>
+                    <p class="text-xs text-gray-400 mt-1">JPG, PNG, WEBP — Máx. 1MB</p>
+
+                    <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/jpg,image/webp"
+                        @change="handleImageChange" class="hidden">
+                </div>
+
+                <p v-if="imageFile" class="mt-1 text-xs text-gray-500 truncate">
+                    📎 {{ imageFile.name }}
+                </p>
+                <p v-else class="mt-1 text-xs text-gray-500">
+                    Deja vacío para mantener la imagen actual.
                 </p>
             </div>
 
+            <!-- link -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Link (opcional)
                 </label>
-                <input
-                    v-model="form.link"
-                    type="text"
-                    placeholder="https://ejemplo.com"
-                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500"
-                >
+                <input v-model="form.link" type="text" placeholder="https://ejemplo.com"
+                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
             </div>
         </div>
 
         <template #footer>
-            <button
-                @click="close"
-                :disabled="isSubmitting"
-                class="rounded-md border border-transparent py-2 px-4 text-sm text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-50"
-            >
+            <button @click="close" :disabled="isSubmitting"
+                class="rounded-md border border-transparent py-2 px-4 text-sm text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-50">
                 Cancelar
             </button>
 
-            <button
-                @click="submit"
-                :disabled="isSubmitting"
-                class="rounded-md bg-blue-600 py-2 px-4 text-sm text-white transition-all shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button @click="submit" :disabled="isSubmitting"
+                class="rounded-md bg-blue-600 py-2 px-4 text-sm text-white transition-all shadow-md hover:bg-blue-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ isSubmitting ? 'Actualizando...' : 'Actualizar banner' }}
             </button>
         </template>

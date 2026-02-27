@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -10,7 +11,7 @@ class News extends Model implements HasMedia
 {
     use InteractsWithMedia;
 
-    protected $table = 'news';
+    protected $table = Constants::TABLE_NEWS;
 
     protected $fillable = [
         'title',

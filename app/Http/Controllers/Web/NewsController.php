@@ -74,8 +74,8 @@ class NewsController extends Controller
                 'link'       => $item->link,
                 'type'       => $item->type,
                 'is_active'  => $item->is_active,
-                'image'      => $item->getFirstMediaUrl('news_images'),
-                'pdf'        => $item->getFirstMediaUrl('news_pdfs'),
+                'image'      => $item->getFirstMediaUrl('news_images') ?: null,
+                'pdf'        => $item->getFirstMediaUrl('news_pdfs') ?: null,
                 'updated_at' => $item->updated_at->format('d/m/Y'),
             ];
         });
@@ -237,7 +237,7 @@ class NewsController extends Controller
 
             $data = $request->validate([
                 'title'    => 'required|string|max:255',
-                'content'  => 'required|string',
+                'content'  => 'required|string|max:2000',
                 'extract'  => 'nullable|string|max:500',
                 'link'     => 'nullable|string|max:255|url:http,https',
                 'type'     => 'required|in:sesion,noticia',
@@ -249,16 +249,22 @@ class NewsController extends Controller
             $news = News::findOrFail($id);
             $news->update($data);
 
+            // imagen
             if ($request->hasFile('image')) {
                 $news->clearMediaCollection('news_images');
                 $news->addMediaFromRequest('image')
                     ->toMediaCollection('news_images');
+            } elseif ($request->input('remove_image') == '1') {
+                $news->clearMediaCollection('news_images');
             }
 
+            // PDF
             if ($request->hasFile('pdf')) {
                 $news->clearMediaCollection('news_pdfs');
                 $news->addMediaFromRequest('pdf')
                     ->toMediaCollection('news_pdfs');
+            } elseif ($request->input('remove_pdf') == '1') {
+                $news->clearMediaCollection('news_pdfs');
             }
 
             /* return response()->json([

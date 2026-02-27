@@ -18,7 +18,15 @@ class AttendeesController extends Controller
     public function index(Request $request, $event_type)
     {
         $attendees = $this->addFilters($request, $event_type);
-        $events = $this->getEvents($event_type);        
+        $events = $this->getEvents($event_type);
+
+        if ($event_type === Constants::EVENT_WEBINAR) {
+            return Inertia::render('WebinarsAttendees/Index', [
+            'attendees' => $attendees,
+            'eventName' => $events['eventName'],
+            'events' => $events['events']
+        ]);
+        }
 
         return Inertia::render('CoursesAttendees/Index', [
             'attendees' => $attendees,
@@ -27,7 +35,8 @@ class AttendeesController extends Controller
         ]);
     }
 
-    private function addFilters(Request $request, $event_type) {
+    private function addFilters(Request $request, $event_type)
+    {
         $search = $request->input('search', null);
         $perPage = $request->input('per_page', 10);
 
@@ -50,7 +59,8 @@ class AttendeesController extends Controller
         return $attendees->paginate($perPage)->withQueryString();
     }
 
-    private function getEvents($event_type) {
+    private function getEvents($event_type)
+    {
         switch ($event_type) {
             case Constants::EVENT_COURSE:
                 $eventName = 'Curso';
@@ -77,7 +87,7 @@ class AttendeesController extends Controller
         ];
     }
 
-    
+
     public function store(Request $request)
     {
         try {
@@ -86,15 +96,14 @@ class AttendeesController extends Controller
             $rules = $this->getValidationRules($request);
             $data = $request->validate($rules, $this->getValidationMessages());
             $data['person_id'] = $this->getMemberByCmecId($request);
-                        
+
             Attendee::create($data);
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
-                ->with('success', 'Asistente creado exitosamente'); 
-
+                ->with('success', 'Asistente creado exitosamente');
         } catch (ValidationException $e) {
-            
+
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
 
@@ -119,10 +128,9 @@ class AttendeesController extends Controller
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
-                ->with('success', 'Asistente actualizado exitosamente'); 
-
+                ->with('success', 'Asistente actualizado exitosamente');
         } catch (ValidationException $e) {
-            
+
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
 
@@ -221,7 +229,8 @@ class AttendeesController extends Controller
 
     private function getMemberByCmecId(Request $request)
     {
-        if ($request->input('person_type') === Constants::PERSON_MEMBER && 
+        if (
+            $request->input('person_type') === Constants::PERSON_MEMBER &&
             $request->filled('cmec_member_id')
         ) {
             $cmecMemberId = $request->input('cmec_member_id');
@@ -236,5 +245,4 @@ class AttendeesController extends Controller
         }
         return null;
     }
-    
 }

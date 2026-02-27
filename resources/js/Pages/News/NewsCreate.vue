@@ -77,6 +77,32 @@ const handleCancel = () => {
     alertState.value.show = false
 }
 
+// ─── Drag & Drop imagen ────────────────────────────────────
+const isImageDragging = ref(false)
+
+const onImageDragOver = (e) => { e.preventDefault(); isImageDragging.value = true }
+const onImageDragLeave = (e) => { e.preventDefault(); isImageDragging.value = false }
+const onImageDrop = (e) => {
+    e.preventDefault()
+    isImageDragging.value = false
+    const files = e.dataTransfer.files
+    if (!files?.length) return
+    onImageChange({ target: { files } })
+}
+
+/* DRAG AND DROP DE LA IMAGEN */
+const isPdfDragging = ref(false)
+
+const onPdfDragOver = (e) => { e.preventDefault(); isPdfDragging.value = true }
+const onPdfDragLeave = (e) => { e.preventDefault(); isPdfDragging.value = false }
+const onPdfDrop = (e) => {
+    e.preventDefault()
+    isPdfDragging.value = false
+    const files = e.dataTransfer.files
+    if (!files?.length) return
+    onPdfChange({ target: { files } })
+}
+
 // validacion de campos
 const canSubmit = computed(() => {
     return form.value.title.trim() !== '' &&
@@ -387,35 +413,59 @@ const submit = () => {
                             class="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-5">
                             <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Imagen</h4>
 
-                            <!-- preview -->
-                            <div v-if="imagePreview" class="mb-3 relative">
+                            <!-- preview con botón eliminar -->
+                            <div v-if="imagePreview" class="mb-3 relative group">
                                 <img :src="imagePreview"
                                     class="w-full h-36 object-cover rounded-lg border border-gray-200" alt="Preview">
-                                <button @click="removeImage"
-                                    class="absolute top-2 right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-                                    title="Eliminar imagen">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke-width="2" stroke="currentColor" class="w-3 h-3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
+                                <div
+                                    class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                    <button @click="removeImage"
+                                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors shadow">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        Eliminar imagen
+                                    </button>
+                                </div>
                             </div>
 
-                            <!-- zona de dropeo de imagen -->
-                            <div v-else
-                                class="mb-3 w-full h-36 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center gap-2 bg-gray-50 dark:bg-gray-900/50">
+                            <!-- zona drag & drop imagen -->
+                            <div v-else @dragover="onImageDragOver" @dragleave="onImageDragLeave" @drop="onImageDrop"
+                                @click="$refs.imageInput.click()" :class="[
+                                    'mb-3 w-full h-36 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-all',
+                                    isImageDragging
+                                        ? 'border-green-500 bg-green-50 dark:bg-green-500/10'
+                                        : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900'
+                                ]">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-gray-300">
+                                    stroke-width="1.5" stroke="currentColor"
+                                    :class="['w-8 h-8 transition-colors', isImageDragging ? 'text-green-400' : 'text-gray-300']">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                 </svg>
-                                <span class="text-xs text-gray-400">Sin imagen seleccionada</span>
+                                <div class="text-center">
+                                    <p class="text-xs font-medium text-green-600 dark:text-green-400">
+                                        {{ isImageDragging ? 'Suelta la imagen aquí' : 'Haz clic o arrastra una imagen'
+                                        }}
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP · Máx. 1MB</p>
+                                </div>
                             </div>
 
-                            <input type="file" accept="image/jpeg,image/png,image/jpg,image/webp"
-                                @change="onImageChange"
-                                class="block w-full text-xs text-gray-500 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-900 focus:outline-none">
-                            <p class="mt-1.5 text-xs text-gray-400">JPG, PNG, WEBP · Máx. 1MB</p>
+                            <!-- nombre del archivo seleccionado -->
+                            <p v-if="imageFile" class="mt-1.5 text-xs text-gray-500 truncate flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor"
+                                    class="w-3.5 h-3.5 text-green-500 shrink-0">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                </svg>
+                                {{ imageFile.name }}
+                            </p>
+
+                            <input ref="imageInput" type="file" accept="image/jpeg,image/png,image/jpg,image/webp"
+                                @change="onImageChange" class="hidden">
                         </div>
 
                         <!-- PDF -->
@@ -446,20 +496,29 @@ const submit = () => {
                                 </button>
                             </div>
 
-                            <!-- Sin PDF -->
-                            <div v-else
-                                class="mb-3 w-full h-16 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center gap-2 bg-gray-50 dark:bg-gray-900/50">
+                            <!-- drag and drop PDF -->
+                            <div v-else @dragover="onPdfDragOver" @dragleave="onPdfDragLeave" @drop="onPdfDrop"
+                                @click="$refs.pdfInput.click()" :class="[
+                                    'mb-3 w-full h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all',
+                                    isPdfDragging
+                                        ? 'border-red-400 bg-red-50 dark:bg-red-500/10'
+                                        : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900'
+                                ]">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-gray-300">
+                                    stroke-width="1.5" stroke="currentColor"
+                                    :class="['w-5 h-5 transition-colors', isPdfDragging ? 'text-red-400' : 'text-gray-300']">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                 </svg>
-                                <span class="text-xs text-gray-400">Sin documento adjunto</span>
+                                <p class="text-xs font-medium transition-colors"
+                                    :class="isPdfDragging ? 'text-red-500' : 'text-red-400'">
+                                    {{ isPdfDragging ? 'Suelta el PDF aquí' : 'Haz clic o arrastra un PDF' }}
+                                </p>
+                                <p class="text-xs text-gray-400">Solo PDF · Máx. 10MB</p>
                             </div>
 
-                            <input type="file" accept="application/pdf" @change="onPdfChange"
-                                class="block w-full text-xs text-gray-500 border border-gray-300 dark:border-gray-700 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-900 focus:outline-none">
-                            <p class="mt-1.5 text-xs text-gray-400">Solo PDF · Máx. 10MB</p>
+                            <input ref="pdfInput" type="file" accept="application/pdf" @change="onPdfChange"
+                                class="hidden">
                         </div>
 
                         <!-- pantalla mas chica -->
