@@ -32,6 +32,7 @@ class Webinar extends Model implements HasMedia
         'resident_price',
         'member_price',
         'bank_detail_id',
+        'is_active',
     ];
 
     protected $dates = [
@@ -45,6 +46,13 @@ class Webinar extends Model implements HasMedia
         'gallery_urls',
         'sponsors_logos_urls',
         'program_url',
+    ];
+
+    protected $casts = [
+        'resident_price' => 'decimal:2',
+        'guest_price' => 'decimal:2',
+        'member_price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
     public function attendees()
@@ -106,5 +114,10 @@ class Webinar extends Model implements HasMedia
             $media = $this->getFirstMedia('webinars_program');
             return $media ? $media->getUrl() : null;
         });
+    }
+
+    public function bankDetails()
+    {
+        return $this->morphOne(BankDetail::class, 'event');
     }
 }

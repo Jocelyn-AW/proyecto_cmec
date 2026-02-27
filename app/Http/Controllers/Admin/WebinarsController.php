@@ -11,21 +11,46 @@ use Inertia\Inertia;
 
 class WebinarsController extends Controller
 {
+
+    // Reemplaza únicamente el método index() en WebinarsController
+    // También agrega is_active al $fillable del modelo Webinar y al $casts: 'is_active' => 'boolean'
+
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-        $search = $request->get('search', null);
 
         $webinars = Webinar::orderBy('created_at', 'desc')
-            ->when($search, function ($query, $search) {
-                $query->where('topic', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+
+            // Búsqueda por topic
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('topic', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
             })
+
+            // Filtro por fecha exacta (YYYY-MM-DD)
+            ->when($request->filled('date'), function ($query) use ($request) {
+                $query->whereDate('date', $request->date);
+            })
+
+            // Filtro por organized_by
+            ->when($request->filled('organized_by'), function ($query) use ($request) {
+                $query->where('organized_by', 'like', '%' . $request->organized_by . '%');
+            })
+
+            // Filtro por estado activo/inactivo
+            ->when($request->filled('status'), function ($query) use ($request) {
+                $query->where('is_active', $request->status === 'active');
+            })
+
             ->paginate($perPage)
-            ->withqueryString();
+            ->withQueryString();
 
         return Inertia::render('Webinars/Index', [
             'webinars' => $webinars,
+            'filters'  => $request->only(['search', 'date', 'organized_by', 'status']),
         ]);
     }
 
@@ -220,8 +245,8 @@ class WebinarsController extends Controller
     {
         return [
             'topic' => 'required|string|max:255',
-            'description' => 'required|string|max:500',
-            'objectives' => 'nullable|string|max:1000',
+            'description' => 'required|string|max:5000',
+            'objectives' => 'nullable|string|max:2000',
             'date' => 'required|date',
             'time' => 'required|date_format:H:i',
             'duration' => 'required|numeric|max:255',
@@ -232,10 +257,11 @@ class WebinarsController extends Controller
             'resident_price' => 'nullable|numeric',
             'link' => 'nullable|url',
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
+            'is_active' => 'boolean',
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
-            'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp'
+            'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
         ];
     }
 
@@ -253,6 +279,7 @@ class WebinarsController extends Controller
             '*.date' => 'El campo debe ser una fecha válida.',
             'bank_detail_id.exists' => 'Seleccione una cuenta válida',
             '*.url' => 'El campo debe ser una URL válida.',
+            'is_active.boolean' => 'El estado de activación solo admite verdadero/falso.',
         ];
     }
 
@@ -262,14 +289,16 @@ class WebinarsController extends Controller
             'description' => 'No disponible',
             'objectives' => null,
             'sponsored_by' => null,
-            'guest_price' => null,
-            'resident_price' => null,
-            'link' => null
+            'guest_price' => 0,
+            'resident_price' => 0,
+            'link' => null,
+            'is_active' => true,
         ]);
     }
 
     private function formatDateTime($date, $time)
     {
+        $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
     }
 }

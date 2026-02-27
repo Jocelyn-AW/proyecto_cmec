@@ -3,10 +3,8 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DataTable from '@/Components/DataTable.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
-import Drawer from '@/Components/Drawer.vue';
-import { ref, reactive } from 'vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
 import UploadDiploma from './UploadDiploma.vue';
@@ -20,6 +18,7 @@ const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
 const selectedItem = ref(null);
+const togglingId = ref(null); // evita doble click mientras se procesa
 
 const props = defineProps({
     attendees: {
@@ -50,29 +49,17 @@ const props = defineProps({
 
 const page = usePage();
 
-
 onMounted(() => {
-
     if (page.props.success || props.flash.success) {
         success(page.props.success || props.flash.success)
     }
     if (page.props.error || props.flash.error) {
         errorA(page.props.error || props.flash.error)
     }
-
     if (page.props.warning || props.flash.warning) {
         warning(page.props.warning || props.flash.warning)
     }
 })
-
-const generateRandomString = (length = 5) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-};
 
 const handleOnCreate = () => {
     showCreateDrawer.value = true;
@@ -104,6 +91,26 @@ const openDiploma = (attendee) => {
     }
 }
 
+const toggleAttendance = (attendee) => {
+    warning("Todavia no implementamos esa caracteristica!")
+    /* if (togglingId.value === attendee.id) return;
+    togglingId.value = attendee.id; */
+    /* router.post(
+        route('attendees.update', attendee.id),
+        {
+            _method: 'put',
+            did_attend: !attendee.did_attend,
+        },
+        {
+            preserveScroll: true,
+            only: ['attendees'],
+            onFinish: () => {
+                togglingId.value = null;
+            }
+        }
+    ); */
+}
+
 const onCreateSuccess = () => {
     success('Asistente registrado exitosamente');
     showCreateDrawer.value = false;
@@ -114,8 +121,8 @@ const onEditSuccess = () => {
     showEditDrawer.value = false;
     selectedItem.value = null;
 }
-
 </script>
+
 <template>
 
     <Head title="Asistentes a webinars" />
@@ -127,7 +134,6 @@ const onEditSuccess = () => {
                 <p class="text-sm text-gray-500">Administra los asistentes registrados a webinars desde esta sección</p>
             </div>
             <DataTable :columns="[
-                { label: 'ID', key: 'id' },
                 { label: 'Webinar', key: 'event_name' },
                 { label: 'Asistente', key: 'name' },
                 { label: 'Telefono', key: 'phone' },
@@ -167,24 +173,35 @@ const onEditSuccess = () => {
                     </span>
                 </template>
 
+                <!-- Badge de asistencia clicable -->
                 <template #cell-did_attend="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.did_attend ? 'bg-emerald-200 text-emerald-700' : 'bg-orange-200 text-orange-700'">
-                        {{ item.did_attend ? 'Sí' : 'No' }}
-                    </span>
+                    <button @click="toggleAttendance(item)" :disabled="togglingId === item.id"
+                        :title="item.did_attend ? 'Marcar como no asistió' : 'Marcar como asistió'" :class="[
+                            'inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize transition-all',
+                            item.did_attend
+                                ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
+                                : 'bg-orange-200 text-orange-700 hover:bg-orange-300',
+                            togglingId === item.id ? 'opacity-50 cursor-wait' : 'cursor-pointer'
+                        ]">
+                        <span v-if="togglingId === item.id">...</span>
+                        <span v-else>{{ item.did_attend ? 'Sí' : 'No' }}</span>
+                    </button>
                 </template>
 
                 <template #cell-event_name="{ item }">
-                    <span :title="item.topic" class="block max-w-[200px] truncate">
+                    <span :title="item.event?.topic || item.event?.name" class="block max-w-[200px] truncate">
                         {{ (item.event?.topic || item.event?.name) ?? 'N/A' }}
                     </span>
                 </template>
 
                 <template #actionButtons="{ item }">
-                    <button title="Ver diploma" @click="openDiploma(item)"
-                        class="p-2 rounded-lg bg-amber-20 text-amber-500 hover:bg-amber-600 hover:text-white transition-colors border border-amber-100 hover:border-amber-600">
+                    <button :title="item.diploma_url ? 'Ver diploma PDF' : 'Subir diploma'" @click="openDiploma(item)"
+                        :class="item.diploma_url
+                            ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
+                            : 'bg-transparent text-gray-300 border-gray-200 hover:bg-gray-100 hover:text-gray-500'"
+                        class="p-2 rounded-lg transition-colors border">
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
-                            class="text-8xl w-4 h-4">
+                            class="w-4 h-4">
                             <g fill="none">
                                 <path
                                     d="M24 0v24H0V0zM12.593 23.258l-.011.002-.071.035-.02.004-.014-.004-.071-.035q-.016-.005-.024.005l-.004.01-.017.428.005.02.01.013.104.074.015.004.012-.004.104-.074.012-.016.004-.017-.017-.427q-.004-.016-.017-.018m.265-.113-.013.002-.185.093-.01.01-.003.011.018.43.005.012.008.007.201.093q.019.005.029-.008l.004-.014-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014-.034.614q.001.018.017.024l.015-.002.201-.093.01-.008.004-.011.017-.43-.003-.012-.01-.01z">
@@ -196,21 +213,19 @@ const onEditSuccess = () => {
                         </svg>
                     </button>
                 </template>
-
             </DataTable>
+
             <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.events"
                 :errors="props.errors" @close="showCreateDrawer = false" @success="onCreateSuccess" />
             <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
                 :events="props.events" :errors="props.errors" @close="showEditDrawer = false"
                 @success="onEditSuccess" />
-
             <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem" @close="showUploadDiploma = false" />
-
         </div>
     </div>
+
     <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
         :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"
         @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
         @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()" @close="hideAlert()" />
-
 </template>
