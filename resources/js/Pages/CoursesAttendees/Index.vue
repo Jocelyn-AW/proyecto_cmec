@@ -193,7 +193,13 @@ const onEditSuccess = () => {
 
                 <template #actionButtons="{ item }">
                     <button title="Ver diploma" @click="openDiploma(item)"
-                        class="p-2 rounded-lg bg-amber-20 text-amber-500 hover:bg-amber-600 hover:text-white transition-colors border border-amber-100 hover:border-amber-600">
+                        class="p-2 rounded-lg "
+                        :class="
+                            item.diploma_url == null || item.diploma_url == '' 
+                            ? 'bg-amber-30 text-amber-500 hover:bg-amber-600 hover:text-white transition-colors border border-amber-100 hover:border-amber-600' 
+                            : 'bg-amber-500 text-white hover:bg-amber-600 hover:text-white transition-colors border border-amber-500 hover:border-amber-100'
+                        "
+                        >
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
                             class="text-8xl w-4 h-4">
                             <g fill="none">
