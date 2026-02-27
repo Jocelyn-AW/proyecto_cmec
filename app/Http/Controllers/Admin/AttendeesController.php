@@ -38,6 +38,8 @@ class AttendeesController extends Controller
     private function addFilters(Request $request, $event_type)
     {
         $search = $request->input('search', null);
+        $event_id = $request->input('event_id', null);
+        $did_attend = $request->input('did_attend', null);
         $perPage = $request->input('per_page', 10);
 
         $title = $event_type == Constants::EVENT_CONFERENCE ? 'name' : 'topic';
@@ -55,6 +57,12 @@ class AttendeesController extends Controller
         }
 
         $attendees->where('event_type', $event_type);
+        
+        if (!empty($event_id)) {
+            $attendees->where('event_id', $event_id);
+        }
+
+        if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
 
         return $attendees->paginate($perPage)->withQueryString();
     }
@@ -163,6 +171,24 @@ class AttendeesController extends Controller
         return redirect()
             ->route('attendees.index', ['event' => $attendee->event_type])
             ->with('success', 'Diploma subido exitosamente');
+    }
+
+    public function changeDidAttend($id) {
+        try {
+            $attendee = Attendee::findOrFail($id);
+
+            $attendee->did_attend = !$attendee->did_attend;
+            $attendee->update();
+
+            return redirect()
+                ->route('attendees.index', ['event' => $attendee->event_type]);
+
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Ocurrió un error al cambiar la asistencia. Por favor, inténtalo de nuevo.')
+                ->withInput();
+        }
     }
 
     private function getValidationRules(Request $request)

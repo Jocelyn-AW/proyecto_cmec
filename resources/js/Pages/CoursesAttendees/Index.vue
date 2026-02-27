@@ -21,6 +21,9 @@ const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
 const selectedItem = ref(null);
 
+const event_id = ref(route().params.event_id ?? '')
+const did_attend = ref(route().params.did_attend ?? '')
+
 const props = defineProps({
     attendees: {
         type: Object,
@@ -114,6 +117,29 @@ const onEditSuccess = () => {
     selectedItem.value = null;
 }
 
+const truncate = (text, max = 50) => {
+    if (!text) return '';
+    return text.length > max ? text.substring(0, max) + '...' : text;
+}
+
+const onChangeAttend = (attendee) => {    
+    router.get(route('attendees.change-attend', attendee.id))
+}
+
+const filters = {
+    event_id: event_id, 
+    did_attend: did_attend 
+}
+
+const hasActiveFilters = () =>
+    event_id.value || did_attend.value
+
+
+const clearFilters = () => {
+    event_id.value = ''
+    did_attend.value = ''
+}
+
 </script>
 <template>
     <Head title="Asistentes a cursos" />
@@ -126,15 +152,15 @@ const onEditSuccess = () => {
             </div>
             <DataTable
                 :columns="[
-                    { label: 'ID', key: 'id' },
                     { label: 'Curso', key: 'event_name' },
                     { label: 'Asistente', key: 'name' },
                     { label: 'Telefono', key: 'phone' },
                     { label: 'Ciudad/Estado', key: 'origin' },
-                    { label: 'Tipo de Usuario', key: 'person_type', align: 'center' },
-                    { label: 'Estatus de Pago', key: 'status', align: 'center' },
-                    { label: 'Asistencia', key: 'did_attend', align: 'center'},
+                    { label: 'Tipo de Usuario', key: 'person_type' },
+                    { label: 'Estatus de Pago', key: 'status' },
+                    { label: 'Asistencia', key: 'did_attend' },
                 ]"
+                :filter-values="filters"
                 :paginator="props.attendees"
                 :searchable="true"
                 :per-page-options="[10, 25, 50, 100]"
@@ -147,6 +173,46 @@ const onEditSuccess = () => {
                 @delete="handleOnDelete"
                 :only="['attendees']"
                 >
+
+                <template #filters
+                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Curso -->
+                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
+                                Cursos
+                            </label>
+                            <select id="event_id" v-model="event_id"
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                                >
+                                <option value="">Todos</option>
+                                <option v-for="option in events" :key="option.id" :value="option.id" >
+                                    {{ truncate(option.topic, 25) }}
+                                </option>
+                            </select>
+                            <!-- Asistencia -->
+                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
+                                Asistencia
+                            </label>
+                            <select id="attend" v-model="did_attend" 
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                                >
+                                <option value="">Todos</option>
+                                <option :value="0">No</option>
+                                <option :value="1">Si</option> 
+                            </select>
+                            <!-- Limpiar filtros -->
+                            <button v-if="hasActiveFilters()" @click="clearFilters"
+                                class="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-red-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </template>
 
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
@@ -179,8 +245,11 @@ const onEditSuccess = () => {
                 </template>
 
                 <template #cell-did_attend="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.did_attend ? 'bg-emerald-200 text-emerald-700' : 'bg-orange-200 text-orange-700'"
+                    <span role="button" @click="onChangeAttend(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.did_attend 
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
                     >
                         {{ item.did_attend ? 'Sí' : 'No' }}
                     </span>

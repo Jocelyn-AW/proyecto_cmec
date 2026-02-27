@@ -100,7 +100,6 @@ const truncate = (text, max = 50) => {
             </div>
             <DataTable
                 :columns="[
-                    { label: 'ID', key: 'id' },
                     { label: 'Título', key: 'topic' },
                     { label: 'Fecha', key: 'date' },
                     { label: 'Descripción', key: 'description' },
@@ -173,7 +172,12 @@ const truncate = (text, max = 50) => {
 
                 <template #actionButtons="{ item }">
                     <button title="Ver Pdf" @click="openPdf(item)"
-                        class="p-2 rounded-lg bg-red-20 text-red-500 hover:bg-red-600 hover:text-white transition-colors border border-red-100 hover:border-red-600">
+                        class="p-2 rounded-lg "
+                        :class="
+                            item.program_url == null || item.program_url == '' 
+                            ? 'bg-red-20 text-red-500 transition-colors border border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600' 
+                            : 'bg-red-400 text-white transition-colors border border-red-400 hover:bg-red-600 hover:text-white hover:border-red-600'
+                        ">
                         <svg width="18" height="18" fill="currentcolor"
                             class="bi bi-filetype-pdf text-8xl w-4 h-4 dark:text-stone-200" viewBox="0 0 16 16"
                             xmlns="http://www.w3.org/2000/svg">

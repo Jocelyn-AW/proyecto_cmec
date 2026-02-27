@@ -8,3 +8,4 @@ Route::post('/new', [AttendeesController::class, 'store'])->name('store');
 Route::put('/{id}', [AttendeesController::class, 'update'])->name('update');
 Route::delete('/{id}', [AttendeesController::class, 'delete'])->name('delete');
 Route::post('/upload-diploma/{id}', [AttendeesController::class, 'uploadDiploma'])->name('upload-diploma');
+Route::get('/changeAttend/{id}', [AttendeesController::class, 'changeDidAttend'])->name('change-attend');
