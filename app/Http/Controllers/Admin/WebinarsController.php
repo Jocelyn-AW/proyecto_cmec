@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Web\BannersController;
 use App\Http\Controllers\Controller;
 use function Illuminate\Log\log;
 use Illuminate\Http\Request;
@@ -81,6 +82,16 @@ class WebinarsController extends Controller
 
             $this->updateWebinarMedia($webinar, $request);
 
+            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+                BannersController::createFromEvent(
+                    title: $request->input('banner_title', $webinar->topic),
+                    image: $request->file('banner_image'),
+                    link: $request->input('banner_link') ?: null,
+                    eventId: $webinar->id,
+                    eventType: 'webinar'
+                );
+            }
+
             return redirect()
                 ->route('webinars.index')
                 ->with('success', 'Webinar creado exitosamente');
@@ -123,6 +134,16 @@ class WebinarsController extends Controller
             $webinar->update($data);
 
             $this->updateWebinarMedia($webinar, $request);
+
+            if ($request->input('update_banner') === '1') {
+                BannersController::updateFromEvent(
+                    title: $request->input('banner_title', $webinar->topic),
+                    image: $request->hasFile('banner_image') ? $request->file('banner_image') : null,
+                    link: $request->input('banner_link') ?: null,
+                    eventId: $webinar->id,
+                    eventType: 'webinar'
+                );
+            }
 
             return redirect()
                 ->route('webinars.index')

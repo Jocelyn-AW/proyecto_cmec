@@ -4,36 +4,23 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Http\Requests\Auth\LoginRequest;
 use App\Mail\TestMail;
 use App\Models\Banner;
 use App\Models\Media;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Http\Controllers\Mail\MailsController;
-use function Psy\debug;
+use Illuminate\Http\UploadedFile;
 
 class BannersController extends Controller
 {
-
-    /**
-     * Display the login view.
-     */
-    /* public function display(): Response
-    {
-        return Inertia::render('Banner/Banners', []);
-    } */
-
-
-
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): Response
+    public function index(): Response
     {
 
         /* $mailsController = new MailsController();
@@ -44,12 +31,15 @@ class BannersController extends Controller
             ->get()
             ->map(function ($banner) {
                 return [
-                    'id' => $banner->id,
-                    'order' => $banner->order,
-                    'link' => $banner->link,
-                    'is_active' => $banner->is_active,
-                    'name' => $banner->media->first()?->name ?? null,
-                    'image' => $banner->getFirstMediaUrl('banners'),
+                    'id'         => $banner->id,
+                    'title'      => $banner->title,
+                    'order'      => $banner->order,
+                    'link'       => $banner->link,
+                    'is_active'  => $banner->is_active,
+                    'event_id'   => $banner->event_id,
+                    'event_type' => $banner->event_type,
+                    'name'       => $banner->media->first()?->name ?? null,
+                    'image'      => $banner->getFirstMediaUrl('banners'),
                 ];
             });
 
@@ -88,16 +78,27 @@ class BannersController extends Controller
     {
         try {
             $request->mergeIfMissing([
-                'is_active' => true,
-                'link' => null
+                'is_active'  => true,
+                'link'       => null,
+                'event_type' => 'home',
             ]);
 
             $data = $request->validate([
-                'order' => 'required|numeric',
-                'link' => 'nullable|string|max:255|url:http,https',
-                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:1024',
-                'is_active' => 'boolean'
+                'title'      => 'required|string|max:255',
+                'order'      => 'required|numeric',
+                'link'       => 'nullable|string|max:255|url:http,https',
+                'image'      => 'required|image|mimes:jpeg,png,jpg,webp|max:1024',
+                'is_active'  => 'boolean',
+                'event_id'   => 'nullable|numeric',
+                'event_type' => 'required|string|max:255',
             ]);
+
+            // si viene event_id, event_type es obligatorio (ya lo garantiza el or defecto 'home')
+            // si NO viene event_id, se limpia event_type para que quede 'home'
+            if (empty($data['event_id'])) {
+                $data['event_type'] = 'home';
+                $data['event_id']   = null;
+            }
 
             $banner = Banner::create($data);
 
@@ -124,42 +125,38 @@ class BannersController extends Controller
         }
     }
 
-
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
+     * Update the specified resource.
      */
     public function edit(Request $request, int $id)
     {
         try {
-
             $request->mergeIfMissing([
-                'is_active' => true,
-                'link' => null
+                'is_active'  => true,
+                'link'       => null,
+                'event_type' => 'home',
             ]);
 
             $data = $request->validate([
-                'order' => 'required|numeric',
-                'link' => 'nullable|string|max:255|url:http,https',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
-                'is_active' => 'boolean'
+                'title'      => 'required|string|max:255',
+                'order'      => 'required|numeric',
+                'link'       => 'nullable|string|max:255|url:http,https',
+                'image'      => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
+                'is_active'  => 'boolean',
+                'event_id'   => 'nullable|numeric',
+                'event_type' => 'required|string|max:255',
             ]);
 
-            $banner = Banner::findOrFail($id);
+            if (empty($data['event_id'])) {
+                $data['event_type'] = 'home';
+                $data['event_id']   = null;
+            }
 
+            $banner = Banner::findOrFail($id);
             $banner->update($data);
 
             if ($request->hasFile('image')) {
-
                 $banner->clearMediaCollection('banners');
-
                 $banner->addMediaFromRequest('image')
                     ->toMediaCollection('banners');
             }
@@ -189,18 +186,10 @@ class BannersController extends Controller
     {
         try {
             $banner = Banner::findOrFail($id);
-
             $banner->clearMediaCollection('banners');
-
             $banner->delete();
 
             return redirect()->route('banners.index');
-            // return response()->json([
-            //     'message' => 'success',
-            //     'data' => [
-            //         'deleted_id' => $id
-            //     ]
-            // ], 200);
         } catch (Exception $e) {
 
             /* return response()->json([
@@ -212,12 +201,15 @@ class BannersController extends Controller
         }
     }
 
+    /**
+     * Reorder banners.
+     */
     public function reorder(Request $request)
     {
         $request->validate([
-            'banners' => 'required|array',
-            'banners.*.id' => 'required|exists:banners,id',
-            'banners.*.order' => 'required|numeric'
+            'banners'          => 'required|array',
+            'banners.*.id'     => 'required|exists:banners,id',
+            'banners.*.order'  => 'required|numeric'
         ]);
 
         foreach ($request->banners as $item) {
@@ -229,5 +221,57 @@ class BannersController extends Controller
         //     'message' => 'Orden actualizado'
         // ]);
         return redirect()->route('banners.index');
+    }
+
+
+    public static function createFromEvent(
+        string $title,
+        UploadedFile $image,
+        ?string $link = null,
+        ?int $eventId = null,
+        ?string $eventType = null
+    ): Banner {
+        $banner = Banner::create([
+            'title'      => $title,
+            'link'       => $link,
+            'order'      => (Banner::max('order') ?? 0) + 1,
+            'is_active'  => true,
+            'event_id'   => $eventId,
+            'event_type' => $eventId ? $eventType : 'home',
+        ]);
+
+        $banner->addMedia($image)
+            ->toMediaCollection('banners');
+
+        return $banner;
+    }
+
+    public static function updateFromEvent(
+        string $title,
+        ?UploadedFile $image = null,
+        ?string $link = null,
+        int $eventId,
+        string $eventType
+    ): Banner {
+        $banner = Banner::where('event_id', $eventId)
+            ->where('event_type', $eventType)
+            ->first();
+
+        if (!$banner) {
+            return static::createFromEvent($title, $image, $link, $eventId, $eventType);
+        }
+
+        $banner->update([
+            'title' => $title,
+            'link'  => $link,
+        ]);
+
+        if ($image !== null) {
+            $banner->clearMediaCollection('banners');
+            $banner->addMedia($image)
+                ->toMediaCollection('banners');
+        }
+
+        return $banner;
     }
 }

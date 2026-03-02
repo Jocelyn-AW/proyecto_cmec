@@ -26,7 +26,7 @@ const emit = defineEmits(['edit', 'delete'])
         <!-- Info -->
         <div class="flex-1 min-w-0">
             <div class="text-base font-medium leading-6 text-gray-800 dark:text-white/90 truncate">
-                {{ banner.name }}
+                {{ banner.title }}
             </div>
             <div v-if="banner.link" class="text-sm text-blue-600 truncate max-w-full">
                 <a :href="banner.link" target="_blank" rel="noopener noreferrer" class="hover:underline">

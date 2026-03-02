@@ -31,6 +31,7 @@ const props = defineProps({
     },
 });
 const isSubmitting = ref(false);
+const updateBanner = ref(false)
 const formData = reactive({
     _method: 'put',
     id: null,
@@ -118,7 +119,7 @@ watch(() => props.webinar, (newWebinar) => {
 }, { immediate: true });
 
 const handleSubmit = () => {
-    
+
     if (isSubmitting.value) return;
 
     if (!cover.file.value && !props.webinar?.cover_url) {
@@ -132,6 +133,17 @@ const handleSubmit = () => {
 
     if (pdf.file.value) {
         formData.program_pdf = pdf.file.value;
+    }
+
+    if (updateBanner.value) {
+        formData.update_banner = '1'
+        formData.banner_title = formData.topic
+        if (cover.file.value) {
+            formData.banner_image = cover.file.value
+        }
+        if (formData.link && formData.link.trim() !== '') {
+            formData.banner_link = formData.link
+        }
     }
 
     isSubmitting.value = true;
@@ -204,7 +216,7 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-xs flex justify-end">{{ errors.topic
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <div>
@@ -244,6 +256,23 @@ const flatpickrTimeConfig = {
                             <span v-if="errors.organized_by" class="text-red-500 text-xs flex justify-end">{{
                                 errors.organized_by }}</span>
                         </div>
+
+                        <!-- Switch: Actualizar Banner -->
+                        <div
+                            class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Actualizar el banner de
+                                    este webinar?</p>
+                                <p class="text-xs text-gray-400 mt-0.5">Se actualizará el banner existente con los
+                                    nuevos datos de portada, título y link.</p>
+                            </div>
+                            <button type="button" @click="updateBanner = !updateBanner"
+                                :class="updateBanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+                                <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
+                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -265,7 +294,7 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.link"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.link" class="text-red-500 text-xs flex justify-end">{{ errors.link
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <div>

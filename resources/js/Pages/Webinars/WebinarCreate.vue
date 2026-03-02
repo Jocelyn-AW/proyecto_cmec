@@ -35,6 +35,7 @@ defineProps({
 });
 
 const { alertState, success, errorA, warning } = useAlert()
+const createBanner = ref(false)
 const isSubmitting = ref(false);
 const formData = reactive({
     topic: "",
@@ -93,6 +94,15 @@ const handleSubmit = () => {
 
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value)
+    }
+
+    if (createBanner.value) {
+        data.append('create_banner', '1')
+        data.append('banner_title', formData.topic)
+        data.append('banner_image', cover.file.value)
+        if (formData.link && formData.link.trim() !== '') {
+            data.append('banner_link', formData.link)
+        }
     }
 
     router.post('/webinars/new', data, {
@@ -209,6 +219,23 @@ const flatpickrTimeConfig = {
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.organized_by" class="text-red-500 text-sm flex justify-start">{{
                                 errors.organized_by }}</span>
+                        </div>
+
+                        <!-- Switch: Generar Banner -->
+                        <div
+                            class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Generar banner para
+                                    este webinar?</p>
+                                <p class="text-xs text-gray-400 mt-0.5">Se creará un banner usando la portada, el título
+                                    y el link del webinar.</p>
+                            </div>
+                            <button type="button" @click="createBanner = !createBanner"
+                                :class="createBanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+                                <span :class="createBanner ? 'translate-x-5' : 'translate-x-0'"
+                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
+                            </button>
                         </div>
                     </div>
                 </div>
