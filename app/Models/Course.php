@@ -34,7 +34,10 @@ class Course extends Model implements HasMedia
         'resident_price',
         'member_price',
         'bank_detail_id',
-        'is_active'
+        'is_active',
+        'format',
+        'address',
+        'additional_info',
     ];
 
     protected $dates = [

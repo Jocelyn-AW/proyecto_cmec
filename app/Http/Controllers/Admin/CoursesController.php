@@ -249,7 +249,11 @@ class CoursesController extends Controller
             'member_price' => 'required|numeric',
             'guest_price' => 'required|numeric',
             'resident_price' => 'required|numeric',
-            'link' => 'nullable|url',
+            'format' => 'required|string',
+            'link' => 'required_if:format,online|nullable|url',
+            'address' => 'required_if:format,in_person,hybrid|nullable|string',
+            'additional_info' => 'nullable|string',
+
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             //Horarios
             'sessions'         => 'required|array|min:1',
@@ -269,14 +273,15 @@ class CoursesController extends Controller
             'cover_image.image' => 'El archivo debe ser una imagen.',
             'cover_image.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
             'program_pdf.mimes' => 'El archivo del programa debe ser un PDF.',
-            '*.required' => 'El campo es obligatorio.',
+            '*.required' => 'Este campo es obligatorio.',
             '*.string' => 'El campo debe ser una cadena de texto.',
             '*.max' => 'El campo no debe exceder los :max caracteres.',
             '*.numeric' => 'El campo debe ser un número.',
             'sessions.*.date' => 'El campo debe ser una fecha válida.',
             'sessions.*.time' => 'Selecciona un horario válido',
             '*.url' => 'El campo debe ser una URL válida.',
-            'bank_detail_id.exists' => 'Seleccione una cuenta válida'
+            'bank_detail_id.exists' => 'Seleccione una cuenta válida',
+            '*.required_if' => 'Este campo es obligatorio.',
         ];
     }
 

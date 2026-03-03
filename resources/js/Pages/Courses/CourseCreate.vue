@@ -46,7 +46,10 @@ const formData = reactive({
     bank_detail_id: "",
     sessions: [
         { date: '', time: '' }  // inicia con una sesión vacía
-    ]
+    ],
+    format: "",
+    address: "",
+    additional_info: "",
 });
 
 
@@ -218,24 +221,55 @@ const flatpickrTimeConfig = {
                 >
                 <div class="grid grid-cols-4 gap-4 p-6">
                     <div class="">
-                        <span class="text-sm text-gray-700">
-                            Detalles Adicionales</span
-                        >
+                        <span class="text-sm text-gray-700"> Detalles Adicionales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
                         <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-                            >
-                                Link de conexión 
-                                <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Modalidad
                             </label>
-                            <input
-                                type="text"
-                                v-model="formData.link"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                            />
-                            <span v-if="errors.link" class="text-red-500 text-xs flex justify-end">{{ errors.link }}</span>
+                            <select name="format" id="format" v-model="formData.format" 
+                                class="w-full py-2.5 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Seleccionar modalidad</option>
+                                <option value="in_person">Presencial</option>
+                                <option value="hybrid">Hibrida</option>
+                                <option value="online">En línea</option>
+                            </select>
+                        </div>
+                        <div v-if="formData.format != ''">
+                            <div v-if="formData.format != 'online'" class="mb-6">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Dirección
+                                </label>
+                                <input
+                                    type="text" v-model="formData.address"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                />
+                                <span v-if="errors.address" class="text-red-500 text-xs flex justify-end">{{ errors.address }}</span>
+                            </div>
+                            <div v-if="formData.format != 'online'" class="mb-6">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Información adicional
+                                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                </label>
+                                <input
+                                    type="text" v-model="formData.additional_info" placeholder="Ej. Planta Alta, Auditorio 2"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                />
+                                <span v-if="errors.additional_info" class="text-red-500 text-xs flex justify-end">{{ errors.additional_info }}</span>
+                            </div>
+                            <div v-if="formData.format != 'in_person'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Link de conexión 
+                                    <span v-if="formData.format == 'hybrid'" class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    v-model="formData.link"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                />
+                                <span v-if="errors.link" class="text-red-500 text-xs flex justify-end">{{ errors.link }}</span>
+                            </div>
                         </div>
                         <div>
                             <label
