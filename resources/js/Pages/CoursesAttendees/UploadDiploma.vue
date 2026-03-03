@@ -57,7 +57,7 @@ const close = () => {
 <template>
     <Modal :show="show" @close="close" maxWidth="2xl">
         <template #title>
-            Agregar diploma
+            <p class="text-lg">Agregar diploma</p>
         </template>
 
         <div class="p-6 space-y-4">

@@ -10,6 +10,7 @@ import { ref, reactive } from 'vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
 import UploadDiploma from './UploadDiploma.vue';
+import PaymentDetailsModal from './PaymentDetailsModal.vue';
 
 defineOptions({
     layout: AuthenticatedLayout
@@ -19,7 +20,9 @@ const { alertState, success, errorA, warning, hideAlert } = useAlert()
 const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
+const showPaymentDetails = ref(false);
 const selectedItem = ref(null);
+const paymentDetails = ref(null);
 
 const event_id = ref(route().params.event_id ?? '')
 const did_attend = ref(route().params.did_attend ?? '')
@@ -108,6 +111,11 @@ const openDiploma = (attendee) => {
         selectedItem.value = attendee;
         showUploadDiploma.value = true;
     }
+}
+
+const openPaymentDetails = (attendee) => {
+    paymentDetails.value = attendee.payments?.[0] ?? null;    
+    showPaymentDetails.value = true;
 }
 
 const onCreateSuccess = () => {
@@ -238,9 +246,13 @@ const clearFilters = () => {
                 </template>
 
                 <template #cell-status="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.status == 'pending' ? 'bg-amber-200 text-amber-700' : 
-                        (item.status == 'paid') ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
+                    <span
+                        role="button" @click="openPaymentDetails(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.status == 'pending' ? 'bg-amber-200 text-amber-700 hover:bg-amber-300' : 
+                        (item.status == 'paid') 
+                        ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                        : 'bg-sky-200 text-sky-700 hover:bg-sky-300'"
                         >
                         {{ item.status === 'paid' ? 'Pagado' : '' }}
                         {{ item.status === 'pending' ? 'Pendiente' : '' }}
@@ -308,10 +320,16 @@ const clearFilters = () => {
             
             <UploadDiploma
                 :show="showUploadDiploma"
+                :max-width="'lg'"
                 :attendee="selectedItem"
                 @close="showUploadDiploma = false"
             />
 
+            <PaymentDetailsModal
+                :show="showPaymentDetails"
+                :max-width="'lg'"
+                @close="showPaymentDetails = false"
+                :payment-details="paymentDetails"/>
         </div>
     </div>
     <Alerta
