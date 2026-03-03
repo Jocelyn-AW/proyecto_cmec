@@ -41,7 +41,8 @@ const stripHtml = (html) => {
                     : 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400'">
                     {{ item.type }}
                 </span>
-                <span class="text-xs text-gray-400 dark:text-gray-500">Última actualización: {{ item.updated_at }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">Última actualización: {{ item.updated_at
+                    }}</span>
             </div>
 
             <!-- titulo -->
@@ -54,10 +55,10 @@ const stripHtml = (html) => {
                 {{ item.extract ? stripHtml(item.extract) : stripHtml(item.content) }}
             </p>
 
-            <!-- link -->
-            <div class="h-5">
+            <!-- link + tiempo de lectura -->
+            <div class="flex items-center justify-between h-5">
                 <a v-if="item.link" :href="item.link" target="_blank" rel="noopener noreferrer"
-                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline truncate max-w-full">
+                    class="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline truncate max-w-[60%]">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                         stroke="currentColor" class="w-3 h-3 shrink-0">
                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -66,10 +67,21 @@ const stripHtml = (html) => {
                     <span class="truncate">{{ item.link }}</span>
                 </a>
                 <span v-else class="text-xs text-gray-300 dark:text-gray-600">— sin link —</span>
+
+                <!-- tiempo de lectura -->
+                <span v-if="item.reading_time"
+                    class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-3.5 h-3.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ item.reading_time }} min
+                </span>
             </div>
 
-            <!-- PDF -->
-            <div class="h-6">
+            <!-- PDF + vistas -->
+            <div class="flex items-center justify-between h-6">
                 <a v-if="item.pdf" :href="item.pdf" target="_blank" rel="noopener noreferrer"
                     class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 text-red-600 hover:bg-red-100 transition-colors text-xs font-medium dark:bg-red-500/10 dark:text-red-400">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -87,6 +99,17 @@ const stripHtml = (html) => {
                             d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
                     Sin PDF
+                </span>
+
+                <!-- numero de vistas -->
+                <span class="inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                        stroke="currentColor" class="w-3.5 h-3.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {{ item.views_number ?? 0 }}
                 </span>
             </div>
         </div>

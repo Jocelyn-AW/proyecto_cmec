@@ -20,15 +20,13 @@ class News extends Model implements HasMedia
         'extract',
         'type',
         'is_active',
-    ];
-
-    protected $dates = [
-        'created_at',
-        'updated_at'
+        'reading_time',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'reading_time' => 'integer',
+        'views_number' => 'integer',
     ];
 
     /**

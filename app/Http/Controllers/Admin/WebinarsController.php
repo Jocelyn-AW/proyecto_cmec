@@ -19,9 +19,8 @@ class WebinarsController extends Controller
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-
-        $webinars = Webinar::orderBy('created_at', 'desc')
-
+        $webinars = Webinar::with('sessions')
+            ->orderBy('created_at', 'desc')
             // Búsqueda por topic
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
@@ -33,7 +32,9 @@ class WebinarsController extends Controller
 
             // Filtro por fecha exacta (YYYY-MM-DD)
             ->when($request->filled('date'), function ($query) use ($request) {
-                $query->whereDate('date', $request->date);
+                $query->whereHas('sessions', function ($q) use ($request) {
+                    $q->whereDate('date', $request->date);
+                });
             })
 
             // Filtro por organized_by
@@ -75,10 +76,17 @@ class WebinarsController extends Controller
 
             $data = $request->validate($validationRules, $this->getValidatonMessages());
 
-            $data['date'] = $this->formatDateTime($data['date'], $data['time']);
-            unset($data['time']);
+            $sessions = $data['sessions'];
+            unset($data['sessions']);
 
             $webinar = Webinar::create($data);
+
+            foreach ($sessions as $session) {
+                $webinar->sessions()->create([
+                    'date' => $this->formatDateTime($session['date'], $session['time']),
+                    'time' => $session['time'],
+                ]);
+            }
 
             $this->updateWebinarMedia($webinar, $request);
 
@@ -108,7 +116,7 @@ class WebinarsController extends Controller
 
     public function edit($id)
     {
-        $webinar = Webinar::findOrFail($id);
+        $webinar = Webinar::with('sessions')->findOrFail($id);
         //todo: load payment_methods
         $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
             ->get();
@@ -127,11 +135,21 @@ class WebinarsController extends Controller
             $validationRules = $this->getValidationArray();
             $data = $request->validate($validationRules, $this->getValidatonMessages());
 
-            $data['date'] = $this->formatDateTime($data['date'], $data['time']);
-            unset($data['time']);
-
             $webinar = Webinar::findOrFail($request->id);
+
+            $sessions = $data['sessions'];
+            unset($data['sessions']);
+
             $webinar->update($data);
+
+            $webinar->sessions()->delete();
+
+            foreach ($sessions as $session) {
+                $webinar->sessions()->create([
+                    'date' => $this->formatDateTime($session['date'], $session['time']),
+                    'time' => $session['time'],
+                ]);
+            }
 
             $this->updateWebinarMedia($webinar, $request);
 
@@ -165,6 +183,7 @@ class WebinarsController extends Controller
         try {
             $webinar = Webinar::findOrFail($id);
             $this->deleteWebinarMedia($webinar);
+            $webinar->sessions()->delete();
             $webinar->delete();
 
             return redirect()
@@ -268,8 +287,6 @@ class WebinarsController extends Controller
             'topic' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
             'objectives' => 'nullable|string|max:2000',
-            'date' => 'required|date',
-            'time' => 'required|date_format:H:i',
             'duration' => 'required|numeric|max:255',
             'organized_by' => 'required|string|max:255',
             'sponsored_by' => 'nullable|string|max:255',
@@ -283,6 +300,10 @@ class WebinarsController extends Controller
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
             'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            //Tiempo
+            'sessions' => 'required|array|min:1',
+            'sessions.*.date' => 'required|date',
+            'sessions.*.time' => 'required|date_format:H:i',
         ];
     }
 

@@ -31,6 +31,7 @@ const form = ref({
     link: '',
     type: 'noticia',
     is_active: true,
+    reading_time: '',
 })
 
 // imagen
@@ -128,6 +129,7 @@ const submit = () => {
     formData.append('type', form.value.type)
     formData.append('is_active', form.value.is_active ? '1' : '0')
 
+    if (form.value.reading_time) formData.append('reading_time', form.value.reading_time)
     if (form.value.extract.trim()) formData.append('extract', form.value.extract)
     if (form.value.link.trim()) formData.append('link', form.value.link)
     if (imageFile.value) formData.append('image', imageFile.value)
@@ -405,6 +407,25 @@ const submit = () => {
                                         class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out"
                                         :class="form.is_active ? 'translate-x-5' : 'translate-x-0'" />
                                 </button>
+                            </div>
+
+                            <!-- tiempo de lectura -->
+                            <div class="border-t border-gray-100 dark:border-gray-800 pt-3">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Tiempo de lectura
+                                    <span class="text-gray-400 text-xs">(opcional)</span>
+                                </label>
+                                <p class="text-xs text-gray-400 mb-2">Minutos estimados para leer esta noticia</p>
+                                <div class="relative">
+                                    <input v-model="form.reading_time" type="number" min="1" max="999" step="1"
+                                        onkeydown="return event.keyCode !== 190 && event.keyCode !== 110 && event.keyCode !== 188 && event.keyCode !== 69 && event.keyCode !== 107 && event.keyCode !== 109"
+                                        @keypress="onlyIntegers($event)" placeholder="ej. 5"
+                                        class="block w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-16 text-sm text-gray-800 dark:text-white/90 dark:bg-gray-900 dark:border-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500">
+                                    <span
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                                        min
+                                    </span>
+                                </div>
                             </div>
                         </div>
 

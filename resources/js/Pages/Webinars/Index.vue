@@ -166,8 +166,8 @@ const openGallery = (webinar) => {
                 { label: 'Link', key: 'link' },
                 { label: 'Estado', key: 'is_active', align: 'center' },
             ]" :paginator="props.webinars" :searchable="false" :per-page-options="[5, 10, 15]" :allow-create="false"
-                :allow-actions="true" :allow-edit="true" :allow-delete="true"
-                @edit="handleOnEdit" @delete="handleOnDelete" :only="['webinars']">
+                :allow-actions="true" :allow-edit="true" :allow-delete="true" @edit="handleOnEdit"
+                @delete="handleOnDelete" :only="['webinars']">
 
                 <template #cell-topic="{ item }">
                     <span :title="item.topic" class="block max-w-[200px] truncate">{{ item.topic }}</span>
@@ -178,9 +178,21 @@ const openGallery = (webinar) => {
                 </template>
 
                 <template #cell-date="{ item }">
-                    {{ new Date(item.date).toLocaleDateString('es-MX', {
-                        day: '2-digit', month: 'short', year: 'numeric'
-                    }) }}
+                    <template v-if="item.sessions && item.sessions.length > 0">
+                        {{
+                            (() => {
+                                const parts = item.sessions[0].date.split(/[T ]/)[0].split('-')
+                                return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('es-MX', {
+                                    day: '2-digit', month: 'short', year: 'numeric'
+                        })
+                        })()
+                        }}
+                        <span v-if="item.sessions.length > 1"
+                            class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                            +{{ item.sessions.length - 1 }}
+                        </span>
+                    </template>
+                    <span v-else class="text-gray-400 text-xs">—</span>
                 </template>
 
                 <template #cell-duration="{ item }">
