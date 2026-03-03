@@ -217,10 +217,19 @@ class BannersController extends Controller
                 ->update(['order' => $item['order']]);
         }
 
-        // return response()->json([
-        //     'message' => 'Orden actualizado'
-        // ]);
         return redirect()->route('banners.index');
+    }
+
+    public function statusChange(int $id)
+    {
+        try {
+            $banner = Banner::findOrFail($id);
+            $banner->is_active = !$banner->is_active;
+            $banner->save();
+            return redirect()->route('banners.index');
+        } catch (Exception $e) {
+            return redirect()->route('banners.index')->with('error', $e->getMessage());
+        }
     }
 
 
@@ -273,5 +282,17 @@ class BannersController extends Controller
         }
 
         return $banner;
+    }
+
+    public static function deleteFromEvent(int $eventId, string $eventType): void
+    {
+        $banner = Banner::where('event_id', $eventId)
+            ->where('event_type', $eventType)
+            ->first();
+
+        if ($banner) {
+            $banner->clearMediaCollection('banners');
+            $banner->delete();
+        }
     }
 }

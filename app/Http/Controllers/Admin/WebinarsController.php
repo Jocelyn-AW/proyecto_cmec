@@ -183,6 +183,7 @@ class WebinarsController extends Controller
         try {
             $webinar = Webinar::findOrFail($id);
             $this->deleteWebinarMedia($webinar);
+            BannersController::deleteFromEvent(eventId: $id, eventType: 'webinar');
             $webinar->sessions()->delete();
             $webinar->delete();
 
