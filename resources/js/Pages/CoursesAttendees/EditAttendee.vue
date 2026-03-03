@@ -76,6 +76,8 @@ const price = computed(() => {
 
 
 onMounted(() => {    
+    // console.log(page.props);
+    
     if (page.props.success || props.flash.success) {
         success(page.props.success || props.flash.success)
     }
@@ -115,6 +117,7 @@ const createForm = reactive({
     reference: '',
     payment_method: '',
     specialty: '',
+    did_attend: false,
 })
 
 const cleanForm = () => {
@@ -131,6 +134,7 @@ const cleanForm = () => {
     createForm.status = '';
     createForm.cmec_member_id = null;
     createForm.price = '';
+    createForm.did_attend = false;
     selectedEvent.value = '';
     selectedCity.value = '';
     selectedState.value = '';
@@ -156,6 +160,7 @@ const setDataToForm = () => {
     createForm.reference = props.data.payments?.[0]?.reference || '';
     createForm.payment_method = props.data.payments?.[0]?.payment_method || '';
     createForm.specialty = props.data.specialty || '';
+    createForm.did_attend = props.data.did_attend === true;    
 }
 
 const submitCreate = () => {
