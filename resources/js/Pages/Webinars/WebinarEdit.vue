@@ -31,12 +31,11 @@ const props = defineProps({
     },
 });
 const isSubmitting = ref(false);
+const updateBanner = ref(false)
 const formData = reactive({
     _method: 'put',
     id: null,
     topic: "",
-    date: "",
-    time: "",
     description: "",
     duration: "",
     objectives: "",
@@ -46,7 +45,18 @@ const formData = reactive({
     resident_price: "",
     guest_price: "",
     bank_detail_id: "",
+    sessions: [
+        { date: '', time: '' }
+    ],
 });
+
+const addSession = () => {
+    formData.sessions.push({ date: '', time: '' })
+}
+
+const removeSession = (index) => {
+    formData.sessions.splice(index, 1)
+}
 
 const cover = useImageUpload({
     maxSizeMB: 1,
@@ -95,13 +105,16 @@ const getTimeFromDateTime = (dateTime) => {
     return `${hours}:${minutes}`;
 };
 
+const getDateFromDateTime = (dateTime) => {
+    if (!dateTime) return "";
+    return dateTime.split('T')[0].split(' ')[0];
+};
+
 const fillForm = (webinar) => {
     formData.id = webinar.id || null;
     formData.topic = webinar.topic || "";
     formData.description = webinar.description || "";
     formData.objectives = webinar.objectives || "";
-    formData.date = webinar.date || "";
-    formData.time = getTimeFromDateTime(webinar.date) || "";
     formData.duration = webinar.duration || "";
     formData.organized_by = webinar.organized_by || "";
     formData.link = webinar.link || "";
@@ -109,6 +122,15 @@ const fillForm = (webinar) => {
     formData.resident_price = webinar.resident_price || "";
     formData.guest_price = webinar.guest_price || "";
     formData.bank_detail_id = webinar.bank_detail_id || "";
+
+    if (webinar.sessions && webinar.sessions.length > 0) {
+        formData.sessions = webinar.sessions.map(session => ({
+            date: getDateFromDateTime(session.date),
+            time: session.time ? session.time.substring(0, 5) : '',
+        }));
+    } else {
+        formData.sessions = [{ date: '', time: '' }];
+    }
 };
 
 watch(() => props.webinar, (newWebinar) => {
@@ -118,7 +140,7 @@ watch(() => props.webinar, (newWebinar) => {
 }, { immediate: true });
 
 const handleSubmit = () => {
-    
+
     if (isSubmitting.value) return;
 
     if (!cover.file.value && !props.webinar?.cover_url) {
@@ -126,23 +148,55 @@ const handleSubmit = () => {
         return;
     }
 
+    isSubmitting.value = true;
+
+    const data = new FormData();
+    data.append('_method', 'PUT');
+    data.append('id', formData.id);
+    data.append('topic', formData.topic);
+    data.append('description', formData.description);
+    data.append('objectives', formData.objectives ?? '');
+    data.append('duration', formData.duration);
+    data.append('organized_by', formData.organized_by);
+    data.append('member_price', formData.member_price);
+    data.append('resident_price', formData.resident_price ?? '');
+    data.append('guest_price', formData.guest_price ?? '');
+    data.append('link', formData.link ?? '');
+    data.append('bank_detail_id', formData.bank_detail_id ?? '');
+
+    // sesiones indexadas para que laravel reciba array
+    formData.sessions.forEach((session, index) => {
+        data.append(`sessions[${index}][date]`, session.date);
+        data.append(`sessions[${index}][time]`, session.time);
+    });
+
     if (cover.file.value) {
-        formData.cover_image = cover.file.value;
+        data.append('cover_image', cover.file.value);
     }
 
     if (pdf.file.value) {
-        formData.program_pdf = pdf.file.value;
+        data.append('program_pdf', pdf.file.value);
     }
 
-    isSubmitting.value = true;
+    if (updateBanner.value) {
+        data.append('update_banner', '1');
+        data.append('banner_title', formData.topic);
+        if (cover.file.value) {
+            data.append('banner_image', cover.file.value);
+        }
+        if (formData.link && formData.link.trim() !== '') {
+            data.append('banner_link', formData.link);
+        }
+    }
 
-    router.post(route('webinars.update', formData.id), formData, {
+    router.post(route('webinars.update', formData.id), data, {
         forceFormData: true,
         onFinish: () => {
             isSubmitting.value = false;
         }
     });
 };
+
 
 const handleCancel = () => {
     router.get('/webinars');
@@ -244,6 +298,23 @@ const flatpickrTimeConfig = {
                             <span v-if="errors.organized_by" class="text-red-500 text-xs flex justify-end">{{
                                 errors.organized_by }}</span>
                         </div>
+
+                        <!-- Switch: Actualizar Banner -->
+                        <div
+                            class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Actualizar el banner de
+                                    este webinar?</p>
+                                <p class="text-xs text-gray-400 mt-0.5">Se actualizará el banner existente con los
+                                    nuevos datos de portada, título y link.</p>
+                            </div>
+                            <button type="button" @click="updateBanner = !updateBanner"
+                                :class="updateBanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+                                <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
+                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -283,13 +354,15 @@ const flatpickrTimeConfig = {
                                 errors.pdf_file }}</span>
                         </div>
 
+                        <!-- SESIONES (múltiples fechas) -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Fecha y Hora de Inicio
+                                Horarios
                             </label>
-                            <div class="relative grid grid-cols-2 gap-4">
+                            <div v-for="(session, index) in formData.sessions" :key="index"
+                                class="relative grid grid-cols-2 gap-4 my-3">
                                 <div>
-                                    <flat-pickr v-model="formData.time" :config="flatpickrTimeConfig"
+                                    <flat-pickr v-model="session.time" :config="flatpickrTimeConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una hora" />
                                     <span
@@ -298,26 +371,42 @@ const flatpickrTimeConfig = {
                                             xmlns="http://www.w3.org/2000/svg"
                                             class="text-stone-800 dark:text-stone-200">
                                             <path fill="currentColor"
-                                                d="M5.673 0a.7.7 0 0 1 .7.7v1.309h7.517v-1.3a.7.7 0 0 1 1.4 0v1.3H18a2 2 0 0 1 2 1.999v13.993A2 2 0 0 1 18 20H2a2 2 0 0 1-2-1.999V4.008a2 2 0 0 1 2-1.999h2.973V.699a.7.7 0 0 1 .7-.699ZM1.4 7.742v10.259a.6.6 0 0 0 .6.6h16a.6.6 0 0 0 .6-.6V7.756zm5.267 6.877v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zm-8.333-3.977v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zM4.973 3.408H2a.6.6 0 0 0-.6.6v2.335l17.2.014V4.008a.6.6 0 0 0-.6-.6h-2.71v.929a.7.7 0 0 1-1.4 0v-.929H6.373v.92a.7.7 0 0 1-1.4 0z">
-                                            </path>
+                                                d="M5.673 0a.7.7 0 0 1 .7.7v1.309h7.517v-1.3a.7.7 0 0 1 1.4 0v1.3H18a2 2 0 0 1 2 1.999v13.993A2 2 0 0 1 18 20H2a2 2 0 0 1-2-1.999V4.008a2 2 0 0 1 2-1.999h2.973V.699a.7.7 0 0 1 .7-.699ZM1.4 7.742v10.259a.6.6 0 0 0 .6.6h16a.6.6 0 0 0 .6-.6V7.756zm5.267 6.877v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zm-8.333-3.977v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zM4.973 3.408H2a.6.6 0 0 0-.6.6v2.335l17.2.014V4.008a.6.6 0 0 0-.6-.6h-2.71v.929a.7.7 0 0 1-1.4 0v-.929H6.373v.92a.7.7 0 0 1-1.4 0z" />
                                         </svg>
                                     </span>
-                                    <span v-if="errors.time" class="text-red-500 text-xs flex justify-end">{{
-                                        errors.time }}</span>
+                                    <span v-if="errors[`sessions.${index}.time`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.time`] }}
+                                    </span>
                                 </div>
                                 <div>
-                                    <flat-pickr v-model="formData.date" :config="flatpickrConfig"
+                                    <flat-pickr v-model="session.date" :config="flatpickrConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una fecha" />
-                                    <span v-if="errors.date" class="text-red-500 text-xs flex justify-end">{{
-                                        errors.date }}</span>
+                                    <span v-if="errors[`sessions.${index}.date`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.date`] }}
+                                    </span>
                                 </div>
+                                <button v-if="formData.sessions.length > 1" @click="removeSession(index)" type="button"
+                                    class="absolute -right-6 top-3 text-red-400 hover:text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                             </div>
+
+                            <button @click="addSession" type="button"
+                                class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1">
+                                + Agregar fecha
+                            </button>
                         </div>
+
 
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Duracion (en horas)
+                                Duracion total (en horas)
                             </label>
                             <input type="number" v-model="formData.duration" min="1"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />

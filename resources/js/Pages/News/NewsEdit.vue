@@ -27,6 +27,7 @@ const editForm = ref({
     link: '',
     type: 'noticia',
     is_active: true,
+    reading_time: '',
 })
 
 const editImageFile = ref(null)
@@ -71,6 +72,7 @@ watch(() => props.newsItem, (item) => {
         link: item.link || '',
         type: item.type,
         is_active: item.is_active,
+        reading_time: item.reading_time || '',
     }
     editCurrentImage.value = item.image || null
     editCurrentPdf.value = item.pdf || null
@@ -147,6 +149,7 @@ const submitEdit = () => {
     formData.append('content', editForm.value.content)
     formData.append('type', editForm.value.type)
     formData.append('is_active', editForm.value.is_active ? '1' : '0')
+    if (editForm.value.reading_time) formData.append('reading_time', editForm.value.reading_time)
     if (editForm.value.extract.trim()) formData.append('extract', editForm.value.extract)
     if (editForm.value.link.trim()) formData.append('link', editForm.value.link)
     if (editImageFile.value) formData.append('image', editImageFile.value)
@@ -274,6 +277,26 @@ const submitEdit = () => {
                                                         {{ editForm.is_active ? 'Activo' : 'Inactivo' }}
                                                     </span>
                                                 </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- tiempo de lectura -->
+                                        <div>
+                                            <label
+                                                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                Tiempo de lectura
+                                                <span class="text-gray-400 text-xs">(opcional)</span>
+                                            </label>
+                                            <div class="relative">
+                                                <input v-model.number="editForm.reading_time" type="number" min="1"
+                                                    max="999" step="1"
+                                                    onkeydown="return event.keyCode !== 190 && event.keyCode !== 110 && event.keyCode !== 188 && event.keyCode !== 69 && event.keyCode !== 107 && event.keyCode !== 109"
+                                                    @keypress="onlyIntegers($event)" placeholder="ej. 5"
+                                                    class="block w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-16 text-sm text-gray-800 dark:text-white/90 dark:bg-gray-800 dark:border-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                                <span
+                                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                                                    min
+                                                </span>
                                             </div>
                                         </div>
 

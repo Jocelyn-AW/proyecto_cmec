@@ -9,3 +9,4 @@ Route::post('/', [BannersController::class, 'store'])->name('store');
 //Cambiar a PUT en web para pruebas // No funciono
 Route::post('/{id}', [BannersController::class, 'edit'])->name('edit');
 Route::delete('/{id}', [BannersController::class, 'delete'])->name('delete');
+Route::patch('/{id}/status', [BannersController::class, 'statusChange'])->name('statusChange');
