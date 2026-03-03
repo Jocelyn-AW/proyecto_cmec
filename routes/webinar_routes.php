@@ -9,6 +9,7 @@ Route::post('/new', [WebinarsController::class, 'store'])->name('store');
 Route::get('/{id}', [WebinarsController::class, 'edit'])->name('edit');
 Route::put('/{id}', [WebinarsController::class, 'update'])->name('update');
 Route::delete('/{id}', [WebinarsController::class, 'delete'])->name('delete');
+Route::patch('/{id}/status', [WebinarsController::class, 'statusChange'])->name('statusChange');
 
 Route::get('/{id}/gallery', [WebinarsController::class, 'gallery'])->name('gallery');
 Route::post('/{id}/gallery', [WebinarsController::class, 'updateGallery'])->name('gallery.update');

@@ -114,6 +114,28 @@ const handleOnEdit = (webinar) => {
     router.get(route('webinars.edit', webinar.id), {}, { preserveState: false });
 }
 
+const onChangeStatus = (webinar) => {
+    let action = 'desactivar'
+    let title = 'Desactivar'
+    let message = 'Al hacerlo ya no podrá registrar más asistentes.'
+
+    if (!webinar.is_active) {
+        action = 'activar'
+        title = 'Activar'
+        message = 'Al hacerlo podrá volver a registrar asistentes.'
+    }
+
+    warning(`¿Confirma que desea ${action} este webinar? ${message} `, {
+        title: `${title} webinar`,
+        buttonText: `Sí, ${action}`,
+        cancelText: 'Cancelar',
+        onConfirm: () => {
+            hideAlert();
+            router.patch(route('webinars.statusChange', webinar.id));
+        }
+    })
+}
+
 const handleOnDelete = (webinarId) => {
     warning('¿Confirma que desea eliminar este webinar? Esta acción no se puede deshacer.', {
         title: 'Eliminar webinar',
@@ -229,8 +251,12 @@ const openGallery = (webinar) => {
 
                 <!-- Columna Estado -->
                 <template #cell-is_active="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium"
-                        :class="item.is_active ? 'bg-emerald-200 text-emerald-700' : 'bg-gray-200 text-gray-500'">
+                    <span role="button" @click="onChangeStatus(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.is_active 
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
+                    >
                         {{ item.is_active ? 'Activo' : 'Inactivo' }}
                     </span>
                 </template>

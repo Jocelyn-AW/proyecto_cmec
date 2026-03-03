@@ -70,6 +70,10 @@ const handleOnEdit = (attendee) => {
     showEditDrawer.value = true;
 }
 
+const onChangeAttend = (attendee) => {    
+    router.get(route('attendees.change-attend', attendee.id))
+}
+
 const handleOnDelete = (attendeeId) => {
     warning('¿Confirma que desea eliminar a este asistente? Esta acción no se puede deshacer.', {
         title: 'Eliminar registro',
@@ -173,19 +177,15 @@ const onEditSuccess = () => {
                     </span>
                 </template>
 
-                <!-- Badge de asistencia clicable -->
                 <template #cell-did_attend="{ item }">
-                    <button @click="toggleAttendance(item)" :disabled="togglingId === item.id"
-                        :title="item.did_attend ? 'Marcar como no asistió' : 'Marcar como asistió'" :class="[
-                            'inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize transition-all',
-                            item.did_attend
-                                ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
-                                : 'bg-orange-200 text-orange-700 hover:bg-orange-300',
-                            togglingId === item.id ? 'opacity-50 cursor-wait' : 'cursor-pointer'
-                        ]">
-                        <span v-if="togglingId === item.id">...</span>
-                        <span v-else>{{ item.did_attend ? 'Sí' : 'No' }}</span>
-                    </button>
+                    <span role="button" @click="onChangeAttend(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.did_attend 
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
+                    >
+                        {{ item.did_attend ? 'Sí' : 'No' }}
+                    </span>
                 </template>
 
                 <template #cell-event_name="{ item }">

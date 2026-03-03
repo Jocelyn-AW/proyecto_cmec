@@ -343,4 +343,20 @@ class WebinarsController extends Controller
         $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
     }
+
+    public function statusChange ($id) {
+        try {
+            $webinar = Webinar::findOrFail($id);
+
+            $webinar->is_active = !$webinar->is_active;
+            $webinar->update();
+
+            return redirect()->route('webinars.index');
+
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('webinars.index')
+                ->with('error', 'Hubo un error al actualizar el webinar. Intenta de nuevo más tarde.');
+        }
+    }
 }
