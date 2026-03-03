@@ -54,6 +54,13 @@ const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
 const emit = defineEmits(['close', 'success', 'error'])
 const selectedEvent = ref(null)
+const paymentMethods =  {
+    'cash': 'Efectivo',
+    'debit_card': 'Tarjeta de Débito', 
+    'credit_card': 'Tarjeta de Crédito', 
+    'transfer': 'Transferencia', 
+    'stripe': 'En línea (stripe)'
+}
 
 const price = computed(() => {    
     if (!selectedEvent.value || !createForm.person_type) return ''
@@ -104,7 +111,10 @@ const createForm = reactive({
     folio: generateRandomString(),
     status: '',
     price: '',
-    cmec_member_id: null
+    cmec_member_id: null,
+    reference: '',
+    payment_method: '',
+    specialty: '',
 })
 
 const cleanForm = () => {
@@ -143,6 +153,9 @@ const setDataToForm = () => {
     selectedEvent.value = props.events.find(e => e.id === createForm.event_id)
     selectedState.value = props.data.state || '';
     selectedCity.value = props.data.city || '';
+    createForm.reference = props.data.payments?.[0]?.reference || '';
+    createForm.payment_method = props.data.payments?.[0]?.payment_method || '';
+    createForm.specialty = props.data.specialty || '';
 }
 
 const submitCreate = () => {
@@ -234,22 +247,33 @@ watch(selectedState, (value, old) => {
                 <span v-if="errors?.name" class="text-red-500 text-xs flex justify-end">{{ errors?.name }}</span>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Especialidad</label>
                 <input
-                    v-model="createForm.email"
-                    type="email"
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span v-if="errors?.email" class="text-red-500 text-xs flex justify-end">{{ errors?.email }}</span>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                <input
-                    v-model="createForm.phone"
+                    v-model="createForm.specialty"
                     type="text"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
+                <span v-if="errors?.specialty" class="text-red-500 text-xs flex justify-end">{{ errors?.specialty }}</span>
+            </div>
+            <div class="flex gap-2 w-full">
+                <div class="flex flex-col grow">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+                    <input
+                        v-model="createForm.email"
+                        type="email"
+                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span v-if="errors?.email" class="text-red-500 text-xs flex justify-end">{{ errors?.email }}</span>
+                </div>
+                <div class="flex flex-col grow">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                    <input
+                        v-model="createForm.phone"
+                        type="text"
+                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
+                </div>
             </div>
             <div >
                 <label class="block text-sm font-medium text-gray-700 mb-1">Origen</label>
@@ -298,14 +322,36 @@ watch(selectedState, (value, old) => {
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Cantidad a pagar"
                     />
-                    <select name="status" id="status" v-model="createForm.status" 
+                    <select name="method" id="method" v-model="createForm.payment_method" 
                     class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="" selected>Seleccionar estatus</option>
-                        <option value="paid">Pagado</option>
-                        <option value="pending">Pendiente</option>
+                        <option value="" selected>Seleccionar método de pago</option>
+                        <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
                     </select>
                 </div>
-                <span v-if="errors?.status" class="text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
+                <div class="flex gap-9 w-full">
+                    <span v-if="errors?.price" class="grow text-red-500 text-xs flex justify-end">{{ errors?.price }}</span>
+                    <span v-if="errors?.payment_method" class="grow text-red-500 text-xs flex justify-end">{{ errors?.payment_method }}</span>
+                </div>
+                <div class="flex gap-2 w-full mt-3">
+                    <select name="status" id="status" v-model="createForm.status" 
+                    class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="" selected>Seleccionar estatus de pago</option>
+                        <option value="paid">Pagado</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="cancelled">Cancelado</option>
+                    </select>
+                </div>
+                <span v-if="errors?.status" class="grow text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
+                <div class="flex mt-3" 
+                    v-if="createForm.payment_method != 'cash' && createForm.payment_method != '' && createForm.status != 'pending' && createForm.status != ''">
+                    <input
+                        v-model="createForm.reference"
+                        type="text"
+                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Referencia o  Numero de transaccion"
+                    />
+                </div>
+                <span v-if="errors?.reference" class="grow text-red-500 text-xs flex justify-end">{{ errors?.reference }}</span>
             </div>
             <hr class="my-2">
             <div>

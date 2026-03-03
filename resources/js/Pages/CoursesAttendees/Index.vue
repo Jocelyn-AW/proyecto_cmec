@@ -29,7 +29,11 @@ const props = defineProps({
         type: Object,
         default: () => ({})
     },
-    events: {
+    allEvents: {
+        type: Object,
+        default: () => ({})
+    },
+    activeEvents: {
         type: Object,
         default: () => ({})
     },
@@ -186,7 +190,7 @@ const clearFilters = () => {
                                 class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                                 >
                                 <option value="">Todos</option>
-                                <option v-for="option in events" :key="option.id" :value="option.id" >
+                                <option v-for="option in allEvents" :key="option.id" :value="option.id" >
                                     {{ truncate(option.topic, 25) }}
                                 </option>
                             </select>
@@ -287,7 +291,7 @@ const clearFilters = () => {
             <CreateAttendee 
                 :show="showCreateDrawer"
                 :event-name="props.eventName"
-                :events="props.events"
+                :events="props.activeEvents"
                 :errors="props.errors"
                 @close="showCreateDrawer = false"
                 @success="onCreateSuccess"
@@ -296,7 +300,7 @@ const clearFilters = () => {
                 :show="showEditDrawer"
                 :event-name="props.eventName"
                 :data="selectedItem"
-                :events="props.events"
+                :events="props.activeEvents"
                 :errors="props.errors"
                 @close="showEditDrawer = false"
                 @success="onEditSuccess"

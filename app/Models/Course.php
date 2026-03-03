@@ -67,6 +67,11 @@ class Course extends Model implements HasMedia
         return $this->morphMany(EventSession::class, 'sessionable');
     }
 
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'event_payed');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('courses_covers')

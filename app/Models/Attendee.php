@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Attendee extends Model implements HasMedia
@@ -52,6 +53,11 @@ class Attendee extends Model implements HasMedia
     public function person() : MorphTo
     {
         return $this->morphTo(null, 'person_type', 'person_id');
+    }
+
+    public function payments() : MorphMany
+    {
+        return $this->morphMany(Payment::class, 'user');
     }
 
     public function registermediaCollections(): void
