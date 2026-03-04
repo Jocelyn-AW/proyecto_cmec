@@ -59,14 +59,14 @@ class AttendeesController extends Controller
         }
 
         $attendees->where('event_type', $event_type);
-        
+
         if (!empty($event_id)) {
             $attendees->where('event_id', $event_id);
         }
 
         if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
 
-        return $attendees->paginate($perPage)->withQueryString();
+        return $attendees->latest()->paginate($perPage)->withQueryString();
     }
 
     private function getEvents($event_type)
@@ -86,12 +86,12 @@ class AttendeesController extends Controller
                 break;
             default:
                 $eventName = 'Evento';
-                $events = [];
+                $events = collect();
         }
 
-        $allEvents = $events->addSelect('member_price', 'guest_price', 'resident_price');
+        $allEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'is_active');
         $active = (clone $allEvents)->where('is_active', '1');
-        
+
         return [
             'eventName' => $eventName,
             'allEvents' => $allEvents->get(),
@@ -179,7 +179,8 @@ class AttendeesController extends Controller
             ->with('success', 'Diploma subido exitosamente');
     }
 
-    public function changeDidAttend($id) {
+    public function changeDidAttend($id)
+    {
         try {
             $attendee = Attendee::findOrFail($id);
 
@@ -188,7 +189,6 @@ class AttendeesController extends Controller
 
             return redirect()
                 ->route('attendees.index', ['event' => $attendee->event_type]);
-
         } catch (\Exception $e) {
             return redirect()
                 ->back()
@@ -224,7 +224,8 @@ class AttendeesController extends Controller
             $rules['cmec_member_id'] = 'required|string|max:50';
         }
 
-        if ($request->input('status', 'pending') != Constants::STATUS_PENDING && 
+        if (
+            $request->input('status', 'pending') != Constants::STATUS_PENDING &&
             $request->input('payment_method', 'cash') != Constants::METHOD_CASH
         ) {
             $rules['reference'] = 'required|string|max:100';
@@ -288,7 +289,7 @@ class AttendeesController extends Controller
         return null;
     }
 
-    private function registerPayment($attendee, $data )
+    private function registerPayment($attendee, $data)
     {
         try {
             if ($attendee->payments()->count() > 0 || $data['status'] == 'pending') return;
@@ -302,7 +303,7 @@ class AttendeesController extends Controller
             Payment::create([
                 'user_type' => $isMember ? 'member' : 'attendee',
                 'user_id' => $isMember ? $attendee->person_id : $attendee->id,
-                'event_payed_type' => $attendee->event_type ,
+                'event_payed_type' => $attendee->event_type,
                 'event_payed_id' => $attendee->event_id ?? null,
 
                 'payer_name' => empty($attendee->person_id) ? $attendee->name : null,
@@ -316,7 +317,6 @@ class AttendeesController extends Controller
             ]);
 
             return true;
-        
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return false;

@@ -48,6 +48,9 @@ const formData = reactive({
     resident_price: "",
     guest_price: "",
     bank_detail_id: "",
+    format: "",
+    address: "",
+    additional_info: "",
     sessions: [
         { date: '', time: '' }
     ],
@@ -96,6 +99,10 @@ const handleSubmit = () => {
     data.append('resident_price', formData.resident_price ?? '')
     data.append('guest_price', formData.guest_price ?? '')
     data.append('link', formData.link ?? '')
+    data.append('format', formData.format ?? '')
+    data.append('link', formData.link ?? '')
+    data.append('address', formData.address ?? '')
+    data.append('additional_info', formData.additional_info ?? '')
     data.append('cover_image', cover.file.value)
     data.append('bank_detail_id', formData.bank_detail_id ?? '')
 
@@ -261,18 +268,67 @@ const flatpickrTimeConfig = {
                         <span class="text-sm text-gray-700">Detalles Adicionales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
+
+                        <!-- MODALIDAD -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Link de conexión
-                                <span
-                                    class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                Modalidad
                             </label>
-                            <input type="text" v-model="formData.link"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
+                            <select v-model="formData.format"
+                                class="w-full py-2.5 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90">
+                                <option value="">Seleccionar modalidad</option>
+                                <option value="in_person">Presencial</option>
+                                <option value="hybrid">Híbrida</option>
+                                <option value="online">En línea</option>
+                            </select>
+                            <span v-if="errors.format" class="text-red-500 text-sm flex justify-start">{{ errors.format
                             }}</span>
                         </div>
 
+                        <!-- CAMPOS MODALIDAD -->
+                        <template v-if="formData.format !== ''">
+
+                            <!-- DIRECCIÓN (presencial e híbrida) -->
+                            <div v-if="formData.format !== 'online'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Dirección
+                                </label>
+                                <input type="text" v-model="formData.address"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.address" class="text-red-500 text-sm flex justify-start">{{
+                                    errors.address }}</span>
+                            </div>
+
+                            <!-- INFORMACIÓN ADICIONAL (presencial e híbrida) -->
+                            <div v-if="formData.format !== 'online'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Información adicional
+                                    <span
+                                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                </label>
+                                <input type="text" v-model="formData.additional_info"
+                                    placeholder="Ej. Planta Alta, Auditorio 2"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.additional_info" class="text-red-500 text-sm flex justify-start">{{
+                                    errors.additional_info }}</span>
+                            </div>
+
+                            <!-- LINK (online e híbrida) -->
+                            <div v-if="formData.format !== 'in_person'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Link de conexión
+                                    <span v-if="formData.format === 'hybrid'"
+                                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                </label>
+                                <input type="text" v-model="formData.link"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
+                                }}</span>
+                            </div>
+
+                        </template>
+
+                        <!-- PDF (siempre visible) -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Programa del Webinar
@@ -288,7 +344,7 @@ const flatpickrTimeConfig = {
                                 errors.pdf_file }}</span>
                         </div>
 
-                        <!-- SESIONES (múltiples fechas) -->
+                        <!-- SESIONES -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Horarios
@@ -330,22 +386,23 @@ const flatpickrTimeConfig = {
                                     </svg>
                                 </button>
                             </div>
-
                             <button @click="addSession" type="button"
                                 class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1">
                                 + Agregar fecha
                             </button>
                         </div>
 
+                        <!-- DURACION -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Duracion total (en horas)
+                                Duración total (en horas)
                             </label>
                             <input type="number" v-model="formData.duration" min="1"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.duration" class="text-red-500 text-sm flex justify-start">{{
                                 errors.duration }}</span>
                         </div>
+
                     </div>
                 </div>
             </div>

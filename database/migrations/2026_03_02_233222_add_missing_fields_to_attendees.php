@@ -12,9 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('attendees', function (Blueprint $table) {
-            $table->text('specialty')->nullable()->default(null); //especialidad
-            $table->date('birth_date')->nullable()->default(null); //fecha de nacimiento
-            $table->string('special_needs')->nullable()->default(null); //ej: silla de ruedas
+            $table->text('specialty')
+                ->after('did_attend')
+                ->nullable()
+                ->default(null); //especialidad
+            $table->date('birth_date')
+                ->after('specialty')
+                ->nullable()
+                ->default(null); //fecha de nacimiento
+            $table->string('special_needs')
+                ->after('birth_date')
+                ->nullable()
+                ->default(null); //ej: silla de ruedas
         });
     }
 

@@ -12,16 +12,12 @@ use Inertia\Inertia;
 
 class WebinarsController extends Controller
 {
-
-    // Reemplaza únicamente el método index() en WebinarsController
-    // También agrega is_active al $fillable del modelo Webinar y al $casts: 'is_active' => 'boolean'
-
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
         $webinars = Webinar::with('sessions')
             ->orderBy('created_at', 'desc')
-            // Búsqueda por topic
+            // busqueda por topic
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
@@ -30,19 +26,20 @@ class WebinarsController extends Controller
                 });
             })
 
-            // Filtro por fecha exacta (YYYY-MM-DD)
+            // FILTROS
+            // fecha exacta (YYYY-MM-DD)
             ->when($request->filled('date'), function ($query) use ($request) {
                 $query->whereHas('sessions', function ($q) use ($request) {
                     $q->whereDate('date', $request->date);
                 });
             })
 
-            // Filtro por organized_by
+            // organized_by
             ->when($request->filled('organized_by'), function ($query) use ($request) {
                 $query->where('organized_by', 'like', '%' . $request->organized_by . '%');
             })
 
-            // Filtro por estado activo/inactivo
+            // estado activo/inactivo
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('is_active', $request->status === 'active');
             })
@@ -68,7 +65,7 @@ class WebinarsController extends Controller
     public function store(Request $request)
     {
         try {
-            //todo: add payment_methods
+            //add payment_methods
             $this->mergeNullableFields($request);
 
             $validationRules = $this->getValidationArray();
@@ -294,7 +291,10 @@ class WebinarsController extends Controller
             'member_price' => 'required|numeric',
             'guest_price' => 'nullable|numeric',
             'resident_price' => 'nullable|numeric',
-            'link' => 'nullable|url',
+            'format'          => 'required|string',
+            'link'            => 'required_if:format,online|nullable|url',
+            'address'         => 'required_if:format,in_person,hybrid|nullable|string',
+            'additional_info' => 'nullable|string',
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             'is_active' => 'boolean',
             //Archivos
@@ -311,18 +311,20 @@ class WebinarsController extends Controller
     private function getValidatonMessages()
     {
         return [
-            'cover_image.required' => 'La imagen de portada es obligatoria.',
-            'cover_image.image' => 'El archivo debe ser una imagen.',
-            'cover_image.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
-            'program_pdf.mimes' => 'El archivo del programa debe ser un PDF.',
-            '*.required' => 'El campo es obligatorio.',
-            '*.string' => 'El campo debe ser una cadena de texto.',
-            '*.max' => 'El campo no debe exceder los :max caracteres.',
-            '*.numeric' => 'El campo debe ser un número.',
-            '*.date' => 'El campo debe ser una fecha válida.',
-            'bank_detail_id.exists' => 'Seleccione una cuenta válida',
-            '*.url' => 'El campo debe ser una URL válida.',
-            'is_active.boolean' => 'El estado de activación solo admite verdadero/falso.',
+            'cover_image.required'  => 'La imagen de portada es obligatoria.',
+            'cover_image.image'     => 'El archivo debe ser una imagen.',
+            'cover_image.mimes'     => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
+            'program_pdf.mimes'     => 'El archivo del programa debe ser un PDF.',
+            '*.required'            => 'Este campo es obligatorio.',
+            '*.required_if'         => 'Este campo es obligatorio.',
+            '*.string'              => 'El campo debe ser una cadena de texto.',
+            '*.max'                 => 'El campo no debe exceder los :max caracteres.',
+            '*.numeric'             => 'El campo debe ser un número.',
+            '*.url'                 => 'El campo debe ser una URL válida.',
+            'sessions.*.date'       => 'El campo debe ser una fecha válida.',
+            'sessions.*.time'       => 'Selecciona un horario válido.',
+            'bank_detail_id.exists' => 'Seleccione una cuenta válida.',
+            'is_active.boolean'     => 'El estado de activación solo admite verdadero/falso.',
         ];
     }
 
@@ -335,6 +337,8 @@ class WebinarsController extends Controller
             'guest_price' => 0,
             'resident_price' => 0,
             'link' => null,
+            'address' => null,
+            'additional_info' => null,
             'is_active' => true,
         ]);
     }
@@ -345,7 +349,8 @@ class WebinarsController extends Controller
         return date('Y-m-d H:i:s', strtotime("$date $time"));
     }
 
-    public function statusChange ($id) {
+    public function statusChange($id)
+    {
         try {
             $webinar = Webinar::findOrFail($id);
 
@@ -353,7 +358,6 @@ class WebinarsController extends Controller
             $webinar->update();
 
             return redirect()->route('webinars.index');
-
         } catch (\Exception $e) {
             return redirect()
                 ->route('webinars.index')

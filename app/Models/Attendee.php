@@ -29,16 +29,23 @@ class Attendee extends Model implements HasMedia
         'city',
         'status',
         'price',
-        'did_attend'
+        'did_attend',
+        'specialty',
+        'birth_date',
+        'special_needs',
     ];
 
     protected $dates = [
         'created_at',
-        'updated_at'
+        'updated_at',
+        'birth_date',
     ];
 
     protected $casts = [
         'did_attend' => 'boolean',
+        'birth_date'  => 'date',
+        'specialty'   => 'string',
+        'special_needs' => 'string', 
     ];
 
     protected $appends = [

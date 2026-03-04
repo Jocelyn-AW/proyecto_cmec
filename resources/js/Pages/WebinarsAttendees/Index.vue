@@ -8,6 +8,7 @@ import Alerta from '@/Components/Alerta.vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
 import UploadDiploma from './UploadDiploma.vue';
+import PaymentDetailsModal from './PaymentDetailsModal.vue';
 
 defineOptions({
     layout: AuthenticatedLayout
@@ -25,9 +26,13 @@ const props = defineProps({
         type: Object,
         default: () => ({})
     },
-    events: {
-        type: Object,
-        default: () => ({})
+    allEvents: {
+        type: Array,
+        default: () => []
+    },
+    activeEvents: {
+        type: Array,
+        default: () => []
     },
     eventName: {
         type: String,
@@ -48,6 +53,14 @@ const props = defineProps({
 })
 
 const page = usePage();
+
+const showPaymentDetails = ref(false);
+const paymentDetails = ref(null);
+
+const openPaymentDetails = (attendee) => {
+    paymentDetails.value = attendee.payments?.[0] ?? null;
+    showPaymentDetails.value = true;
+}
 
 onMounted(() => {
     if (page.props.success || props.flash.success) {
@@ -70,7 +83,7 @@ const handleOnEdit = (attendee) => {
     showEditDrawer.value = true;
 }
 
-const onChangeAttend = (attendee) => {    
+const onChangeAttend = (attendee) => {
     router.get(route('attendees.change-attend', attendee.id))
 }
 
@@ -168,22 +181,25 @@ const onEditSuccess = () => {
                 </template>
 
                 <template #cell-status="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.status == 'pending' ? 'bg-amber-200 text-amber-700' :
-                            (item.status == 'paid') ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'">
+                    <span role="button" @click="openPaymentDetails(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize cursor-pointer"
+                        :class="item.status == 'pending'
+                            ? 'bg-amber-200 text-amber-700 hover:bg-amber-300'
+                            : item.status == 'paid'
+                                ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
+                                : 'bg-sky-200 text-sky-700 hover:bg-sky-300'">
                         {{ item.status === 'paid' ? 'Pagado' : '' }}
                         {{ item.status === 'pending' ? 'Pendiente' : '' }}
                         {{ item.status === 'free' ? 'Gratis' : '' }}
+                        {{ item.status === 'cancelled' ? 'Cancelado' : '' }}
                     </span>
                 </template>
 
                 <template #cell-did_attend="{ item }">
                     <span role="button" @click="onChangeAttend(item)"
-                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.did_attend 
-                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
-                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
-                    >
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize" :class="item.did_attend
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'">
                         {{ item.did_attend ? 'Sí' : 'No' }}
                     </span>
                 </template>
@@ -215,12 +231,15 @@ const onEditSuccess = () => {
                 </template>
             </DataTable>
 
-            <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.events"
+            <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.activeEvents"
                 :errors="props.errors" @close="showCreateDrawer = false" @success="onCreateSuccess" />
             <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
-                :events="props.events" :errors="props.errors" @close="showEditDrawer = false"
+                :events="props.allEvents" :errors="props.errors" @close="showEditDrawer = false"
                 @success="onEditSuccess" />
             <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem" @close="showUploadDiploma = false" />
+
+            <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" @close="showPaymentDetails = false"
+                :payment-details="paymentDetails" />
         </div>
     </div>
 
