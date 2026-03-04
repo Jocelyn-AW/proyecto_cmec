@@ -130,7 +130,7 @@ class AttendeesController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $this->mergeNullableFields($request);
+            $this->mergeNullableFieldsForUpdate($request);
 
             $rules = $this->getValidationRules($request);
             $data = $request->validate($rules, $this->getValidationMessages());
@@ -267,6 +267,18 @@ class AttendeesController extends Controller
             'status' => 'pending',
             'person_id' => null,
             'did_attend' => false,
+        ]);
+    }
+
+    private function mergeNullableFieldsForUpdate(Request $request)
+    {
+        $request->mergeIfMissing([
+            'phone' => null,
+            'state' => null,
+            'city' => null,
+            'price' => null,
+            'status' => 'pending',
+            'person_id' => null,
         ]);
     }
 
