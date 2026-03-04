@@ -23,6 +23,7 @@ class Constants {
     const TABLE_POSTS = 'posts';
     const TABLE_USERS = 'users';
     const TABLE_WEBINARS = 'webinars';
+    const TABLE_EVENT_SESSIONS = 'event_sessions';
 
 
     //tipos de evento
@@ -30,11 +31,25 @@ class Constants {
     const EVENT_COURSE = 'course';
     const EVENT_WEBINAR = 'webinar';
     const EVENT_PRECONFERENCE = 'preconference'; //pre-congreso
+    const EVENT_ACADEMIC_SESSION = 'academic_session'; //sesion academica
 
     //tipos de aistentes
     const PERSON_MEMBER = 'member';
     const PERSON_GUEST = 'guest';
     const PERSON_RESIDENT = 'resident';
+
+    //metodos de pago
+    const METHOD_CASH = 'cash'; //efectivo
+    const METHOD_DEBIT_CARD = 'debit_card';
+    const METHOD_CREDIT_CARD = 'credit_card';
+    const METHOD_STRIPE = 'stripe';
+    const METHOD_TRANSFER = 'transfer'; //trasferencia
+
+    //status de pago
+    const STATUS_PAID = 'paid';
+    const STATUS_PENDING = 'pending';
+    const STATUS_CANCELLED = 'cancelled';
+
     
 
 

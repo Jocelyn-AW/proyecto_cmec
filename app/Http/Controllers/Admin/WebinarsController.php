@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Web\BannersController;
 use App\Http\Controllers\Controller;
 use function Illuminate\Log\log;
 use Illuminate\Http\Request;
@@ -11,17 +12,12 @@ use Inertia\Inertia;
 
 class WebinarsController extends Controller
 {
-
-    // Reemplaza únicamente el método index() en WebinarsController
-    // También agrega is_active al $fillable del modelo Webinar y al $casts: 'is_active' => 'boolean'
-
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
-
-        $webinars = Webinar::orderBy('created_at', 'desc')
-
-            // Búsqueda por topic
+        $webinars = Webinar::with('sessions')
+            ->orderBy('created_at', 'desc')
+            // busqueda por topic
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
@@ -30,17 +26,20 @@ class WebinarsController extends Controller
                 });
             })
 
-            // Filtro por fecha exacta (YYYY-MM-DD)
+            // FILTROS
+            // fecha exacta (YYYY-MM-DD)
             ->when($request->filled('date'), function ($query) use ($request) {
-                $query->whereDate('date', $request->date);
+                $query->whereHas('sessions', function ($q) use ($request) {
+                    $q->whereDate('date', $request->date);
+                });
             })
 
-            // Filtro por organized_by
+            // organized_by
             ->when($request->filled('organized_by'), function ($query) use ($request) {
                 $query->where('organized_by', 'like', '%' . $request->organized_by . '%');
             })
 
-            // Filtro por estado activo/inactivo
+            // estado activo/inactivo
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('is_active', $request->status === 'active');
             })
@@ -66,7 +65,7 @@ class WebinarsController extends Controller
     public function store(Request $request)
     {
         try {
-            //todo: add payment_methods
+            //add payment_methods
             $this->mergeNullableFields($request);
 
             $validationRules = $this->getValidationArray();
@@ -74,12 +73,29 @@ class WebinarsController extends Controller
 
             $data = $request->validate($validationRules, $this->getValidatonMessages());
 
-            $data['date'] = $this->formatDateTime($data['date'], $data['time']);
-            unset($data['time']);
+            $sessions = $data['sessions'];
+            unset($data['sessions']);
 
             $webinar = Webinar::create($data);
 
+            foreach ($sessions as $session) {
+                $webinar->sessions()->create([
+                    'date' => $this->formatDateTime($session['date'], $session['time']),
+                    'time' => $session['time'],
+                ]);
+            }
+
             $this->updateWebinarMedia($webinar, $request);
+
+            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+                BannersController::createFromEvent(
+                    title: $request->input('banner_title', $webinar->topic),
+                    image: $request->file('banner_image'),
+                    link: $request->input('banner_link') ?: null,
+                    eventId: $webinar->id,
+                    eventType: 'webinar'
+                );
+            }
 
             return redirect()
                 ->route('webinars.index')
@@ -97,7 +113,7 @@ class WebinarsController extends Controller
 
     public function edit($id)
     {
-        $webinar = Webinar::findOrFail($id);
+        $webinar = Webinar::with('sessions')->findOrFail($id);
         //todo: load payment_methods
         $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
             ->get();
@@ -116,13 +132,33 @@ class WebinarsController extends Controller
             $validationRules = $this->getValidationArray();
             $data = $request->validate($validationRules, $this->getValidatonMessages());
 
-            $data['date'] = $this->formatDateTime($data['date'], $data['time']);
-            unset($data['time']);
-
             $webinar = Webinar::findOrFail($request->id);
+
+            $sessions = $data['sessions'];
+            unset($data['sessions']);
+
             $webinar->update($data);
 
+            $webinar->sessions()->delete();
+
+            foreach ($sessions as $session) {
+                $webinar->sessions()->create([
+                    'date' => $this->formatDateTime($session['date'], $session['time']),
+                    'time' => $session['time'],
+                ]);
+            }
+
             $this->updateWebinarMedia($webinar, $request);
+
+            if ($request->input('update_banner') === '1') {
+                BannersController::updateFromEvent(
+                    title: $request->input('banner_title', $webinar->topic),
+                    image: $request->hasFile('banner_image') ? $request->file('banner_image') : null,
+                    link: $request->input('banner_link') ?: null,
+                    eventId: $webinar->id,
+                    eventType: 'webinar'
+                );
+            }
 
             return redirect()
                 ->route('webinars.index')
@@ -144,6 +180,8 @@ class WebinarsController extends Controller
         try {
             $webinar = Webinar::findOrFail($id);
             $this->deleteWebinarMedia($webinar);
+            BannersController::deleteFromEvent(eventId: $id, eventType: 'webinar');
+            $webinar->sessions()->delete();
             $webinar->delete();
 
             return redirect()
@@ -247,39 +285,46 @@ class WebinarsController extends Controller
             'topic' => 'required|string|max:255',
             'description' => 'required|string|max:5000',
             'objectives' => 'nullable|string|max:2000',
-            'date' => 'required|date',
-            'time' => 'required|date_format:H:i',
             'duration' => 'required|numeric|max:255',
             'organized_by' => 'required|string|max:255',
             'sponsored_by' => 'nullable|string|max:255',
             'member_price' => 'required|numeric',
             'guest_price' => 'nullable|numeric',
             'resident_price' => 'nullable|numeric',
-            'link' => 'nullable|url',
+            'format'          => 'required|string',
+            'link'            => 'required_if:format,online|nullable|url',
+            'address'         => 'required_if:format,in_person,hybrid|nullable|string',
+            'additional_info' => 'nullable|string',
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             'is_active' => 'boolean',
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
             'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            //Tiempo
+            'sessions' => 'required|array|min:1',
+            'sessions.*.date' => 'required|date',
+            'sessions.*.time' => 'required|date_format:H:i',
         ];
     }
 
     private function getValidatonMessages()
     {
         return [
-            'cover_image.required' => 'La imagen de portada es obligatoria.',
-            'cover_image.image' => 'El archivo debe ser una imagen.',
-            'cover_image.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
-            'program_pdf.mimes' => 'El archivo del programa debe ser un PDF.',
-            '*.required' => 'El campo es obligatorio.',
-            '*.string' => 'El campo debe ser una cadena de texto.',
-            '*.max' => 'El campo no debe exceder los :max caracteres.',
-            '*.numeric' => 'El campo debe ser un número.',
-            '*.date' => 'El campo debe ser una fecha válida.',
-            'bank_detail_id.exists' => 'Seleccione una cuenta válida',
-            '*.url' => 'El campo debe ser una URL válida.',
-            'is_active.boolean' => 'El estado de activación solo admite verdadero/falso.',
+            'cover_image.required'  => 'La imagen de portada es obligatoria.',
+            'cover_image.image'     => 'El archivo debe ser una imagen.',
+            'cover_image.mimes'     => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
+            'program_pdf.mimes'     => 'El archivo del programa debe ser un PDF.',
+            '*.required'            => 'Este campo es obligatorio.',
+            '*.required_if'         => 'Este campo es obligatorio.',
+            '*.string'              => 'El campo debe ser una cadena de texto.',
+            '*.max'                 => 'El campo no debe exceder los :max caracteres.',
+            '*.numeric'             => 'El campo debe ser un número.',
+            '*.url'                 => 'El campo debe ser una URL válida.',
+            'sessions.*.date'       => 'El campo debe ser una fecha válida.',
+            'sessions.*.time'       => 'Selecciona un horario válido.',
+            'bank_detail_id.exists' => 'Seleccione una cuenta válida.',
+            'is_active.boolean'     => 'El estado de activación solo admite verdadero/falso.',
         ];
     }
 
@@ -292,6 +337,8 @@ class WebinarsController extends Controller
             'guest_price' => 0,
             'resident_price' => 0,
             'link' => null,
+            'address' => null,
+            'additional_info' => null,
             'is_active' => true,
         ]);
     }
@@ -300,5 +347,21 @@ class WebinarsController extends Controller
     {
         $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
+    }
+
+    public function statusChange($id)
+    {
+        try {
+            $webinar = Webinar::findOrFail($id);
+
+            $webinar->is_active = !$webinar->is_active;
+            $webinar->update();
+
+            return redirect()->route('webinars.index');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('webinars.index')
+                ->with('error', 'Hubo un error al actualizar el webinar. Intenta de nuevo más tarde.');
+        }
     }
 }

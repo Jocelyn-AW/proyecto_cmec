@@ -108,6 +108,13 @@ const deleteBanner = (id) => {
     })
 }
 
+const changeStatus = (id) => {
+    router.patch(route('banners.statusChange', id), {}, {
+        preserveScroll: true,
+        onError: () => errorA('Error al cambiar el estado del banner')
+    })
+}
+
 // --- Callbacks de modales ---
 const onBannerCreated = () => {
     success('El banner ha sido creado correctamente')
@@ -131,6 +138,7 @@ const handleCancel = () => {
 
 <template>
     <div>
+
         <Head title="Banners" />
 
         <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:p-8">
@@ -144,19 +152,16 @@ const handleCancel = () => {
                     </div>
                 </div>
 
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
+                <div
+                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white pt-4 dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 mb-4">
                         <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <button
-                                @click="cancelChanges"
-                                class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
+                            <button @click="cancelChanges"
+                                class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                                 Cancelar
                             </button>
-                            <button
-                                @click="saveOrder"
-                                class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-zinc-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-zinc-800 transition-colors"
-                            >
+                            <button @click="saveOrder"
+                                class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-zinc-900 text-white px-4 py-2.5 text-sm font-medium hover:bg-zinc-800 transition-colors">
                                 Guardar orden
                             </button>
                         </div>
@@ -165,12 +170,12 @@ const handleCancel = () => {
                             ⚠️ Las imágenes deben pesar máximo 1MB
                         </p>
 
-                        <button
-                            @click="showCreateModal = true"
-                            class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-green-700 transition-colors shadow-sm"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                        <button @click="showCreateModal = true"
+                            class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-green-700 transition-colors shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                                class="w-5 h-5">
+                                <path
+                                    d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
                             </svg>
                             Nuevo banner
                         </button>
@@ -178,20 +183,10 @@ const handleCancel = () => {
 
                     <div class="block px-5 pb-4">
                         <div class="space-y-4">
-                            <draggable
-                                :list="list"
-                                ghost-class="ghost"
-                                item-key="id"
-                                @start="startDrag"
-                                @end="endDrag"
-                            >
+                            <draggable :list="list" ghost-class="ghost" item-key="id" @start="startDrag" @end="endDrag">
                                 <template #item="{ element }">
-                                    <BannerListItem
-                                        :key="element.id"
-                                        :banner="element"
-                                        @edit="openEditModal"
-                                        @delete="deleteBanner"
-                                    />
+                                    <BannerListItem :key="element.id" :banner="element" @edit="openEditModal"
+                                        @delete="deleteBanner" @status-change="changeStatus" />
                                 </template>
                             </draggable>
                         </div>
@@ -201,36 +196,17 @@ const handleCancel = () => {
         </div>
 
         <!-- Modales -->
-        <BannerCreateModal
-            :show="showCreateModal"
-            :next-order="nextOrder"
-            @close="showCreateModal = false"
-            @created="onBannerCreated"
-            @warning="(msg) => warning(msg)"
-            @error="(msg) => errorA(msg)"
-            @info="(msg) => warning(msg)"
-        />
+        <BannerCreateModal :show="showCreateModal" :next-order="nextOrder" @close="showCreateModal = false"
+            @created="onBannerCreated" @warning="(msg) => warning(msg)" @error="(msg) => errorA(msg)"
+            @info="(msg) => warning(msg)" />
 
-        <BannerEditModal
-            :show="showEditModal"
-            :banner="bannerToEdit"
-            @close="showEditModal = false; bannerToEdit = null"
-            @updated="onBannerUpdated"
-            @warning="(msg) => warning(msg)"
-            @error="(msg) => errorA(msg)"
-        />
+        <BannerEditModal :show="showEditModal" :banner="bannerToEdit"
+            @close="showEditModal = false; bannerToEdit = null" @updated="onBannerUpdated"
+            @warning="(msg) => warning(msg)" @error="(msg) => errorA(msg)" />
 
-        <Alerta
-            :show="alertState.show"
-            :message="alertState.message"
-            :title="alertState.title"
-            :type="alertState.type"
-            :buttonText="alertState.buttonText"
-            :cancelText="alertState.cancelText"
-            @confirm="handleConfirm"
-            @cancel="handleCancel"
-            @close="alertState.show = false"
-        />
+        <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+            :buttonText="alertState.buttonText" :cancelText="alertState.cancelText" @confirm="handleConfirm"
+            @cancel="handleCancel" @close="alertState.show = false" />
     </div>
 </template>
 

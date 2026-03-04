@@ -7,6 +7,7 @@ use App\Http\Helpers\Constants;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Webinar extends Model implements HasMedia
 {
@@ -23,7 +24,6 @@ class Webinar extends Model implements HasMedia
         'topic',
         'description',
         'objectives',
-        'date',
         'duration',
         'organized_by',
         'sponsored_by',
@@ -33,12 +33,14 @@ class Webinar extends Model implements HasMedia
         'member_price',
         'bank_detail_id',
         'is_active',
+        'format',
+        'address',
+        'additional_info',
     ];
 
     protected $dates = [
         'created_at',
         'updated_at',
-        'date',
     ];
 
     protected $appends = [
@@ -53,11 +55,19 @@ class Webinar extends Model implements HasMedia
         'guest_price' => 'decimal:2',
         'member_price' => 'decimal:2',
         'is_active' => 'boolean',
+        'format' => 'string',
+        'address' => 'string',
+        'additional_info' => 'string',
     ];
 
     public function attendees()
     {
         return $this->morphMany(Attendee::class, 'event');
+    }
+
+    public function sessions(): MorphMany
+    {
+        return $this->morphMany(EventSession::class, 'sessionable');
     }
 
     public function registerMediaCollections(): void

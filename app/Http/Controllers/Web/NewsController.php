@@ -74,6 +74,8 @@ class NewsController extends Controller
                 'link'       => $item->link,
                 'type'       => $item->type,
                 'is_active'  => $item->is_active,
+                'reading_time' => $item->reading_time,
+                'views_number' => $item->views_number,
                 'image'      => $item->getFirstMediaUrl('news_images') ?: null,
                 'pdf'        => $item->getFirstMediaUrl('news_pdfs') ?: null,
                 'updated_at' => $item->updated_at->format('d/m/Y'),
@@ -142,6 +144,7 @@ class NewsController extends Controller
             'is_active' => true,
             'link'      => null,
             'extract'   => null,
+            'reading_time' => null,
         ]);
 
         $messages = [
@@ -159,6 +162,8 @@ class NewsController extends Controller
             'image.max'         => 'La imagen excede el límite de tamaño permitido (1MB).',
             'pdf.mimes'         => 'El archivo adjunto debe ser estrictamente en formato PDF.',
             'pdf.max'           => 'El documento PDF excede el peso máximo permitido de 10MB.',
+            'reading_time.integer' => 'El tiempo de lectura debe ser un número entero sin decimales.',
+            'reading_time.min'     => 'El tiempo de lectura debe ser de al menos 1 minuto.',
         ];
 
         $data = $request->validate([
@@ -168,6 +173,7 @@ class NewsController extends Controller
             'link'      => 'nullable|string|max:255|url:http,https',
             'type'      => 'required|in:sesion,noticia',
             'is_active' => 'boolean',
+            'reading_time' => 'nullable|integer|min:1',
             'image'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
             'pdf'       => 'nullable|mimes:pdf|max:10240',
         ], $messages);
@@ -211,6 +217,8 @@ class NewsController extends Controller
                     'link'       => $news->link,
                     'type'       => $news->type,
                     'is_active'  => $news->is_active,
+                    'reading_time' => $news->reading_time,
+                    'views_number' => $news->views_number,
                     'image'      => $news->getFirstMediaUrl('news_images'),
                     'pdf'        => $news->getFirstMediaUrl('news_pdfs'),
                     'created_at' => $news->created_at->format('d/m/Y'),
@@ -233,6 +241,7 @@ class NewsController extends Controller
                 'is_active' => true,
                 'link'      => null,
                 'extract'   => null,
+                'reading_time' => null,
             ]);
 
             $data = $request->validate([
@@ -242,6 +251,7 @@ class NewsController extends Controller
                 'link'     => 'nullable|string|max:255|url:http,https',
                 'type'     => 'required|in:sesion,noticia',
                 'is_active' => 'boolean',
+                'reading_time' => 'nullable|integer|min:1',
                 'image'    => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
                 'pdf'      => 'nullable|mimes:pdf|max:10240',
             ]);

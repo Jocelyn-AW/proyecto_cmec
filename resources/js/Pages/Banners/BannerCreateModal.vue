@@ -18,6 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'created', 'warning', 'error', 'info'])
 
 const form = ref({
+    title: '',
     link: '',
     order: 0
 })
@@ -31,7 +32,7 @@ const { file: imageFile, preview: imagePreview, handleChange: onImageChange, res
 })
 
 const resetForm = () => {
-    form.value = { link: '', order: 0 }
+    form.value = { title: '', link: '', order: 0 }
     resetImage()
 }
 
@@ -79,6 +80,7 @@ const submit = async () => {
     const formData = new FormData()
     formData.append('image', imageFile.value)
     formData.append('order', props.nextOrder)
+    formData.append('title', form.value.title)
 
     if (form.value.link && form.value.link.trim() !== '') {
         formData.append('link', form.value.link)
@@ -153,6 +155,15 @@ const submit = async () => {
                 </p>
             </div>
 
+            <!-- título -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Título <span class="text-red-500">*</span>
+                </label>
+                <input v-model="form.title" type="text" placeholder="Nombre del banner"
+                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-green-500">
+            </div>
+
             <!-- link -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -169,7 +180,7 @@ const submit = async () => {
                 Cancelar
             </button>
 
-            <button @click="submit" :disabled="isSubmitting || !imageFile"
+            <button @click="submit" :disabled="isSubmitting || !imageFile || !form.title.trim()"
                 class="rounded-md bg-green-600 py-2 px-4 text-sm text-white transition-all shadow-md hover:bg-green-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ isSubmitting ? 'Creando...' : 'Crear banner' }}
             </button>

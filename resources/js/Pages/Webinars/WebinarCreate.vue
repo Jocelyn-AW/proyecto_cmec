@@ -35,11 +35,10 @@ defineProps({
 });
 
 const { alertState, success, errorA, warning } = useAlert()
+const createBanner = ref(false)
 const isSubmitting = ref(false);
 const formData = reactive({
     topic: "",
-    date: "",
-    time: "",
     description: "",
     duration: "",
     objectives: "",
@@ -49,7 +48,21 @@ const formData = reactive({
     resident_price: "",
     guest_price: "",
     bank_detail_id: "",
+    format: "",
+    address: "",
+    additional_info: "",
+    sessions: [
+        { date: '', time: '' }
+    ],
 });
+
+const addSession = () => {
+    formData.sessions.push({ date: '', time: '' })
+}
+
+const removeSession = (index) => {
+    formData.sessions.splice(index, 1)
+}
 
 const cover = useImageUpload({
     maxSizeMB: 1,
@@ -80,19 +93,35 @@ const handleSubmit = () => {
     data.append('topic', formData.topic)
     data.append('description', formData.description)
     data.append('objectives', formData.objectives ?? '')
-    data.append('date', formData.date)
-    data.append('time', formData.time)
     data.append('duration', formData.duration)
     data.append('organized_by', formData.organized_by)
     data.append('member_price', formData.member_price)
     data.append('resident_price', formData.resident_price ?? '')
     data.append('guest_price', formData.guest_price ?? '')
     data.append('link', formData.link ?? '')
+    data.append('format', formData.format ?? '')
+    data.append('link', formData.link ?? '')
+    data.append('address', formData.address ?? '')
+    data.append('additional_info', formData.additional_info ?? '')
     data.append('cover_image', cover.file.value)
     data.append('bank_detail_id', formData.bank_detail_id ?? '')
 
+    formData.sessions.forEach((session, index) => {
+        data.append(`sessions[${index}][date]`, session.date)
+        data.append(`sessions[${index}][time]`, session.time)
+    })
+
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value)
+    }
+
+    if (createBanner.value) {
+        data.append('create_banner', '1')
+        data.append('banner_title', formData.topic)
+        data.append('banner_image', cover.file.value)
+        if (formData.link && formData.link.trim() !== '') {
+            data.append('banner_link', formData.link)
+        }
     }
 
     router.post('/webinars/new', data, {
@@ -170,7 +199,7 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <div>
@@ -210,6 +239,23 @@ const flatpickrTimeConfig = {
                             <span v-if="errors.organized_by" class="text-red-500 text-sm flex justify-start">{{
                                 errors.organized_by }}</span>
                         </div>
+
+                        <!-- Switch: Generar Banner -->
+                        <div
+                            class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Generar banner para
+                                    este webinar?</p>
+                                <p class="text-xs text-gray-400 mt-0.5">Se creará un banner usando la portada, el título
+                                    y el link del webinar.</p>
+                            </div>
+                            <button type="button" @click="createBanner = !createBanner"
+                                :class="createBanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
+                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
+                                <span :class="createBanner ? 'translate-x-5' : 'translate-x-0'"
+                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -222,18 +268,67 @@ const flatpickrTimeConfig = {
                         <span class="text-sm text-gray-700">Detalles Adicionales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
+
+                        <!-- MODALIDAD -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Link de conexión
-                                <span
-                                    class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                Modalidad
                             </label>
-                            <input type="text" v-model="formData.link"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
-                                }}</span>
+                            <select v-model="formData.format"
+                                class="w-full py-2.5 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90">
+                                <option value="">Seleccionar modalidad</option>
+                                <option value="in_person">Presencial</option>
+                                <option value="hybrid">Híbrida</option>
+                                <option value="online">En línea</option>
+                            </select>
+                            <span v-if="errors.format" class="text-red-500 text-sm flex justify-start">{{ errors.format
+                            }}</span>
                         </div>
 
+                        <!-- CAMPOS MODALIDAD -->
+                        <template v-if="formData.format !== ''">
+
+                            <!-- DIRECCIÓN (presencial e híbrida) -->
+                            <div v-if="formData.format !== 'online'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Dirección
+                                </label>
+                                <input type="text" v-model="formData.address"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.address" class="text-red-500 text-sm flex justify-start">{{
+                                    errors.address }}</span>
+                            </div>
+
+                            <!-- INFORMACIÓN ADICIONAL (presencial e híbrida) -->
+                            <div v-if="formData.format !== 'online'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Información adicional
+                                    <span
+                                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                </label>
+                                <input type="text" v-model="formData.additional_info"
+                                    placeholder="Ej. Planta Alta, Auditorio 2"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.additional_info" class="text-red-500 text-sm flex justify-start">{{
+                                    errors.additional_info }}</span>
+                            </div>
+
+                            <!-- LINK (online e híbrida) -->
+                            <div v-if="formData.format !== 'in_person'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Link de conexión
+                                    <span v-if="formData.format === 'hybrid'"
+                                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
+                                </label>
+                                <input type="text" v-model="formData.link"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
+                                }}</span>
+                            </div>
+
+                        </template>
+
+                        <!-- PDF (siempre visible) -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Programa del Webinar
@@ -249,13 +344,15 @@ const flatpickrTimeConfig = {
                                 errors.pdf_file }}</span>
                         </div>
 
+                        <!-- SESIONES -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Fecha y Hora de Inicio
+                                Horarios
                             </label>
-                            <div class="relative grid grid-cols-2 gap-4">
+                            <div v-for="(session, index) in formData.sessions" :key="index"
+                                class="relative grid grid-cols-2 gap-4 my-3">
                                 <div>
-                                    <flat-pickr v-model="formData.time" :config="flatpickrTimeConfig"
+                                    <flat-pickr v-model="session.time" :config="flatpickrTimeConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una hora" />
                                     <span
@@ -264,32 +361,48 @@ const flatpickrTimeConfig = {
                                             xmlns="http://www.w3.org/2000/svg"
                                             class="text-stone-800 dark:text-stone-200">
                                             <path fill="currentColor"
-                                                d="M5.673 0a.7.7 0 0 1 .7.7v1.309h7.517v-1.3a.7.7 0 0 1 1.4 0v1.3H18a2 2 0 0 1 2 1.999v13.993A2 2 0 0 1 18 20H2a2 2 0 0 1-2-1.999V4.008a2 2 0 0 1 2-1.999h2.973V.699a.7.7 0 0 1 .7-.699ZM1.4 7.742v10.259a.6.6 0 0 0 .6.6h16a.6.6 0 0 0 .6-.6V7.756zm5.267 6.877v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zm-8.333-3.977v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zM4.973 3.408H2a.6.6 0 0 0-.6.6v2.335l17.2.014V4.008a.6.6 0 0 0-.6-.6h-2.71v.929a.7.7 0 0 1-1.4 0v-.929H6.373v.92a.7.7 0 0 1-1.4 0z">
-                                            </path>
+                                                d="M5.673 0a.7.7 0 0 1 .7.7v1.309h7.517v-1.3a.7.7 0 0 1 1.4 0v1.3H18a2 2 0 0 1 2 1.999v13.993A2 2 0 0 1 18 20H2a2 2 0 0 1-2-1.999V4.008a2 2 0 0 1 2-1.999h2.973V.699a.7.7 0 0 1 .7-.699ZM1.4 7.742v10.259a.6.6 0 0 0 .6.6h16a.6.6 0 0 0 .6-.6V7.756zm5.267 6.877v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zm-8.333-3.977v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zM4.973 3.408H2a.6.6 0 0 0-.6.6v2.335l17.2.014V4.008a.6.6 0 0 0-.6-.6h-2.71v.929a.7.7 0 0 1-1.4 0v-.929H6.373v.92a.7.7 0 0 1-1.4 0z" />
                                         </svg>
                                     </span>
-                                    <span v-if="errors.time" class="text-red-500 text-sm flex justify-start">{{
-                                        errors.time }}</span>
+                                    <span v-if="errors[`sessions.${index}.time`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.time`] }}
+                                    </span>
                                 </div>
                                 <div>
-                                    <flat-pickr v-model="formData.date" :config="flatpickrConfig"
+                                    <flat-pickr v-model="session.date" :config="flatpickrConfig"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una fecha" />
-                                    <span v-if="errors.date" class="text-red-500 text-sm flex justify-start">{{
-                                        errors.date }}</span>
+                                    <span v-if="errors[`sessions.${index}.date`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.date`] }}
+                                    </span>
                                 </div>
+                                <button v-if="formData.sessions.length > 1" @click="removeSession(index)" type="button"
+                                    class="absolute -right-6 top-3 text-red-400 hover:text-red-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                             </div>
+                            <button @click="addSession" type="button"
+                                class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1">
+                                + Agregar fecha
+                            </button>
                         </div>
 
+                        <!-- DURACION -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Duracion (en horas)
+                                Duración total (en horas)
                             </label>
                             <input type="number" v-model="formData.duration" min="1"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.duration" class="text-red-500 text-sm flex justify-start">{{
                                 errors.duration }}</span>
                         </div>
+
                     </div>
                 </div>
             </div>

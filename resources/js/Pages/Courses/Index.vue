@@ -110,6 +110,15 @@ const onChangeStatus = (course) => {
     })
 }
 
+const formattedDate = (item) => {
+    if (item.sessions?.[0]?.date) {
+        let fullDate = item.sessions?.[0]?.date + 'T00:00:00';
+        const date = new Date(fullDate);
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        return new Intl.DateTimeFormat('es-MX', options).format(date);
+    }
+}
+
 </script>
 <template>
     <Head title="Cursos" />
@@ -123,7 +132,7 @@ const onChangeStatus = (course) => {
             <DataTable
                 :columns="[
                     { label: 'Título', key: 'topic' },
-                    { label: 'Fecha', key: 'date' },
+                    { label: 'inicio', key: 'date' },
                     { label: 'Descripción', key: 'description' },
                     { label: 'Duración', key: 'duration' },
                     { label: 'Organiza', key: 'organized_by' },
@@ -156,7 +165,7 @@ const onChangeStatus = (course) => {
                 </template>
 
                 <template #cell-date="{ item }">
-                    {{ new Date(item.date).toLocaleDateString('en-GB') }}
+                    {{ formattedDate(item) }}
                 </template>
 
                 <template #cell-duration="{ item }">

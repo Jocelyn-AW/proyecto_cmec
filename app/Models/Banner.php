@@ -26,10 +26,18 @@ class Banner extends Model implements HasMedia
      * @var array<int, string>
      */
     protected $fillable = [
+        'title',
         'link',
         'order',
         'is_active',
+        'event_id',
+        'event_type',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
 
     /**
      * The attributes that should be mutated to dates.
@@ -68,5 +76,13 @@ class Banner extends Model implements HasMedia
         return Attribute::make(function () {
             return $this->getFirstMediaUrl('banners');
         });
+    }
+
+    /**
+     * RELACION POLIMORFICA CON CURSOS, WEBINAR Y SESIONES ACADEMICAS
+     */
+    public function event()
+    {
+        return $this->morphTo();
     }
 }

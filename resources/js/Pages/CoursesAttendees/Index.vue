@@ -10,6 +10,7 @@ import { ref, reactive } from 'vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
 import UploadDiploma from './UploadDiploma.vue';
+import PaymentDetailsModal from './PaymentDetailsModal.vue';
 
 defineOptions({
     layout: AuthenticatedLayout
@@ -19,7 +20,9 @@ const { alertState, success, errorA, warning, hideAlert } = useAlert()
 const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
+const showPaymentDetails = ref(false);
 const selectedItem = ref(null);
+const paymentDetails = ref(null);
 
 const event_id = ref(route().params.event_id ?? '')
 const did_attend = ref(route().params.did_attend ?? '')
@@ -29,7 +32,11 @@ const props = defineProps({
         type: Object,
         default: () => ({})
     },
-    events: {
+    allEvents: {
+        type: Object,
+        default: () => ({})
+    },
+    activeEvents: {
         type: Object,
         default: () => ({})
     },
@@ -104,6 +111,11 @@ const openDiploma = (attendee) => {
         selectedItem.value = attendee;
         showUploadDiploma.value = true;
     }
+}
+
+const openPaymentDetails = (attendee) => {
+    paymentDetails.value = attendee.payments?.[0] ?? null;    
+    showPaymentDetails.value = true;
 }
 
 const onCreateSuccess = () => {
@@ -186,7 +198,7 @@ const clearFilters = () => {
                                 class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                                 >
                                 <option value="">Todos</option>
-                                <option v-for="option in events" :key="option.id" :value="option.id" >
+                                <option v-for="option in allEvents" :key="option.id" :value="option.id" >
                                     {{ truncate(option.topic, 25) }}
                                 </option>
                             </select>
@@ -234,9 +246,13 @@ const clearFilters = () => {
                 </template>
 
                 <template #cell-status="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.status == 'pending' ? 'bg-amber-200 text-amber-700' : 
-                        (item.status == 'paid') ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
+                    <span
+                        role="button" @click="openPaymentDetails(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="item.status == 'pending' ? 'bg-amber-200 text-amber-700 hover:bg-amber-300' : 
+                        (item.status == 'paid') 
+                        ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                        : 'bg-sky-200 text-sky-700 hover:bg-sky-300'"
                         >
                         {{ item.status === 'paid' ? 'Pagado' : '' }}
                         {{ item.status === 'pending' ? 'Pendiente' : '' }}
@@ -287,7 +303,7 @@ const clearFilters = () => {
             <CreateAttendee 
                 :show="showCreateDrawer"
                 :event-name="props.eventName"
-                :events="props.events"
+                :events="props.activeEvents"
                 :errors="props.errors"
                 @close="showCreateDrawer = false"
                 @success="onCreateSuccess"
@@ -296,7 +312,7 @@ const clearFilters = () => {
                 :show="showEditDrawer"
                 :event-name="props.eventName"
                 :data="selectedItem"
-                :events="props.events"
+                :events="props.activeEvents"
                 :errors="props.errors"
                 @close="showEditDrawer = false"
                 @success="onEditSuccess"
@@ -304,10 +320,16 @@ const clearFilters = () => {
             
             <UploadDiploma
                 :show="showUploadDiploma"
+                :max-width="'lg'"
                 :attendee="selectedItem"
                 @close="showUploadDiploma = false"
             />
 
+            <PaymentDetailsModal
+                :show="showPaymentDetails"
+                :max-width="'lg'"
+                @close="showPaymentDetails = false"
+                :payment-details="paymentDetails"/>
         </div>
     </div>
     <Alerta

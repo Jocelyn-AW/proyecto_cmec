@@ -48,6 +48,16 @@ const filterForm = reactive({
     status: props.filters.status ?? '',
 })
 
+const formatLabels = {
+    'online': 'En línea',
+    'in_person': 'Presencial',
+    'hybrid': 'Híbrido'
+};
+
+const formatLabel = (value) => {
+    return formatLabels[value] || value; // Retorna el label o el valor original si no existe
+};
+
 // Aplicar filtros con debounce al cambiar cualquier valor
 let debounceTimer = null
 watch(filterForm, () => {
@@ -114,6 +124,28 @@ const handleOnEdit = (webinar) => {
     router.get(route('webinars.edit', webinar.id), {}, { preserveState: false });
 }
 
+const onChangeStatus = (webinar) => {
+    let action = 'desactivar'
+    let title = 'Desactivar'
+    let message = 'Al hacerlo ya no podrá registrar más asistentes.'
+
+    if (!webinar.is_active) {
+        action = 'activar'
+        title = 'Activar'
+        message = 'Al hacerlo podrá volver a registrar asistentes.'
+    }
+
+    warning(`¿Confirma que desea ${action} este webinar? ${message} `, {
+        title: `${title} webinar`,
+        buttonText: `Sí, ${action}`,
+        cancelText: 'Cancelar',
+        onConfirm: () => {
+            hideAlert();
+            router.patch(route('webinars.statusChange', webinar.id));
+        }
+    })
+}
+
 const handleOnDelete = (webinarId) => {
     warning('¿Confirma que desea eliminar este webinar? Esta acción no se puede deshacer.', {
         title: 'Eliminar webinar',
@@ -163,11 +195,11 @@ const openGallery = (webinar) => {
                 { label: 'Costo Miembro', key: 'member_price' },
                 { label: 'Costo Residente', key: 'resident_price' },
                 { label: 'Costo Invitado', key: 'guest_price' },
-                { label: 'Link', key: 'link' },
+                { label: 'Modalidad', key: 'format' },
                 { label: 'Estado', key: 'is_active', align: 'center' },
             ]" :paginator="props.webinars" :searchable="false" :per-page-options="[5, 10, 15]" :allow-create="false"
-                :allow-actions="true" :allow-edit="true" :allow-delete="true"
-                @edit="handleOnEdit" @delete="handleOnDelete" :only="['webinars']">
+                :allow-actions="true" :allow-edit="true" :allow-delete="true" @edit="handleOnEdit"
+                @delete="handleOnDelete" :only="['webinars']">
 
                 <template #cell-topic="{ item }">
                     <span :title="item.topic" class="block max-w-[200px] truncate">{{ item.topic }}</span>
@@ -178,9 +210,21 @@ const openGallery = (webinar) => {
                 </template>
 
                 <template #cell-date="{ item }">
-                    {{ new Date(item.date).toLocaleDateString('es-MX', {
-                        day: '2-digit', month: 'short', year: 'numeric'
-                    }) }}
+                    <template v-if="item.sessions && item.sessions.length > 0">
+                        {{
+                            (() => {
+                                const parts = item.sessions[0].date.split(/[T ]/)[0].split('-')
+                                return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('es-MX', {
+                                    day: '2-digit', month: 'short', year: 'numeric'
+                                })
+                            })()
+                        }}
+                        <span v-if="item.sessions.length > 1"
+                            class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                            +{{ item.sessions.length - 1 }}
+                        </span>
+                    </template>
+                    <span v-else class="text-gray-400 text-xs">—</span>
                 </template>
 
                 <template #cell-duration="{ item }">
@@ -215,10 +259,22 @@ const openGallery = (webinar) => {
                     <span v-else class="text-gray-400 text-xs">—</span>
                 </template>
 
+                <template #cell-format="{ item }">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium capitalize" :class="{
+                        'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400': item.format === 'online',
+                        'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400': item.format === 'in_person',
+                        'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400': item.format === 'hybrid'
+                    }">
+                        {{ formatLabel(item.format) }}
+                    </span>
+                </template>
+
                 <!-- Columna Estado -->
                 <template #cell-is_active="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium"
-                        :class="item.is_active ? 'bg-emerald-200 text-emerald-700' : 'bg-gray-200 text-gray-500'">
+                    <span role="button" @click="onChangeStatus(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize" :class="item.is_active
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'">
                         {{ item.is_active ? 'Activo' : 'Inactivo' }}
                     </span>
                 </template>

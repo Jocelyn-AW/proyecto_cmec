@@ -11,7 +11,9 @@ use App\Models\Course;
 use App\Models\Conference;
 use App\Models\Webinar;
 use App\Models\Member;
+use App\Models\Payment;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class AttendeesController extends Controller
 {
@@ -20,18 +22,16 @@ class AttendeesController extends Controller
         $attendees = $this->addFilters($request, $event_type);
         $events = $this->getEvents($event_type);
 
+        $view = 'CoursesAttendees/Index';
         if ($event_type === Constants::EVENT_WEBINAR) {
-            return Inertia::render('WebinarsAttendees/Index', [
-            'attendees' => $attendees,
-            'eventName' => $events['eventName'],
-            'events' => $events['events']
-        ]);
+            $view = 'WebinarsAttendees/Index';
         }
 
-        return Inertia::render('CoursesAttendees/Index', [
+        return Inertia::render($view, [
             'attendees' => $attendees,
             'eventName' => $events['eventName'],
-            'events' => $events['events']
+            'allEvents' => $events['allEvents'],
+            'activeEvents' => $events['activeEvents']
         ]);
     }
 
@@ -48,6 +48,8 @@ class AttendeesController extends Controller
             $query->select('id', $title, 'member_price', 'guest_price', 'resident_price');
         }]);
 
+        $attendees->with('payments');
+
         if (!empty($search)) {
             $attendees->where('name', 'like', "%{$search}%")
                 ->orWhere('email', 'like', "%{$search}%")
@@ -57,14 +59,14 @@ class AttendeesController extends Controller
         }
 
         $attendees->where('event_type', $event_type);
-        
+
         if (!empty($event_id)) {
             $attendees->where('event_id', $event_id);
         }
 
         if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
 
-        return $attendees->paginate($perPage)->withQueryString();
+        return $attendees->latest()->paginate($perPage)->withQueryString();
     }
 
     private function getEvents($event_type)
@@ -84,15 +86,16 @@ class AttendeesController extends Controller
                 break;
             default:
                 $eventName = 'Evento';
-                $events = [];
+                $events = collect();
         }
 
-        $events->addSelect('member_price', 'guest_price', 'resident_price')
-                ->where('is_active', '1');
-        
+        $allEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'is_active');
+        $active = (clone $allEvents)->where('is_active', '1');
+
         return [
             'eventName' => $eventName,
-            'events' => $events->get()
+            'allEvents' => $allEvents->get(),
+            'activeEvents' => $active->get()
         ];
     }
 
@@ -106,7 +109,8 @@ class AttendeesController extends Controller
             $data = $request->validate($rules, $this->getValidationMessages());
             $data['person_id'] = $this->getMemberByCmecId($request);
 
-            Attendee::create($data);
+            $attendee = Attendee::create($data);
+            $payment = $this->registerPayment($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
@@ -126,7 +130,7 @@ class AttendeesController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $this->mergeNullableFields($request);
+            $this->mergeNullableFieldsForUpdate($request);
 
             $rules = $this->getValidationRules($request);
             $data = $request->validate($rules, $this->getValidationMessages());
@@ -134,15 +138,16 @@ class AttendeesController extends Controller
 
             $attendee = Attendee::findOrFail($id);
             $attendee->update($data);
+            $this->registerPayment($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
                 ->with('success', 'Asistente actualizado exitosamente');
         } catch (ValidationException $e) {
-
+            Log::error($e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-
+            Log::error($e->getMessage());
             return redirect()
                 ->back()
                 ->with('error', 'Ocurrió un error al actualizar el asistente. Por favor, inténtalo de nuevo.')
@@ -174,7 +179,8 @@ class AttendeesController extends Controller
             ->with('success', 'Diploma subido exitosamente');
     }
 
-    public function changeDidAttend($id) {
+    public function changeDidAttend($id)
+    {
         try {
             $attendee = Attendee::findOrFail($id);
 
@@ -183,7 +189,6 @@ class AttendeesController extends Controller
 
             return redirect()
                 ->route('attendees.index', ['event' => $attendee->event_type]);
-
         } catch (\Exception $e) {
             return redirect()
                 ->back()
@@ -209,10 +214,21 @@ class AttendeesController extends Controller
             'event_type' => 'required|string|in:course,conference,webinar',
             'person_id' => 'nullable|integer',
             'person_type' => 'required|string|in:member,resident,guest',
+
+            'payment_method' => 'required|string|in:debit_card,credit_card,cash,transfer,stripe',
+            'reference' => 'nullable|string',
+            'specialty' => 'nullable|string|max:200'
         ];
 
         if ($request->input('person_type') === Constants::PERSON_MEMBER) {
             $rules['cmec_member_id'] = 'required|string|max:50';
+        }
+
+        if (
+            $request->input('status', 'pending') != Constants::STATUS_PENDING &&
+            $request->input('payment_method', 'cash') != Constants::METHOD_CASH
+        ) {
+            $rules['reference'] = 'required|string|max:100';
         }
 
         return $rules;
@@ -254,6 +270,18 @@ class AttendeesController extends Controller
         ]);
     }
 
+    private function mergeNullableFieldsForUpdate(Request $request)
+    {
+        $request->mergeIfMissing([
+            'phone' => null,
+            'state' => null,
+            'city' => null,
+            'price' => null,
+            'status' => 'pending',
+            'person_id' => null,
+        ]);
+    }
+
     private function getMemberByCmecId(Request $request)
     {
         if (
@@ -271,5 +299,39 @@ class AttendeesController extends Controller
             return $member->id;
         }
         return null;
+    }
+
+    private function registerPayment($attendee, $data)
+    {
+        try {
+            if ($attendee->payments()->count() > 0 || $data['status'] == 'pending') return;
+
+            $paymentMethod = $data['payment_method'];
+            $reference     = $data['reference'] ?? '';
+            $status        = $data['status'] ?? 'pending';
+
+            $isMember = $attendee->person_type == Constants::PERSON_MEMBER && !empty($attendee->person_id);
+
+            Payment::create([
+                'user_type' => $isMember ? 'member' : 'attendee',
+                'user_id' => $isMember ? $attendee->person_id : $attendee->id,
+                'event_payed_type' => $attendee->event_type,
+                'event_payed_id' => $attendee->event_id ?? null,
+
+                'payer_name' => empty($attendee->person_id) ? $attendee->name : null,
+                'payer_email' => empty($attendee->person_id) ? $attendee->email : null,
+                'payer_phone' => empty($attendee->person_id) ? $attendee->phone : null,
+                'payment_method' => $paymentMethod,
+                'amount' => $attendee->price ?? 0,
+                'reference' => $reference,
+                'status' => $status,
+                'payment_date' => now()
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return false;
+        }
     }
 }

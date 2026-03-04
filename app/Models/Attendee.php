@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Attendee extends Model implements HasMedia
@@ -28,16 +29,23 @@ class Attendee extends Model implements HasMedia
         'city',
         'status',
         'price',
-        'did_attend'
+        'did_attend',
+        'specialty',
+        'birth_date',
+        'special_needs',
     ];
 
     protected $dates = [
         'created_at',
-        'updated_at'
+        'updated_at',
+        'birth_date',
     ];
 
     protected $casts = [
         'did_attend' => 'boolean',
+        'birth_date'  => 'date',
+        'specialty'   => 'string',
+        'special_needs' => 'string', 
     ];
 
     protected $appends = [
@@ -52,6 +60,11 @@ class Attendee extends Model implements HasMedia
     public function person() : MorphTo
     {
         return $this->morphTo(null, 'person_type', 'person_id');
+    }
+
+    public function payments() : MorphMany
+    {
+        return $this->morphMany(Payment::class, 'user');
     }
 
     public function registermediaCollections(): void
