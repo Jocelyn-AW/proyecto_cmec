@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Attendee;
 use App\Http\Helpers\Constants;
+use App\Models\AcademicSession;
 use Inertia\Inertia;
 use App\Models\Course;
 use App\Models\Conference;
@@ -25,6 +26,8 @@ class AttendeesController extends Controller
         $view = 'CoursesAttendees/Index';
         if ($event_type === Constants::EVENT_WEBINAR) {
             $view = 'WebinarsAttendees/Index';
+        } else if ($event_type === Constants::EVENT_ACADEMIC_SESSION) {
+            $view = 'AcademicSessionsAttendees/Index';
         }
 
         return Inertia::render($view, [
@@ -83,6 +86,10 @@ class AttendeesController extends Controller
             case Constants::EVENT_WEBINAR:
                 $eventName = 'Webinar';
                 $events = Webinar::select('id', 'topic');
+                break;
+            case Constants::EVENT_ACADEMIC_SESSION:
+                $eventName = 'Sesion Academica';
+                $events = AcademicSession::select('id', 'topic');
                 break;
             default:
                 $eventName = 'Evento';

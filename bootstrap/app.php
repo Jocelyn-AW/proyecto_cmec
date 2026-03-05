@@ -32,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->group(base_path('routes/attendees_routes.php'));
                 Route::prefix('webinars')->name('webinars.')
                     ->group(base_path('routes/webinar_routes.php'));
+                Route::prefix('academicsessions')->name('academicsessions.')
+                    ->group(base_path('routes/academicsessions_routes.php'));
             });
         }
     )
