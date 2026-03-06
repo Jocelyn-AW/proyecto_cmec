@@ -12,23 +12,47 @@ const emit = defineEmits(['edit', 'delete', 'status-change'])
 <template>
     <div
         class="bg-white dark:bg-white/[0.03] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex items-center gap-4 hover:shadow-sm transition-shadow">
+
         <!-- Thumbnail -->
         <div class="w-28 h-20 flex-shrink-0 overflow-hidden rounded">
             <img v-if="banner.image" :src="banner.image" class="w-full h-full object-cover"
-                :alt="banner.name || 'Banner'">
+                :alt="banner.name || 'Banner'" />
+            <div v-else class="w-full h-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </div>
         </div>
 
-        <!-- Info -->
-        <div class="flex-1 min-w-0">
+        <!-- info -->
+        <div class="flex-1 min-w-0 space-y-1">
+
+            <!-- titulo -->
             <div class="text-base font-medium leading-6 text-gray-800 dark:text-white/90 truncate">
                 {{ banner.title }}
             </div>
+
+            <!-- link -->
             <div v-if="banner.link" class="text-sm text-blue-600 truncate max-w-full">
                 <a :href="banner.link" target="_blank" rel="noopener noreferrer" class="hover:underline">
                     {{ banner.link }}
                 </a>
             </div>
             <div v-else class="text-sm text-gray-400">-- sin link --</div>
+
+            <!-- fechas del evento, si existen -->
+            <div v-if="banner.dates && banner.dates.length > 0" class="flex flex-wrap gap-1.5 pt-0.5">
+                <span v-for="(date, i) in banner.dates" :key="i"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {{ date }}
+                </span>
+            </div>
+
         </div>
 
         <!-- Acciones -->

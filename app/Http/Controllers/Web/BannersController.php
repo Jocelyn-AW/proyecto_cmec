@@ -13,41 +13,98 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Http\Controllers\Mail\MailsController;
+use App\Models\AcademicSession;
+use App\Models\Course;
+use App\Models\EventSession;
+use App\Models\Webinar;
 use Illuminate\Http\UploadedFile;
+use Carbon\Carbon;
 
 class BannersController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        //Filtros
+        $eventType = $request->get('event_type', 'home');
+        $status    = $request->get('status', '');
+        $search    = $request->get('search', '');
+        $dateFrom  = $request->get('date_from', '');
+        $dateTo    = $request->get('date_to', '');
 
-        /* $mailsController = new MailsController();
-        $mailsController->testMail(); */
+        $query = Banner::with('media')
+            ->where('event_type', $eventType)
+            ->orderBy('order');
 
-        $banners = Banner::with('media')
-            ->orderBy('order')
-            ->get()
-            ->map(function ($banner) {
-                return [
-                    'id'         => $banner->id,
-                    'title'      => $banner->title,
-                    'order'      => $banner->order,
-                    'link'       => $banner->link,
-                    'is_active'  => $banner->is_active,
-                    'event_id'   => $banner->event_id,
-                    'event_type' => $banner->event_type,
-                    'name'       => $banner->media->first()?->name ?? null,
-                    'image'      => $banner->getFirstMediaUrl('banners'),
-                ];
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
+        if ($search) {
+            $query->where('title', 'like', "%{$search}%");
+        }
+
+        // filtro de fecha (solo para tipos con event_id)
+        if ($eventType !== 'home' && ($dateFrom || $dateTo)) {
+            $query->whereIn('event_id', function ($sub) use ($eventType, $dateFrom, $dateTo) {
+                $sub->select('sessionable_id')
+                    ->from('event_sessions')
+                    ->where('sessionable_type', $eventType); // directo gracias al morphMap
+
+                if ($dateFrom) $sub->where('date', '>=', $dateFrom);
+                if ($dateTo)   $sub->where('date', '<=', $dateTo);
             });
+        }
 
-        // return Inertia::render('Banner/Banner', [
-        //     'banners' => $banners
-        // ]);
+        // solo una consulta para traer las sesiones de todos los banners
+        $eventIds = $query->get()->pluck('event_id')->filter()->unique()->values();
+
+        $sessionsByEventId = EventSession::whereIn('sessionable_id', $eventIds)
+            ->where('sessionable_type', $eventType)
+            ->orderBy('date')
+            ->get()
+            ->groupBy('sessionable_id');
+
+        $banners = $query->get()->map(function ($banner) use ($sessionsByEventId) {
+            $dates = [];
+            if ($banner->event_id) {
+                $dates = ($sessionsByEventId[$banner->event_id] ?? collect())
+                    ->map(fn($s) => Carbon::parse($s->date)->format('d/m/Y'))
+                    ->toArray();
+            }
+
+            return [
+                'id'         => $banner->id,
+                'title'      => $banner->title,
+                'order'      => $banner->order,
+                'link'       => $banner->link,
+                'is_active'  => $banner->is_active,
+                'event_id'   => $banner->event_id,
+                'event_type' => $banner->event_type,
+                'name'       => $banner->media->first()?->name ?? null,
+                'image'      => $banner->getFirstMediaUrl('banners'),
+                'dates'      => $dates,
+            ];
+        });
+
+        // draggin de los diferentes tipos de eventos en la db, home default
+        $existingTypes = Banner::select('event_type')->distinct()->pluck('event_type')->toArray();
+        $eventTypes = collect(array_unique(array_merge(['home'], $existingTypes)))->values();
+
         return Inertia::render('Banners/Index', [
-            'banners' => $banners
+            'banners'    => $banners,
+            'eventTypes' => $eventTypes,
+            'filters'    => [
+                'event_type' => $eventType,
+                'status'     => $status,
+                'search'     => $search,
+                'date_from'  => $dateFrom,
+                'date_to'    => $dateTo,
+            ],
         ]);
     }
 
@@ -207,17 +264,19 @@ class BannersController extends Controller
     public function reorder(Request $request)
     {
         $request->validate([
-            'banners'          => 'required|array',
-            'banners.*.id'     => 'required|exists:banners,id',
-            'banners.*.order'  => 'required|numeric'
+            'banners'         => 'required|array',
+            'banners.*.id'    => 'required|exists:banners,id',
+            'banners.*.order' => 'required|numeric',
+            'event_type'      => 'nullable|string',
         ]);
 
         foreach ($request->banners as $item) {
-            Banner::where('id', $item['id'])
-                ->update(['order' => $item['order']]);
+            Banner::where('id', $item['id'])->update(['order' => $item['order']]);
         }
 
-        return redirect()->route('banners.index');
+        return redirect()->route('banners.index', [
+            'event_type' => $request->get('event_type', 'home')
+        ]);
     }
 
     public function statusChange(int $id)
@@ -235,22 +294,33 @@ class BannersController extends Controller
 
     public static function createFromEvent(
         string $title,
-        UploadedFile $image,
+        ?UploadedFile $image = null,
+        ?string $imagePath = null,
         ?string $link = null,
         ?int $eventId = null,
         ?string $eventType = null
     ): Banner {
+        $resolvedType = $eventId ? $eventType : 'home';
+
+        // orden propio por event_type, no global
+        $maxOrder = Banner::where('event_type', $resolvedType)->max('order') ?? -1;
+
         $banner = Banner::create([
             'title'      => $title,
             'link'       => $link,
-            'order'      => (Banner::max('order') ?? 0) + 1,
+            'order'      => $maxOrder + 1,
             'is_active'  => true,
             'event_id'   => $eventId,
-            'event_type' => $eventId ? $eventType : 'home',
+            'event_type' => $resolvedType,
         ]);
 
-        $banner->addMedia($image)
-            ->toMediaCollection('banners');
+        if ($image !== null) {
+            $banner->addMedia($image)->toMediaCollection('banners');
+        } elseif ($imagePath && file_exists($imagePath)) {
+            $banner->addMedia($imagePath)
+                ->preservingOriginal()
+                ->toMediaCollection('banners');
+        }
 
         return $banner;
     }
@@ -258,16 +328,21 @@ class BannersController extends Controller
     public static function updateFromEvent(
         string $title,
         ?UploadedFile $image = null,
+        ?string $imagePath = null,   // path fisico, no URL
         ?string $link = null,
         int $eventId,
         string $eventType
-    ): Banner {
+    ): ?Banner {
         $banner = Banner::where('event_id', $eventId)
             ->where('event_type', $eventType)
             ->first();
 
         if (!$banner) {
-            return static::createFromEvent($title, $image, $link, $eventId, $eventType);
+            if ($image === null && (!$imagePath || !file_exists($imagePath))) {
+                return null;
+            }
+
+            return static::createFromEvent($title, $image, $imagePath, $link, $eventId, $eventType);
         }
 
         $banner->update([
@@ -277,7 +352,10 @@ class BannersController extends Controller
 
         if ($image !== null) {
             $banner->clearMediaCollection('banners');
-            $banner->addMedia($image)
+            $banner->addMedia($image)->toMediaCollection('banners');
+        } elseif ($imagePath && file_exists($imagePath) && !$banner->hasMedia('banners')) {
+            $banner->addMedia($imagePath)
+                ->preservingOriginal()
                 ->toMediaCollection('banners');
         }
 

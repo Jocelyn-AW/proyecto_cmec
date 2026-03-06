@@ -31,6 +31,7 @@ const page = usePage();
 const updateBanner = ref(false);
 
 const form = useForm({
+    id: null,
     topic: "",
     description: "",
     objectives: "",
@@ -103,7 +104,6 @@ const getDateFromDateTime = (dateTime) => {
 };
 
 const fillForm = (academicSession) => {
-
     form.id = academicSession.id || null;
     form.topic = academicSession.topic || "";
     form.description = academicSession.description || "";
@@ -121,24 +121,18 @@ const fillForm = (academicSession) => {
     form.bank_detail_id = academicSession.bank_detail_id || "";
 
     if (academicSession.sessions && academicSession.sessions.length > 0) {
-
         form.sessions = academicSession.sessions.map(session => ({
             date: getDateFromDateTime(session.date),
             time: session.time ? session.time.substring(0, 5) : ''
         }));
-
     } else {
-
         form.sessions = [{ date: '', time: '' }];
-
     }
-
 };
 
 watch(
     [() => page.props.flash, () => props.academicSession],
     ([flash, academicSession]) => {
-
         if (flash?.error) {
             warning(flash.error);
         }
@@ -150,21 +144,34 @@ watch(
         if (academicSession && academicSession.id) {
             fillForm(academicSession);
         }
-
     },
     { immediate: true }
 );
 
 const handleSubmit = () => {
-
     const data = new FormData();
 
-    data.append('topic', form.topic);
-    data.append('description', form.description);
+    data.append('_method', 'PUT');
+
+    data.append('topic', form.topic ?? '');
+    data.append('description', form.description ?? '');
+    data.append('objectives', form.objectives ?? '');
+    data.append('duration', form.duration ?? '');
+    data.append('organized_by', form.organized_by ?? '');
+    data.append('sponsored_by', form.sponsored_by ?? '');
+    data.append('format', form.format ?? '');
+    data.append('link', form.link ?? '');
+    data.append('address', form.address ?? '');
+    data.append('additional_info', form.additional_info ?? '');
+
+    data.append('member_price', form.member_price ?? '');
+    data.append('resident_price', form.resident_price ?? '');
+    data.append('guest_price', form.guest_price ?? '');
+    data.append('bank_detail_id', form.bank_detail_id ?? '');
 
     form.sessions.forEach((session, index) => {
-        data.append(`sessions[${index}][date]`, session.date);
-        data.append(`sessions[${index}][time]`, session.time);
+        data.append(`sessions[${index}][date]`, session.date ?? '');
+        data.append(`sessions[${index}][time]`, session.time ?? '');
     });
 
     if (cover.file.value) {
@@ -177,7 +184,7 @@ const handleSubmit = () => {
 
     if (updateBanner.value) {
         data.append('update_banner', '1');
-        data.append('banner_title', form.topic);
+        data.append('banner_title', form.topic ?? '');
 
         if (cover.file.value) {
             data.append('banner_image', cover.file.value);
@@ -188,12 +195,16 @@ const handleSubmit = () => {
         }
     }
 
-    router.put(`/academicsessions/${form.id}`, data);
-
+    router.post(`/academicsessions/${form.id}`, data, {
+        forceFormData: true,
+        onError: (errors) => {
+            console.error('Errores de validación:', errors);
+        },
+    });
 };
 
 const handleCancel = () => {
-    form.get(route('academicsessions.index'));
+    router.get(route('academicsessions.index'));
 };
 
 // Flatpickr
@@ -222,8 +233,8 @@ const flatpickrTimeConfig = {
 
             <!-- ENCABEZADO -->
             <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nueva Sesión Académica</h3>
-                <p class="text-sm text-gray-500">Completa los datos para registrar una nueva sesión académica</p>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Editar Sesión Académica</h3>
+                <p class="text-sm text-gray-500">Modifica los datos de la sesión académica</p>
             </div>
 
             <!--  DATOS GENERALES -->
@@ -324,15 +335,16 @@ const flatpickrTimeConfig = {
                             </span>
                         </div>
 
-                        <!-- CREAR BANNER -->
+                        <!-- ACTUALIZAR BANNER -->
                         <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    ¿Generar banner para esta sesión?
+                                    ¿Actualizar banner de esta sesión?
                                 </p>
                                 <p class="text-xs text-gray-400 mt-0.5">
-                                    Se actualizara el banner (Si existe) usando la portada, el título y el link de la sesión.
+                                    Se actualizará el banner (si existe) usando la portada, el título y el link de la
+                                    sesión.
                                 </p>
                             </div>
                             <button type="button" @click="updateBanner = !updateBanner"
@@ -373,10 +385,10 @@ const flatpickrTimeConfig = {
                             </span>
                         </div>
 
-                        <!-- MODALIDAD EXSTENSIONES -->
+                        <!-- EXTENSIONES POR MODALIDAD -->
                         <template v-if="form.format !== ''">
 
-                            <!-- DIRECCION (PRESENCIAL / HIBRIDO) -->
+                            <!-- DIRECCIÓN (PRESENCIAL / HÍBRIDO) -->
                             <div v-if="form.format !== 'online'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Dirección
@@ -389,7 +401,7 @@ const flatpickrTimeConfig = {
                                 </span>
                             </div>
 
-                            <!-- INFO ADICIONAL (PRESENCIAL / HIBRIDO) -->
+                            <!-- INFO ADICIONAL (PRESENCIAL / HÍBRIDO) -->
                             <div v-if="form.format !== 'online'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Información adicional
@@ -407,7 +419,7 @@ const flatpickrTimeConfig = {
                                 </span>
                             </div>
 
-                            <!-- LINK (ONLINE / HIBRIDO) -->
+                            <!-- LINK (ONLINE / HÍBRIDO) -->
                             <div v-if="form.format !== 'in_person'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Link de conexión
@@ -452,6 +464,7 @@ const flatpickrTimeConfig = {
 
                             <div v-for="(session, index) in form.sessions" :key="index"
                                 class="relative grid grid-cols-2 gap-4 my-3">
+
                                 <!-- HORA -->
                                 <div>
                                     <flat-pickr v-model="session.time" :config="flatpickrTimeConfig"
@@ -474,7 +487,7 @@ const flatpickrTimeConfig = {
                                     </span>
                                 </div>
 
-                                <!-- REMOVABLE -->
+                                <!-- ELIMINAR SESIÓN -->
                                 <button v-if="form.sessions.length > 1" type="button" @click="removeSession(index)"
                                     class="absolute -right-6 top-3 text-red-400 hover:text-red-600 transition-colors"
                                     title="Eliminar esta fecha">
@@ -502,7 +515,7 @@ const flatpickrTimeConfig = {
                             </button>
                         </div>
 
-                        <!-- DURACION -->
+                        <!-- DURACIÓN -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Duración total (en horas)
@@ -518,12 +531,11 @@ const flatpickrTimeConfig = {
                 </div>
             </div>
 
-            <!--  COSTOS + DETALLES DE PAGO  -->
+            <!-- COSTOS + DETALLES DE PAGO -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
 
-                    <!-- COSTO -->
                     <div>
                         <span class="text-sm text-gray-700 dark:text-gray-400">Costos</span>
                     </div>
@@ -629,7 +641,7 @@ const flatpickrTimeConfig = {
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                         </svg>
-                        <span>{{ form.processing ? 'Guardando...' : 'Guardar Sesión Académica' }}</span>
+                        <span>{{ form.processing ? 'Guardando...' : 'Guardar Cambios' }}</span>
                     </button>
                 </div>
             </div>

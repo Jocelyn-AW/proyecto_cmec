@@ -248,7 +248,7 @@ const menuGroups = computed(() => [
                     name: "Sesiones Academicas",
                     subItems: [
                         { name: "Listado", path: "/academicsessions", pro: false},
-                        { name: "Asistentes Registrados", path: "/attendees/academicsessions", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/academic_session", pro: false },
                         
                     ],
                 },
