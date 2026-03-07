@@ -16,24 +16,26 @@ return new class extends Migration
             $table->dropColumn('specialties');
         
             $table->decimal('surgeon_price', 10, 2)
-                ->nullable()->default(null)
+                ->nullable()
+                ->default(null)
                 ->after('resident_price');
             
                 $table->decimal('nurse_price', 10, 2)
-                ->nullable()->default(null)
+                ->nullable()
+                ->default(null)
                 ->after('surgeon_price');
             
+            $table->text('description')->nullable()->default(null)->after('main_topic');
+            $table->string('google_coords')->nullable()->default(null)->change();
+            $table->string('link')->nullable()->default(null)->after('google_coords');
+            $table->boolean('is_active')->default(true)->after('nurse_price');
+
             $table->foreignId('bank_detail_id')
                 ->nullable()                    
                 ->default(null)                 
                 ->after('is_active')
                 ->constrained('bank_details')
                 ->nullOnDelete();
-
-            $table->text('description')->nullable()->default(null)->after('main_topic');
-            $table->string('link')->nullable()->default(null)->after('google_coords');
-            $table->boolean('is_active')->default(true)->after('nurse_price');
-            $table->string('google_coords')->nullable()->default(null)->change();
         });
     }
 
