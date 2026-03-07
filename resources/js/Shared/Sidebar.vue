@@ -244,6 +244,15 @@ const menuGroups = computed(() => [
                     ],
                 },
                 {
+                    icon: WebinarIcon,
+                    name: "Sesiones Academicas",
+                    subItems: [
+                        { name: "Listado", path: "/academicsessions", pro: false},
+                        { name: "Asistentes Registrados", path: "/attendees/academic_session", pro: false },
+                        
+                    ],
+                },
+                {
                     icon: PresentationIcon,
                     name: "Cursos",
                     subItems: [

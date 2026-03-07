@@ -122,6 +122,9 @@ class CoursesController extends Controller
         try {
             $course = Course::findOrFail($id);
             $this->deleteCourseMedia($course);
+            if (!empty($course->sessions)) {
+                $course->sessions()->delete();
+            }
             $course->delete();
 
             return redirect()

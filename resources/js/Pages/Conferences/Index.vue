@@ -1,8 +1,8 @@
 <script setup>
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { onMounted, watch } from 'vue';
+import { useAlert } from '@/composables/useAlert';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, usePage } from '@inertiajs/vue3'
-import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import DataTable from '@/Components/DataTable.vue';
 
@@ -10,10 +10,8 @@ defineOptions({
     layout: AuthenticatedLayout
 })
 
-const { alertState, success, errorA, warning, hideAlert } = useAlert()
-
 const props = defineProps({
-    courses: {
+    conferences: {
         type: Object,
         default: () => ({})
     },
@@ -32,55 +30,37 @@ const props = defineProps({
 })
 
 const page = usePage();
+const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
-onMounted(() => {
-    if (page.props.success || props.flash.success) {
-        success(page.props.success || props.flash.success)
-    }
-    if (page.props.error || props.flash.error) {
-        errorA(page.props.error || props.flash.error)
-    }
+watch(() => props.flash, (value) => {
+    if (!value) return
 
-    if (page.props.warning || props.flash.warning) {
-        warning(page.props.warning || props.flash.warning)
-    }
-})
+    if (value.success) success(value.success)
+    if (value.warning) warning(value.warning)
+    if (value.error) errorA(value.error)
+}, {immediate: true, deep: true})
 
-const handleOnCreate = () => {
-    router.get(route('courses.new'));
+
+const handleOnCreate =  () => {
+    router.get(route('conferences.new'));
 }
 
-const handleOnEdit = (course) => {
-    router.get(route('courses.edit', course.id), {}, {
+const handleOnEdit = (conference) => {
+    router.get(route('conferences.edit', conference.id), {}, {
         preserveState: false
     });
 }
 
-const handleOnDelete = (courseId) => {
-    warning('¿Confirma que desea eliminar este curso? Esta acción no se puede deshacer.', {
-        title: 'Eliminar curso',
+const handleOnDelete = (conferenceId) => {
+    warning('¿Confirma que desea eliminar este congreso? Esta acción no se puede deshacer.', {
+        title: 'Eliminar congreso',
         buttonText: 'Sí, eliminar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
-            router.delete(route('courses.delete', courseId));
+            router.delete(route('conferences.delete', conferenceId));
         }
     })
-}
-
-const openPdf = (course) => {
-    if (course.program_url) {
-        window.open(course.program_url, '_blank');
-    } else {
-        warning('Este curso no tiene un programa PDF asociado.', {
-            title: 'Sin programa',
-            buttonText: 'Aceptar'
-        })
-    }
-}
-
-const openGallery = (course) => {
-    router.get(route('courses.gallery', course.id));
 }
 
 const truncate = (text, max = 50) => {
@@ -88,26 +68,9 @@ const truncate = (text, max = 50) => {
     return text.length > max ? text.substring(0, max) + '...' : text;
 }
 
-const onChangeStatus = (course) => {
-    let action = 'desactivar'
-    let title = 'Desactivar'
-    let message = 'Al hacerlo ya no podrá registrar más asistentes.'
-
-    if (!course.is_active) {
-        action = 'activar'
-        title = 'Activar'
-        message = 'Al hacerlo podrá volver a registrar asistentes.'
-    }
-
-    warning(`¿Confirma que desea ${action} este curso? ${message} `, {
-        title: `${title} curso`,
-        buttonText: `Sí, ${action}`,
-        cancelText: 'Cancelar',
-        onConfirm: () => {
-            hideAlert();
-            router.get(route('courses.change-status', course.id));
-        }
-    })
+const formatAmount =  (amount) => {
+    let options = { style: 'currency', currency: 'USD' }
+    return new Intl.NumberFormat('en-US', options).format(amount);
 }
 
 const formattedDate = (item) => {
@@ -119,30 +82,62 @@ const formattedDate = (item) => {
     }
 }
 
+const openPdf = (conference) => {
+    if (conference.program_url) {
+        window.open(conference.program_url, '_blank');
+    } else {
+        warning('Este congreso no tiene un programa PDF asociado.', {
+            title: 'Sin programa',
+            buttonText: 'Aceptar'
+        })
+    }
+}
+
+const openGallery = (conference) => {
+    router.get(route('conferences.gallery', conference.id));
+}
+
+const onChangeStatus = (conference) => {
+    let action = conference.is_active ? 'desactivar' : 'activar';
+    let title = conference.is_active ? 'Desactivar' : 'Activar';
+    let message = conference.is_active 
+                    ? 'Al hacerlo ya no podrá registrar más asistentes.'
+                    : 'Al hacerlo podrá volver a registrar asistentes.';
+
+    warning(`¿Confirma que desea ${action} este congreso? ${message} `, {
+        title: `${title} congreso`,
+        buttonText: `Sí, ${action}`,
+        cancelText: 'Cancelar',
+        onConfirm: () => {
+            hideAlert();
+            router.get(route('conferences.change-status', conference.id));
+        }
+    })
+}
+
 </script>
 <template>
-    <Head title="Cursos" />
+    <Head title="Congresos" />
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Cursos</h3>
-                <p class="text-sm text-gray-500">Administra los cursos de tu aplicación desde esta sección</p>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Congresos</h3>
+                <p class="text-sm text-gray-500">Administra los congresos de tu aplicación desde esta sección</p>
             </div>
             <DataTable
                 :columns="[
-                    { label: 'Título', key: 'topic' },
-                    { label: 'inicio', key: 'date' },
-                    { label: 'Descripción', key: 'description' },
-                    { label: 'Duración', key: 'duration' },
+                    { label: 'Título', key: 'name' },
+                    { label: 'Inicio', key: 'date' },
+                    { label: 'Formato', key: 'format' },
                     { label: 'Organiza', key: 'organized_by' },
                     { label: 'Costo Miembro', key: 'member_price' },
                     { label: 'Costo Residente', key: 'resident_price' },
                     { label: 'Costo Invitado', key: 'guest_price' },
                     { label: 'Link', key: 'link' },
-                    { label: 'Estatus', key: 'is_active' }
+                    { label: 'Estatus', key: 'is_active' },
                 ]"
-                :paginator="props.courses"
+                :paginator="props.conferences"
                 :searchable="true"
                 :per-page-options="[5, 10, 15]"
                 :allow-create="true"
@@ -153,31 +148,32 @@ const formattedDate = (item) => {
                 @edit="handleOnEdit"
                 
                 @delete="handleOnDelete"
-                :only="['courses']"
+                :only="['conferences']"
                 >
 
                 <template #cell-topic="{item}">
-                    {{ truncate(item.topic, 25) }}
-                </template>
-
-                <template #cell-description="{item}">
-                    {{ truncate(item.description, 40) }}
+                    {{ truncate(item.name, 25) }}
                 </template>
 
                 <template #cell-date="{ item }">
                     {{ formattedDate(item) }}
                 </template>
 
-                <template #cell-duration="{ item }">
-                    {{ item.duration }} {{ item.duration > 1 ? 'horas' : 'hora' }}
+                <template #cell-organized_by="{ item }">
+                    {{truncate(item.organized_by, 20)}}
+                </template>
 
+                <template #cell-format="{ item }">
+                    {{ item.format == 'in_person' ? 'Presencial' : '' }}
+                    {{ item.format == 'online' ? 'En línea' : '' }}
+                    {{ item.format == 'hybrid' ? 'Hibrido' : '' }}
                 </template>
 
                 <template #cell-member_price="{ item }">
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
                         :class="item.member_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-indigo-200 text-indigo-700'"
                         >
-                        {{ item.member_price === '0.00' ? 'Gratis' : '$' + item.member_price }}
+                        {{ item.member_price === '0.00' ? 'Gratis' : formatAmount(item.member_price) }}
                     </span>
                 </template>
 
@@ -185,7 +181,7 @@ const formattedDate = (item) => {
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
                         :class="item.resident_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
                         >
-                        {{ item.resident_price === '0.00' ? 'Gratis' : '$' + item.resident_price }}
+                        {{ item.resident_price === '0.00' ? 'Gratis' : formatAmount(item.resident_price) }}
                     </span>
                 </template>
 
@@ -193,13 +189,13 @@ const formattedDate = (item) => {
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
                         :class="item.guest_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
                         >
-                        {{ item.guest_price === '0.00' ? 'Gratis' : '$' + item.guest_price }}
+                        {{ item.guest_price === '0.00' ? 'Gratis' : formatAmount(item.guest_price) }}
                     </span>
                 </template>
 
                 <template #cell-link="{ item }">
                     <a :href="item.link" class="text-blue-800">
-                        {{ truncate(item.link, 20) }}
+                        {{ truncate(item.link ?? '--', 20) }}
                     </a>
                 </template>
 
@@ -242,11 +238,10 @@ const formattedDate = (item) => {
                         </svg>
                         </button>
                 </template>
-
-            </DataTable>    
-
+            </DataTable>
         </div>
     </div>
+
     <Alerta
         :show="alertState.show"
         :message="alertState.message"
