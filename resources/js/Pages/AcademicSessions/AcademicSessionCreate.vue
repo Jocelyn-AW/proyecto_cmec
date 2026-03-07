@@ -8,7 +8,7 @@ import Dropzone from "@/Components/Dropzone.vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue';
 import { useAlert } from '@/composables/useAlert';
-import { ref, watch } from "vue";
+import { ref, watch,computed } from "vue";
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -24,7 +24,10 @@ defineProps({
 const { alertState, warning, hideAlert } = useAlert();
 const page = usePage();
 
-const createBanner = ref(false);
+const createBanner = computed({
+    get: () => form.create_banner === '1',
+    set: (val) => { form.create_banner = val ? '1' : '0'; }
+});
 
 const form = useForm({
     topic: "",
@@ -43,9 +46,12 @@ const form = useForm({
     bank_detail_id: "",
     cover_image: null,
     program_pdf: null,
-    sessions: [
-        { date: "", time: "" }
-    ],
+    sessions: [{ date: "", time: "" }],
+
+    create_banner: '0',
+    banner_title: '',
+    banner_link: '',
+    banner_image: null,
 });
 
 const addSession = () => {
@@ -83,32 +89,25 @@ watch(
 );
 
 const handleSubmit = () => {
-
     if (!cover.file.value) {
         warning("Por favor selecciona una imagen de portada para la sesión académica");
         return;
     }
 
     form.cover_image = cover.file.value;
+    form.banner_image = cover.file.value;
+    form.banner_title = form.topic;
+    form.banner_link = form.link ?? '';
 
     if (pdf.file.value) {
         form.program_pdf = pdf.file.value;
     }
 
     form.post('/academicsessions/new', {
-
         forceFormData: true,
-
-        onSuccess: () => {
-            form.reset();
-        },
-
-        onError: () => {
-            warning("Por favor revisa los campos con error");
-        }
-
+        onSuccess: () => form.reset(),
+        onError: () => warning("Por favor revisa los campos con error"),
     });
-
 };
 
 const handleCancel = () => {
@@ -220,8 +219,7 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Organizado por
                             </label>
-                            <input type="text" v-model="form.organized_by"
-                                placeholder="Ej. Dpto. de Medicina Interna"
+                            <input type="text" v-model="form.organized_by" placeholder="Ej. Dpto. de Medicina Interna"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="form.errors?.organized_by" class="text-red-500 text-sm flex justify-start mt-1">
                                 {{ form.errors?.organized_by }}

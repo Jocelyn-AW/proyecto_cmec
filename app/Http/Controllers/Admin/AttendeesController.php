@@ -218,7 +218,7 @@ class AttendeesController extends Controller
             'folio' => 'required|string|max:5',
 
             'event_id' => 'required|integer',
-            'event_type' => 'required|string|in:course,conference,webinar',
+            'event_type' => 'required|string|in:course,conference,webinar,academic_session',
             'person_id' => 'nullable|integer',
             'person_type' => 'required|string|in:member,resident,guest',
 

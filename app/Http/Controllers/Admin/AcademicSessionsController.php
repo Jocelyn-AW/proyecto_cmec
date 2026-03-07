@@ -14,7 +14,7 @@ class AcademicSessionsController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 5);
+        $perPage = $request->get('per_page', 9);
         $academicSessions = AcademicSession::with('sessions')
             ->orderBy('created_at', 'desc')
             ->when($request->filled('search'), function ($query) use ($request) {
@@ -134,13 +134,30 @@ class AcademicSessionsController extends Controller
             $this->updateAcademicSessionMedia($academicSession, $request);
 
             if ($request->input('update_banner') === '1') {
-                BannersController::updateFromEvent(
+
+                $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
+
+                // se uso el 'path' fisico de la imagen, la url truena
+                $bannerImagePath = null;
+                if (!$bannerImage) {
+                    $coverMedia = $academicSession->getFirstMedia('academic_sessions_covers');
+                    $bannerImagePath = $coverMedia?->getPath();
+                }
+
+                $banner = BannersController::updateFromEvent(
                     title: $request->input('banner_title', $academicSession->topic),
-                    image: $request->hasFile('banner_image') ? $request->file('banner_image') : null,
+                    image: $bannerImage,
+                    imagePath: $bannerImagePath,
                     link: $request->input('banner_link') ?: null,
                     eventId: $academicSession->id,
                     eventType: 'academic_session'
                 );
+
+                if ($banner === null) {
+                    return redirect()
+                        ->route('academicsessions.index')
+                        ->with('success', 'Sesión actualizada, pero no se pudo crear el banner porque no hay imagen de portada.');
+                }
             }
 
             return redirect()
@@ -179,8 +196,8 @@ class AcademicSessionsController extends Controller
     {
         $academicSession = AcademicSession::findOrFail($id);
 
-        return Inertia::render('AcademicSessions/Gallery', [
-            'academicSession' => $academicSession->only('id', 'topic'),
+        return Inertia::render('AcademicSessions/AcademicSessionGallery', [
+            'academicsession' => $academicSession->only('id', 'topic'),
             'images' => $academicSession->getMedia('academic_sessions_gallery')->map(fn($media) => [
                 'id' => $media->id,
                 'url' => $media->getUrl()
