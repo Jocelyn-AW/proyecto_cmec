@@ -103,6 +103,7 @@ class AttendeesController extends Controller
         if ($event_type == Constants::EVENT_CONFERENCE) {
             $allEvents->addSelect('surgeon_price', 'nurse_price');
         }
+        $allEvents->orderBy('created_at', 'desc');
 
         $active = (clone $allEvents)->where('is_active', '1');
 
