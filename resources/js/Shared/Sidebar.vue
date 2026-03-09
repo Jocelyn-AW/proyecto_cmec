@@ -166,6 +166,7 @@ import {
     WebinarIcon,
     Message2Line,
     BankIcon,
+    AcademicSesion
 } from "../icons"
 import { useSidebar, useSidebarProvider } from "@/composables/useSidebar";
 import { usePage } from "@inertiajs/vue3";
@@ -244,7 +245,7 @@ const menuGroups = computed(() => [
                     ],
                 },
                 {
-                    icon: WebinarIcon,
+                    icon: AcademicSesion,
                     name: "Sesiones Academicas",
                     subItems: [
                         { name: "Listado", path: "/academicsessions", pro: false},

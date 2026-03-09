@@ -7,8 +7,8 @@ import { onMounted, ref } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
-import UploadDiploma from './UploadDiploma.vue';
-import PaymentDetailsModal from './PaymentDetailsModal.vue';
+import UploadDiploma from '../Attendees/UploadDiploma.vue';
+import PaymentDetailsModal from '../Attendees/PaymentDetailsModal.vue';
 
 defineOptions({
     layout: AuthenticatedLayout

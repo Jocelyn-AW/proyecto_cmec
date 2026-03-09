@@ -380,7 +380,7 @@ const submit = () => {
                                     <select v-model="form.type"
                                         class="block w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-8 text-sm appearance-none text-gray-800 dark:text-white/90 dark:bg-gray-900 dark:border-gray-700 focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500">
                                         <option value="noticia">Noticia</option>
-                                        <option value="sesion">Sesión</option>
+                                        <!-- <option value="sesion">Sesión</option> -->
                                     </select>
                                     <span
                                         class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">

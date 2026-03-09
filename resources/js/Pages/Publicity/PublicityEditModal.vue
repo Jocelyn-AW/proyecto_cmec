@@ -18,6 +18,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'updated', 'warning', 'error'])
 
 const form = ref({
+    title: '',
     link: '',
     order: 0,
     currentImage: null
@@ -34,6 +35,7 @@ const { file: imageFile, preview: imagePreview, handleChange: onImageChange, res
 watch(() => props.post, (post) => {
     if (post) {
         form.value = {
+            title: post.title || '',
             link: post.link || '',
             order: post.order ?? 0,
             currentImage: post.image
@@ -43,7 +45,7 @@ watch(() => props.post, (post) => {
 }, { immediate: true })
 
 const resetForm = () => {
-    form.value = { link: '', order: 0, currentImage: null }
+    form.value = { title: '', link: '', order: 0, currentImage: null }
     resetImage()
 }
 
@@ -86,6 +88,7 @@ const submit = async () => {
 
     const formData = new FormData()
     formData.append('order', form.value.order)
+    formData.append('title', form.value.title)
 
     if (form.value.link && form.value.link.trim() !== '') {
         formData.append('link', form.value.link)
@@ -163,6 +166,14 @@ const submit = async () => {
                 <p v-else class="mt-1 text-xs text-gray-500">
                     Deja vacío para mantener la imagen actual.
                 </p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Título <span class="text-red-500">*</span>
+                </label>
+                <input v-model="form.title" type="text" placeholder="Nombre de la publicidad"
+                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-blue-500">
             </div>
 
             <div>
