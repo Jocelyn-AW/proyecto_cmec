@@ -216,24 +216,13 @@ const menuGroups = computed(() => [
 
             ...(isAdmin.value ? [
                 {
-                    icon: ImagesIcon,
-                    name: "Banners",
-                    path: '/banners'
-                },
-                {
-                    icon: NewsIcon,
-                    name: "Publicidad",
-                    path: '/publicity'
-                },
-                {
-                    icon: BlogIcon,
-                    name: "Noticias",
-                    path: '/news'
-                },
-                {
-                    icon: PriceTagIcon,
-                    name: "Membresías",
-                    path: '/memberships'
+                    icon: PresentationIcon,
+                    name: "Congresos",
+                    subItems: [
+                        { name: "Listado", path: "/conferences", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/conference", pro: false },
+                        
+                    ],
                 },
                 {
                     icon: WebinarIcon,
@@ -263,13 +252,29 @@ const menuGroups = computed(() => [
                     ],
                 },
                 {
-                    icon: PresentationIcon,
-                    name: "Congresos",
-                    subItems: [
-                        { name: "Listado", path: "/conferences", pro: false },
-                        { name: "Asistentes Registrados", path: "/attendees/conference", pro: false },
-                        
-                    ],
+                    icon: ImagesIcon,
+                    name: "Banners",
+                    path: '/banners'
+                },
+                {
+                    icon: NewsIcon,
+                    name: "Publicidad",
+                    path: '/publicity'
+                },
+                {
+                    icon: BlogIcon,
+                    name: "Noticias",
+                    path: '/news'
+                },
+                {
+                    icon: PriceTagIcon,
+                    name: "Membresías",
+                    path: '/memberships'
+                },
+                {
+                    icon: BankIcon,
+                    name: "Gestión de Datos de Bancarios",
+                    path: "/bankdetails",
                 },
                 {
                     icon: UserGroupIcon,
@@ -280,11 +285,7 @@ const menuGroups = computed(() => [
                         
                     ],
                 },
-                {
-                    icon: BankIcon,
-                    name: "Gestión de Datos de Bancarios",
-                    path: "/bankdetails",
-                },
+
 
             ] : []),
 
