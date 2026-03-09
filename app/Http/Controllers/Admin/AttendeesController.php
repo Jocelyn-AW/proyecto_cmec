@@ -28,6 +28,8 @@ class AttendeesController extends Controller
             $view = 'WebinarsAttendees/Index';
         } else if ($event_type === Constants::EVENT_ACADEMIC_SESSION) {
             $view = 'AcademicSessionsAttendees/Index';
+        } else if ($event_type === Constants::EVENT_CONFERENCE) {
+            $view = 'ConferencesAttendees/Index';
         }
 
         return Inertia::render($view, [
@@ -45,7 +47,8 @@ class AttendeesController extends Controller
         $did_attend = $request->input('did_attend', null);
         $perPage = $request->input('per_page', 10);
 
-        $title = $event_type == Constants::EVENT_CONFERENCE ? 'name' : 'topic';
+        $is_conference = $event_type == Constants::EVENT_CONFERENCE;
+        $title = $is_conference ? 'name' : 'topic';
 
         $attendees = Attendee::with(['event' => function ($query) use ($title) {
             $query->select('id', $title, 'member_price', 'guest_price', 'resident_price');
@@ -97,6 +100,10 @@ class AttendeesController extends Controller
         }
 
         $allEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'is_active');
+        if ($event_type == Constants::EVENT_CONFERENCE) {
+            $allEvents->addSelect('surgeon_price', 'nurse_price');
+        }
+
         $active = (clone $allEvents)->where('is_active', '1');
 
         return [
@@ -222,10 +229,13 @@ class AttendeesController extends Controller
             'did_attend' => 'boolean',
             'folio' => 'required|string|max:5',
 
+            'birth_date' => 'nullable|date',
+            'special_needs' => 'nullable|string|max:250',
+
             'event_id' => 'required|integer',
             'event_type' => 'required|string|in:course,conference,webinar,academic_session',
             'person_id' => 'nullable|integer',
-            'person_type' => 'required|string|in:member,resident,guest',
+            'person_type' => 'required|string|in:member,resident,guest,surgeon,nurse',
 
             'payment_method' => 'required|string|in:debit_card,credit_card,cash,transfer,stripe',
             'reference' => 'nullable|string',
