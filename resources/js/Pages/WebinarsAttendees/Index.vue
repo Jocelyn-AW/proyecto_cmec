@@ -212,9 +212,11 @@ const onEditSuccess = () => {
 
                 <template #actionButtons="{ item }">
                     <button :title="item.diploma_url ? 'Ver diploma PDF' : 'Subir diploma'" @click="openDiploma(item)"
+                        :disabled="!item.did_attend"
                         :class="item.diploma_url
                             ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-                            : 'bg-transparent text-gray-300 border-gray-200 hover:bg-gray-100 hover:text-gray-500'"
+                            : 'bg-transparent text-gray-300 border-gray-200 hover:bg-gray-100 hover:text-gray-500',
+                            item.did_attend ? '' : 'disabled text-white'"
                         class="p-2 rounded-lg transition-colors border">
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
                             class="w-4 h-4">

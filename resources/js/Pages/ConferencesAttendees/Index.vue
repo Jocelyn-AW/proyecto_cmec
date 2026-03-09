@@ -279,11 +279,12 @@ const handleOnDelete = (attendeeId) => {
                 <template #actionButtons="{ item }">
                     <button title="Ver diploma" @click="openDiploma(item)"
                         class="p-2 rounded-lg "
+                        :disabled="!item.did_attend"
                         :class="
                             item.diploma_url == null || item.diploma_url == '' 
                             ? 'bg-amber-30 text-amber-500 hover:bg-amber-600 hover:text-white transition-colors border border-amber-100 hover:border-amber-600' 
-                            : 'bg-amber-500 text-white hover:bg-amber-600 hover:text-white transition-colors border border-amber-500 hover:border-amber-100'
-                        "
+                            : 'bg-amber-500 text-white hover:bg-amber-600 hover:text-white transition-colors border border-amber-500 hover:border-amber-100',
+                            item.did_attend ? '' : 'disabled text-white'"
                         >
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
                             class="text-8xl w-4 h-4">
