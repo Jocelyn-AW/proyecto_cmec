@@ -52,6 +52,7 @@ import BlogIcon from "./BlogIcon.vue";
 import PriceTagIcon from "./PriceTagIcon.vue";
 import NewsIcon from "./NewsIcon.vue";
 import BankIcon from "./BankIcon.vue";
+import AcademicSesion from "./AcademicSesion.vue";
 
 export {
   BellIcon,
@@ -107,5 +108,6 @@ export {
   BlogIcon,
   PriceTagIcon,
   NewsIcon,
-  BankIcon
+  BankIcon,
+  AcademicSesion
 };

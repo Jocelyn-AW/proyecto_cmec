@@ -25,7 +25,7 @@ const newsToEdit = ref(null)
 
 // --- Filtros ---
 const search = ref(props.filters.search || '')
-const filterType = ref(props.filters.type || '')
+const filterType = ref('noticia');
 const filterStatus = ref(props.filters.status || '')
 const filterHasImage = ref(props.filters.has_image || '')
 const filterHasPdf = ref(props.filters.has_pdf || '')
@@ -136,7 +136,7 @@ const chevronSvg = `<svg class="stroke-current" width="16" height="16" viewBox="
                 <!-- Encabezado -->
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Noticias</h3>
-                    <p class="text-sm text-gray-500">Administra las noticias y sesiones publicadas</p>
+                    <p class="text-sm text-gray-500">Administra las noticias publicadas</p>
                 </div>
 
                 <!-- Toolbar -->
@@ -163,7 +163,7 @@ const chevronSvg = `<svg class="stroke-current" width="16" height="16" viewBox="
                                 <select v-model="filterType" :class="selectClass">
                                     <option value="">Todos los tipos</option>
                                     <option value="noticia">Noticia</option>
-                                    <option value="sesion">Sesión</option>
+                                    <!-- <option value="sesion">Sesión</option> -->
                                 </select>
                                 <span
                                     class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">

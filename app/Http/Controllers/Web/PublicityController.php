@@ -22,6 +22,7 @@ class PublicityController extends Controller
             ->map(function ($post) {
                 return [
                     'id' => $post->id,
+                    'title' => $post->title,
                     'order' => $post->order,
                     'link' => $post->link,
                     'is_active' => $post->is_active,
@@ -47,6 +48,7 @@ class PublicityController extends Controller
             ]);
 
             $data = $request->validate([
+                'title' => 'required|string|max:255',
                 'order' => 'required|numeric',
                 'link' => 'nullable|string|max:255|url:http,https',
                 'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:1024',
@@ -92,6 +94,7 @@ class PublicityController extends Controller
             ]);
 
             $data = $request->validate([
+                'title' => 'required|string|max:255',
                 'order' => 'required|numeric',
                 'link' => 'nullable|string|max:255|url:http,https',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',

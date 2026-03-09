@@ -26,6 +26,7 @@ class Post extends Model implements HasMedia
      * @var array<int, string>
      */
     protected $fillable = [
+        'title',
         'link',
         'order',
         'is_active',

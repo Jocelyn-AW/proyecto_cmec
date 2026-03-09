@@ -13,6 +13,9 @@ const props = defineProps({
     banner: {
         type: Object,
         default: null
+    },
+    eventType: { 
+        type: String, default: 'home' 
     }
 })
 
@@ -91,6 +94,11 @@ const submit = async () => {
     const formData = new FormData()
     formData.append('order', form.value.order)
     formData.append('title', form.value.title)
+    formData.append('event_type', props.eventType)
+
+    if (props.banner.event_id) {
+        formData.append('event_id', props.banner.event_id)
+    }
 
     if (form.value.link && form.value.link.trim() !== '') {
         formData.append('link', form.value.link)

@@ -218,7 +218,9 @@ class BannersController extends Controller
                     ->toMediaCollection('banners');
             }
 
-            return redirect()->route('banners.index');
+            return redirect()->route('banners.index', [
+                'event_type' => $request->get('event_type', 'home')
+            ]);
             /* return response()->json([
                 'message' => 'success',
                 'data' => [
@@ -239,19 +241,17 @@ class BannersController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function delete(int $id)
+    public function delete(Request $request, int $id)
     {
         try {
             $banner = Banner::findOrFail($id);
             $banner->clearMediaCollection('banners');
             $banner->delete();
 
-            return redirect()->route('banners.index');
+            return redirect()->route('banners.index', [
+                'event_type' => $request->get('event_type', 'home')
+            ]);
         } catch (Exception $e) {
-
-            /* return response()->json([
-                'message' => $e->getMessage(),
-            ], 500); */
             return redirect()->back()->withErrors([
                 'message' => $e->getMessage()
             ]);
@@ -279,13 +279,15 @@ class BannersController extends Controller
         ]);
     }
 
-    public function statusChange(int $id)
+    public function statusChange(Request $request, int $id)
     {
         try {
             $banner = Banner::findOrFail($id);
             $banner->is_active = !$banner->is_active;
             $banner->save();
-            return redirect()->route('banners.index');
+            return redirect()->route('banners.index', [
+                'event_type' => $request->get('event_type', 'home')
+            ]);
         } catch (Exception $e) {
             return redirect()->route('banners.index')->with('error', $e->getMessage());
         }
