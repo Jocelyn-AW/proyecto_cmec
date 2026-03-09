@@ -156,6 +156,9 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     createForm.did_attend = false;
+    createForm.reference = '';
+    createForm.payment_method = '';
+    createForm.specialty = '';
     createForm.birth_date = '';
     createForm.special_needs = '';
 

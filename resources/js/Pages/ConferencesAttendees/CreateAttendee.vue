@@ -135,10 +135,16 @@ const cleanForm = () => {
     createForm.folio = generateRandomString();
     createForm.status = '';
     createForm.cmec_member_id = null;
-    createForm.price = '';
+    createForm.price = '';        
+    createForm.reference = '';
+    createForm.payment_method = '';
+    createForm.specialty = '';
     createForm.birth_date = '';
     createForm.special_needs = '';
+
     selectedEvent.value = '';
+    selectedState.value = '';
+    selectedCity.value = '';
 }
 
 
