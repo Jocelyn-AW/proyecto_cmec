@@ -165,6 +165,11 @@ class AttendeesController extends Controller
     public function delete($id)
     {
         $attendee = Attendee::findOrFail($id);
+        if ($attendee->payments()->count() > 0) {
+            $attendee->payments()->delete();
+        }
+        $attendee->clearMediaCollection('diplomas');
+        
         $attendee->delete();
 
         return redirect()
