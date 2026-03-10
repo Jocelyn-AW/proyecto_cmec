@@ -28,7 +28,7 @@ const props = defineProps({
 const { alertState, warning, hideAlert } = useAlert();
 const page = usePage();
 
-const updateBanner = ref(false);
+/* const updateBanner = ref(false); */
 
 const form = useForm({
     id: null,
@@ -182,7 +182,7 @@ const handleSubmit = () => {
         data.append('program_pdf', pdf.file.value);
     }
 
-    if (updateBanner.value) {
+    /* if (updateBanner.value) {
         data.append('update_banner', '1');
         data.append('banner_title', form.topic ?? '');
 
@@ -193,7 +193,7 @@ const handleSubmit = () => {
         if (form.link && form.link.trim() !== '') {
             data.append('banner_link', form.link);
         }
-    }
+    } */
 
     router.post(`/academicsessions/${form.id}`, data, {
         forceFormData: true,
@@ -336,7 +336,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- ACTUALIZAR BANNER -->
-                        <div
+                        <!-- <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -353,7 +353,7 @@ const flatpickrTimeConfig = {
                                 <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
                             </button>
-                        </div>
+                        </div> -->
 
                     </div>
                 </div>

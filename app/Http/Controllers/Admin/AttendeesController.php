@@ -61,8 +61,9 @@ class AttendeesController extends Controller
                         $event_type => function ($query) use ($title) {
                             $query->select('id', $title);
                         }
-                ]);
-            }]);
+                    ]);
+                }
+            ]);
 
             $attendees->with('payments');
 
@@ -83,7 +84,6 @@ class AttendeesController extends Controller
             if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
 
             return $attendees->latest()->paginate($perPage)->withQueryString();
-
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }
@@ -169,9 +169,11 @@ class AttendeesController extends Controller
             $attendee->update($data);
             $this->registerPayment($attendee, $data);
 
-            return redirect()
-                ->route('attendees.index', ['event' => $data['event_type']])
-                ->with('success', 'Asistente actualizado exitosamente');
+            return redirect()->route('attendees.index', array_filter([
+                'event'      => $data['event_type'],
+                'event_id'   => $request->get('_filters_event_id'),
+                'did_attend' => $request->get('_filters_did_attend'),
+            ], fn($v) => $v !== null && $v !== ''))->with('success', 'Asistente actualizado exitosamente');
         } catch (ValidationException $e) {
             Log::error($e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -184,19 +186,21 @@ class AttendeesController extends Controller
         }
     }
 
-    public function delete($id)
+    public function delete(Request $request, $id)
     {
         $attendee = Attendee::findOrFail($id);
         if ($attendee->payments()->count() > 0) {
             $attendee->payments()->delete();
         }
         $attendee->clearMediaCollection('diplomas');
-        
+
         $attendee->delete();
 
-        return redirect()
-            ->route('attendees.index', ['event' => $attendee->event_type])
-            ->with('success', 'Asistente eliminado exitosamente');
+        return redirect()->route('attendees.index', array_filter([
+            'event'      => $attendee->event_type,
+            'event_id'   => $request->get('event_id'),
+            'did_attend' => $request->get('did_attend'),
+        ], fn($v) => $v !== null && $v !== ''))->with('success', 'Asistente eliminado exitosamente');
     }
 
     public function uploadDiploma(Request $request, $id)
@@ -213,7 +217,7 @@ class AttendeesController extends Controller
             ->with('success', 'Diploma subido exitosamente');
     }
 
-    public function changeDidAttend($id)
+    public function changeDidAttend(Request $request, $id)
     {
         try {
             $attendee = Attendee::findOrFail($id);
@@ -221,8 +225,11 @@ class AttendeesController extends Controller
             $attendee->did_attend = !$attendee->did_attend;
             $attendee->update();
 
-            return redirect()
-                ->route('attendees.index', ['event' => $attendee->event_type]);
+            return redirect()->route('attendees.index', array_filter([
+                'event'      => $attendee->event_type,
+                'event_id'   => $request->get('event_id'),
+                'did_attend' => $request->get('did_attend'),
+            ], fn($v) => $v !== null && $v !== ''));
         } catch (\Exception $e) {
             return redirect()
                 ->back()

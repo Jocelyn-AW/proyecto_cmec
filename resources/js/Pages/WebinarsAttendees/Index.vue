@@ -21,6 +21,20 @@ const showUploadDiploma = ref(false);
 const selectedItem = ref(null);
 const togglingId = ref(null); // evita doble click mientras se procesa
 
+const event_id = ref(route().params.event_id ?? '')
+const did_attend = ref(route().params.did_attend ?? '')
+
+const filters = { event_id, did_attend }
+const hasActiveFilters = () => event_id.value !== '' || did_attend.value !== ''
+const clearFilters = () => {
+    event_id.value = ''
+    did_attend.value = ''
+}
+const truncate = (text, max = 30) => {
+    if (!text) return ''
+    return text.length > max ? text.substring(0, max) + '…' : text
+}
+
 const props = defineProps({
     attendees: {
         type: Object,
@@ -84,7 +98,13 @@ const handleOnEdit = (attendee) => {
 }
 
 const onChangeAttend = (attendee) => {
-    router.get(route('attendees.change-attend', attendee.id))
+    const params = {}
+    if (event_id.value !== '') params.event_id = event_id.value
+    if (did_attend.value !== '') params.did_attend = did_attend.value
+
+    router.get(route('attendees.change-attend', attendee.id), params, {
+        preserveScroll: true,
+    })
 }
 
 const handleOnDelete = (attendeeId) => {
@@ -94,7 +114,14 @@ const handleOnDelete = (attendeeId) => {
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
-            router.delete(route('attendees.delete', attendeeId));
+            const params = {}
+            if (event_id.value !== '') params.event_id = event_id.value
+            if (did_attend.value !== '') params.did_attend = did_attend.value
+
+            router.delete(route('attendees.delete', attendeeId), {
+                data: params,
+                preserveScroll: true,
+            })
         }
     })
 }
@@ -160,7 +187,50 @@ const onEditSuccess = () => {
                 { label: 'Asistencia', key: 'did_attend', align: 'center' },
             ]" :paginator="props.attendees" :searchable="true" :per-page-options="[10, 25, 50, 100]"
                 :allow-create="true" :allow-actions="true" :allow-edit="true" :allow-delete="true"
-                @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']">
+                @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']"
+                :filter-values="filters">
+
+                <!-- NUEVO: filtros -->
+                <template #filters>
+                    <div class="flex flex-wrap items-center gap-3 px-4 py-3">
+
+                        <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            Webinar
+                        </label>
+                        <!-- Webinar -->
+                        <select v-model="event_id" class="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-2 text-sm text-gray-700
+                       dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                       focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Todos</option>
+                            <option v-for="e in allEvents" :key="e.id" :value="e.id">
+                                {{ truncate(e.topic, 35) }}
+                            </option>
+                        </select>
+
+                        <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            Asistencia
+                        </label>
+                        <!-- Asistencia -->
+                        <select v-model="did_attend" class="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700
+                       dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                       focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Todos</option>
+                            <option :value="1">Sí asistió</option>
+                            <option :value="0">No asistió</option>
+                        </select>
+
+                        <!-- Limpiar -->
+                        <button v-if="hasActiveFilters()" @click="clearFilters" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-gray-300
+                       dark:border-gray-700 text-sm text-gray-500 hover:text-red-500
+                       hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpiar
+                        </button>
+                    </div>
+                </template>
 
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
@@ -212,8 +282,7 @@ const onEditSuccess = () => {
 
                 <template #actionButtons="{ item }">
                     <button :title="item.diploma_url ? 'Ver diploma PDF' : 'Subir diploma'" @click="openDiploma(item)"
-                        :disabled="!item.did_attend"
-                        :class="item.diploma_url
+                        :disabled="!item.did_attend" :class="item.diploma_url
                             ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
                             : 'bg-transparent text-gray-300 border-gray-200 hover:bg-gray-100 hover:text-gray-500',
                             item.did_attend ? '' : 'disabled text-white'"
@@ -236,8 +305,9 @@ const onEditSuccess = () => {
             <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.activeEvents"
                 :errors="props.errors" @close="showCreateDrawer = false" @success="onCreateSuccess" />
             <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
-                :events="props.allEvents" :errors="props.errors" @close="showEditDrawer = false"
-                @success="onEditSuccess" />
+                :events="props.allEvents" :errors="props.errors"
+                :active-filters="{ event_id: event_id, did_attend: did_attend }"
+                @close="showEditDrawer = false" @success="onEditSuccess" />
             <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem" @close="showUploadDiploma = false" />
 
             <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" @close="showPaymentDetails = false"

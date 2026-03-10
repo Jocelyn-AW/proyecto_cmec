@@ -87,7 +87,7 @@ class WebinarsController extends Controller
 
             $this->updateWebinarMedia($webinar, $request);
 
-            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+            /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
                     title: $request->input('banner_title', $webinar->topic),
                     image: $request->file('banner_image'),
@@ -95,7 +95,7 @@ class WebinarsController extends Controller
                     eventId: $webinar->id,
                     eventType: 'webinar'
                 );
-            }
+            } */
 
             return redirect()
                 ->route('webinars.index')
@@ -150,7 +150,7 @@ class WebinarsController extends Controller
 
             $this->updateWebinarMedia($webinar, $request);
 
-            if ($request->input('update_banner') === '1') {
+            /* if ($request->input('update_banner') === '1') {
 
                 $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
 
@@ -174,7 +174,7 @@ class WebinarsController extends Controller
                         ->route('webinars.index')
                         ->with('success', 'Webinar actualizado, pero no se pudo crear el banner porque no hay imagen de portada.');
                 }
-            }
+            } */
 
             return redirect()
                 ->route('webinars.index')

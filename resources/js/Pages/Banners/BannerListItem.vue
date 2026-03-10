@@ -42,7 +42,7 @@ const emit = defineEmits(['edit', 'delete', 'status-change'])
             <div v-else class="text-sm text-gray-400">-- sin link --</div>
 
             <!-- fechas del evento, si existen -->
-            <div v-if="banner.dates && banner.dates.length > 0" class="flex flex-wrap gap-1.5 pt-0.5">
+            <!-- <div v-if="banner.dates && banner.dates.length > 0" class="flex flex-wrap gap-1.5 pt-0.5">
                 <span v-for="(date, i) in banner.dates" :key="i"
                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +51,7 @@ const emit = defineEmits(['edit', 'delete', 'status-change'])
                     </svg>
                     {{ date }}
                 </span>
-            </div>
+            </div> -->
 
         </div>
 

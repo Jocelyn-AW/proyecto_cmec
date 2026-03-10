@@ -56,7 +56,10 @@ const typeLabels = {
     academic_session: 'Sesiones Académicas',
     webinar: 'Webinars',
     course: 'Cursos',
+    conference: "Congreso",
+    preconference: "Pre-Congreso",
 }
+
 const labelFor = (type) => typeLabels[type] ?? type
 
 // Lista ordenada
@@ -221,8 +224,7 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                         </div>
 
                         <!-- FILTRO FECHA (solo para no-home) -->
-                        <template v-if="selectedType !== 'home'">
-                            <!-- Fecha desde -->
+                        <!-- <template v-if="selectedType !== 'home'">
                             <div class="min-w-[150px]">
                                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                                     Fecha desde
@@ -232,7 +234,6 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                     class="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
                             </div>
 
-                            <!-- Fecha hasta -->
                             <div class="min-w-[150px]">
                                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                                     Fecha hasta
@@ -242,12 +243,11 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                     class="w-full h-10 px-3 rounded-lg border border-gray-300 text-sm text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90 focus:outline-none focus:ring-2 focus:ring-brand-500/20" />
                             </div>
 
-                            <!-- Limpiar fechas -->
                             <button v-if="dateFrom || dateTo" @click="dateFrom = ''; dateTo = ''; applyFilters()"
                                 class="h-10 px-3 text-xs text-gray-500 hover:text-red-500 transition-colors self-end">
                                 Limpiar fechas
                             </button>
-                        </template>
+                        </template> -->
 
                     </div>
                 </div>
@@ -279,7 +279,7 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                             ⚠️ Las imágenes deben pesar máximo 1MB
                         </p>
 
-                        <button v-if="selectedType === 'home'" @click="showCreateModal = true"
+                        <button @click="showCreateModal = true"
                             class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg bg-green-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-green-700 transition-colors shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
                                 class="w-5 h-5">
@@ -288,10 +288,6 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                             </svg>
                             Nuevo banner
                         </button>
-                        <p v-if="selectedType !== 'home'"
-                            class="inline-flex h-10 w-full sm:w-auto justify-center items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium shadow-sm text-gray-500">
-                            Estos banners se crean desde sus respectivos eventos
-                        </p>
                     </div>
 
                     <!-- DRAG LIST -->
@@ -314,7 +310,8 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
         </div>
 
         <!-- Modales -->
-        <BannerCreateModal :show="showCreateModal" :next-order="nextOrder" @close="showCreateModal = false"
+        <BannerCreateModal :show="showCreateModal" :next-order="nextOrder" :event-type="selectedType"
+            @close="showCreateModal = false"
             @created="() => { showCreateModal = false; success('Banner creado correctamente') }"
             @warning="(msg) => warning(msg)" @error="(msg) => errorA(msg)" />
 

@@ -21,6 +21,21 @@ const showUploadDiploma = ref(false);
 const selectedItem = ref(null);
 const togglingId = ref(null); // evita doble click mientras se procesa
 
+const event_id = ref(route().params.event_id ?? '')
+const did_attend = ref(route().params.did_attend ?? '')
+
+const filters = { event_id, did_attend }
+const hasActiveFilters = () => event_id.value !== '' || did_attend.value !== ''
+const clearFilters = () => {
+    event_id.value = ''
+    did_attend.value = ''
+}
+
+const truncate = (text, max = 30) => {
+    if (!text) return ''
+    return text.length > max ? text.substring(0, max) + '…' : text
+}
+
 const props = defineProps({
     attendees: {
         type: Object,
@@ -148,7 +163,8 @@ const onEditSuccess = () => {
         <div class="space-y-5">
             <div class="">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Asistentes a sesiones academicas</h3>
-                <p class="text-sm text-gray-500">Administra los asistentes registrados a sesiones academicas desde esta sección</p>
+                <p class="text-sm text-gray-500">Administra los asistentes registrados a sesiones academicas desde esta
+                    sección</p>
             </div>
             <DataTable :columns="[
                 { label: 'Sesión Academica', key: 'event_name' },
@@ -160,7 +176,49 @@ const onEditSuccess = () => {
                 { label: 'Asistencia', key: 'did_attend', align: 'center' },
             ]" :paginator="props.attendees" :searchable="true" :per-page-options="[10, 25, 50, 100]"
                 :allow-create="true" :allow-actions="true" :allow-edit="true" :allow-delete="true"
-                @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']">
+                @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']"
+                :filter-values="filters">
+
+                <template #filters>
+                    <div class="flex flex-wrap items-center gap-3 px-4 py-3">
+
+                        <!-- Sesión académica -->
+                        <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            Sesión académica
+                        </label>
+                        <select v-model="event_id" class="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-2 text-sm text-gray-700
+                       dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                       focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Todas las sesiones</option>
+                            <option v-for="e in allEvents" :key="e.id" :value="e.id">
+                                {{ truncate(e.topic, 35) }}
+                            </option>
+                        </select>
+
+                        <!-- Asistencia -->
+                        <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            Asistencia
+                        </label>
+                        <select v-model="did_attend" class="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700
+                       dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                       focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Todos</option>
+                            <option :value="1">Sí asistió</option>
+                            <option :value="0">No asistió</option>
+                        </select>
+
+                        <!-- Limpiar -->
+                        <button v-if="hasActiveFilters()" @click="clearFilters" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-gray-300
+                       dark:border-gray-700 text-sm text-gray-500 hover:text-red-500
+                       hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpiar
+                        </button>
+                    </div>
+                </template>
 
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
@@ -212,8 +270,7 @@ const onEditSuccess = () => {
 
                 <template #actionButtons="{ item }">
                     <button :title="item.diploma_url ? 'Ver diploma PDF' : 'Subir diploma'" @click="openDiploma(item)"
-                        :disabled="!item.did_attend"
-                        :class="item.diploma_url
+                        :disabled="!item.did_attend" :class="item.diploma_url
                             ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
                             : 'bg-transparent text-gray-300 border-gray-200 hover:bg-gray-100 hover:text-gray-500',
                             item.did_attend ? '' : 'disabled text-white'"

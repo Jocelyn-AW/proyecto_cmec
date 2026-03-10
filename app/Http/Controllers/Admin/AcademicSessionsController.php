@@ -76,7 +76,7 @@ class AcademicSessionsController extends Controller
 
             $this->updateAcademicSessionMedia($academicSession, $request);
 
-            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+            /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
                     title: $request->input('banner_title', $academicSession->topic),
                     image: $request->file('banner_image'),
@@ -84,7 +84,7 @@ class AcademicSessionsController extends Controller
                     eventId: $academicSession->id,
                     eventType: 'academic_session'
                 );
-            }
+            } */
 
             return redirect()
                 ->route('academicsessions.index')
@@ -133,7 +133,7 @@ class AcademicSessionsController extends Controller
 
             $this->updateAcademicSessionMedia($academicSession, $request);
 
-            if ($request->input('update_banner') === '1') {
+            /* if ($request->input('update_banner') === '1') {
 
                 $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
 
@@ -158,7 +158,7 @@ class AcademicSessionsController extends Controller
                         ->route('academicsessions.index')
                         ->with('success', 'Sesión actualizada, pero no se pudo crear el banner porque no hay imagen de portada.');
                 }
-            }
+            } */
 
             return redirect()
                 ->route('academicsessions.index')

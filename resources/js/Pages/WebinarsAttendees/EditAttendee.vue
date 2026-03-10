@@ -36,6 +36,10 @@ const props = defineProps({
     errors: {
         type: Object,
         default: () => ({})
+    },
+    activeFilters: {
+        type: Object,
+        default: () => ({})
     }
 })
 
@@ -149,7 +153,13 @@ const submitCreate = () => {
     createForm.event_type = 'webinar';
     createForm.price = price.value;
 
-    router.post(route('attendees.update', createForm.id), createForm, {
+    /* console.log('Filtros activos:', props.activeFilters) */
+
+    router.post(route('attendees.update', createForm.id), {
+        ...createForm,
+        _filters_event_id: props.activeFilters?.event_id ?? '',
+        _filters_did_attend: props.activeFilters?.did_attend ?? '',
+    }, {
         onSuccess: () => {
             cleanForm();
             emit('success');
