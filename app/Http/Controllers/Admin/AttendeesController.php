@@ -14,6 +14,7 @@ use App\Models\Webinar;
 use App\Models\Member;
 use App\Models\Payment;
 use Exception;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 
@@ -52,21 +53,28 @@ class AttendeesController extends Controller
             $is_conference = $event_type == Constants::EVENT_CONFERENCE;
             $title = $is_conference ? 'name' : 'topic';
 
-            $attendees = Attendee::with(['event' => function ($query) use ($title) {
-                $query->select('id', $title, 'member_price', 'guest_price', 'resident_price');
+            $attendees = Attendee::where('event_type', $event_type);
+
+            $attendees->with([
+                'event' => function (MorphTo $morphTo) use ($event_type, $title) {
+                    $morphTo->morphWith([
+                        $event_type => function ($query) use ($title) {
+                            $query->select('id', $title);
+                        }
+                ]);
             }]);
 
             $attendees->with('payments');
 
             if (!empty($search)) {
-                $attendees->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('state', 'like', "%{$search}%")
-                    ->orWhere('city', 'like', "%{$search}%")
-                    ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
+                $attendees->where(function ($query) use ($search, $event_type, $title) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('state', 'like', "%{$search}%")
+                        ->orWhere('city', 'like', "%{$search}%")
+                        ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
+                });
             }
-
-            $attendees->where('event_type', $event_type);
 
             if (!empty($event_id)) {
                 $attendees->where('event_id', $event_id);
@@ -78,10 +86,6 @@ class AttendeesController extends Controller
 
         } catch (Exception $e) {
             Log::error($e->getMessage());
-            return redirect()
-                    ->back()
-                    ->with('error', 'Ocurrió un error al buscar el asistente. Por favor, inténtalo de nuevo.')
-                    ->withInput();
         }
     }
 
