@@ -133,13 +133,13 @@ const formattedDate = (item) => {
                 :columns="[
                     { label: 'Título', key: 'topic' },
                     { label: 'inicio', key: 'date' },
-                    { label: 'Descripción', key: 'description' },
                     { label: 'Duración', key: 'duration' },
                     { label: 'Organiza', key: 'organized_by' },
                     { label: 'Costo Miembro', key: 'member_price' },
                     { label: 'Costo Residente', key: 'resident_price' },
                     { label: 'Costo Invitado', key: 'guest_price' },
-                    { label: 'Link', key: 'link' },
+                    { label: 'Modalidad', key: 'format' },
+                    { label: 'Link de conexion', key: 'link' },
                     { label: 'Estatus', key: 'is_active' }
                 ]"
                 :paginator="props.courses"
@@ -160,17 +160,12 @@ const formattedDate = (item) => {
                     {{ truncate(item.topic, 25) }}
                 </template>
 
-                <template #cell-description="{item}">
-                    {{ truncate(item.description, 40) }}
-                </template>
-
                 <template #cell-date="{ item }">
                     {{ formattedDate(item) }}
                 </template>
 
                 <template #cell-duration="{ item }">
                     {{ item.duration }} {{ item.duration > 1 ? 'horas' : 'hora' }}
-
                 </template>
 
                 <template #cell-member_price="{ item }">
@@ -194,6 +189,14 @@ const formattedDate = (item) => {
                         :class="item.guest_price == '0.00' ? 'bg-emerald-200 text-emerald-700' : 'bg-sky-200 text-sky-700'"
                         >
                         {{ item.guest_price === '0.00' ? 'Gratis' : '$' + item.guest_price }}
+                    </span>
+                </template>
+
+                <template #cell-format="{ item }">
+                    <span>
+                        {{ item.format === 'in_person' ? 'Presencial' : '' }}
+                        {{ item.format === 'hybrid' ? 'Hibrida' : '' }}
+                        {{ item.format === 'online' ? 'En línea' : '' }}
                     </span>
                 </template>
 

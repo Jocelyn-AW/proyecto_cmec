@@ -769,4 +769,5 @@ span.flatpickr-weekday,
 .disabled {
   background-color: var(--color-gray-300);
   cursor: not-allowed;
+  border-color: var(--color-gray-300);
 }
