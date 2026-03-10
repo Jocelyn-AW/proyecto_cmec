@@ -13,6 +13,7 @@ use App\Models\Conference;
 use App\Models\Webinar;
 use App\Models\Member;
 use App\Models\Payment;
+use Exception;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 
@@ -42,37 +43,46 @@ class AttendeesController extends Controller
 
     private function addFilters(Request $request, $event_type)
     {
-        $search = $request->input('search', null);
-        $event_id = $request->input('event_id', null);
-        $did_attend = $request->input('did_attend', null);
-        $perPage = $request->input('per_page', 10);
+        try {
+            $search = $request->input('search', null);
+            $event_id = $request->input('event_id', null);
+            $did_attend = $request->input('did_attend', null);
+            $perPage = $request->input('per_page', 10);
 
-        $is_conference = $event_type == Constants::EVENT_CONFERENCE;
-        $title = $is_conference ? 'name' : 'topic';
+            $is_conference = $event_type == Constants::EVENT_CONFERENCE;
+            $title = $is_conference ? 'name' : 'topic';
 
-        $attendees = Attendee::with(['event' => function ($query) use ($title) {
-            $query->select('id', $title, 'member_price', 'guest_price', 'resident_price');
-        }]);
+            $attendees = Attendee::with(['event' => function ($query) use ($title) {
+                $query->select('id', $title, 'member_price', 'guest_price', 'resident_price');
+            }]);
 
-        $attendees->with('payments');
+            $attendees->with('payments');
 
-        if (!empty($search)) {
-            $attendees->where('name', 'like', "%{$search}%")
-                ->orWhere('email', 'like', "%{$search}%")
-                ->orWhere('state', 'like', "%{$search}%")
-                ->orWhere('city', 'like', "%{$search}%")
-                ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
+            if (!empty($search)) {
+                $attendees->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('state', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
+            }
+
+            $attendees->where('event_type', $event_type);
+
+            if (!empty($event_id)) {
+                $attendees->where('event_id', $event_id);
+            }
+
+            if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
+
+            return $attendees->latest()->paginate($perPage)->withQueryString();
+
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()
+                    ->back()
+                    ->with('error', 'Ocurrió un error al buscar el asistente. Por favor, inténtalo de nuevo.')
+                    ->withInput();
         }
-
-        $attendees->where('event_type', $event_type);
-
-        if (!empty($event_id)) {
-            $attendees->where('event_id', $event_id);
-        }
-
-        if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
-
-        return $attendees->latest()->paginate($perPage)->withQueryString();
     }
 
     private function getEvents($event_type)
