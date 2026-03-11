@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\AcademicSession;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -25,6 +24,8 @@ use App\Models\User;
 use App\Models\Webinar;
 use App\Models\Conference;
 use App\Models\News;
+use App\Models\AcademicSession;
+use App\Models\Album;
 use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
@@ -64,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
             'webinar' => Webinar::class,
             'news' => News::class,
             'academic_session' => AcademicSession::class,
+            'album' => Album::class,
         ]);
 
         Vite::prefetch(concurrency: 3);

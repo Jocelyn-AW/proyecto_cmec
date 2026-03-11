@@ -170,7 +170,10 @@ const openPdf = (webinar) => {
 }
 
 const openGallery = (webinar) => {
-    router.get(route('webinars.gallery', webinar.id));
+    router.get(route('albums.index', {
+        event_type: 'webinar',
+        event_id: webinar.id,
+    }))
 }
 </script>
 
