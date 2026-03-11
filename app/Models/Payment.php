@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 
 class Payment extends Model
 {
+    use SoftDeletes;
+    
     protected $table = Constants::TABLE_PAYMENTS;
 
     protected $fillable = [

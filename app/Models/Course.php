@@ -9,10 +9,11 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\EventSession;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, SoftDeletes;
 
     /**
      * The table associated with the model.
