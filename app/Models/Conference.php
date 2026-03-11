@@ -42,7 +42,9 @@ class Conference extends Model implements HasMedia
     protected $appends = [
         'cover_url',
         'gallery_urls',
-        'sponsors_logos_urls',
+        'platinum_sponsors_urls',
+        'golden_sponsors_urls',
+        'silver_sponsors_urls',
         'program_url',
     ];
 
@@ -81,7 +83,17 @@ class Conference extends Model implements HasMedia
             ->useDisk('public')
             ->withResponsiveImages();
 
-        $this->addMediaCollection('conference_sponsor_logos')
+        $this->addMediaCollection('conference_platinum_sponsors')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('conference_golden_sponsors')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('conference_silver_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
             ->withResponsiveImages();
@@ -122,6 +134,42 @@ class Conference extends Model implements HasMedia
         return Attribute::make(function () {
             $media = $this->getFirstMedia('conference_program');
             return $media ? $media->getUrl() : null;
+        });
+    }
+
+    protected function platinumSponsorsUrls(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getMedia('conference_platinum_sponsors')->map(function ($media) {                
+                return [
+                    'id' => $media->id,
+                    'url' =>  $media->getUrl()
+                ];
+            });
+        });
+    }
+
+    protected function goldenSponsorsUrls(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getMedia('conference_golden_sponsors')->map(function ($media) {
+                return [
+                    'id' => $media->id,
+                    'url' =>  $media->getUrl()
+                ];
+            });
+        });
+    }
+
+    protected function silverSponsorsUrls(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getMedia('conference_silver_sponsors')->map(function ($media) {
+                return [
+                    'id' => $media->id,
+                    'url' =>  $media->getUrl()
+                ];
+            });
         });
     }
 }

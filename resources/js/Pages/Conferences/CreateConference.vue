@@ -1,12 +1,14 @@
 <script setup>
-import { Head, router } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { reactive, watch } from 'vue';
 import flatPickr from "vue-flatpickr-component";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
 import Dropzone from '@/Components/Dropzone.vue';
 import { useFileUpload, useImageUpload } from '@/composables/useImageDropped';
+import { useAlert } from '@/composables/useAlert';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Alerta from '@/Components/Alerta.vue';
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -55,20 +57,55 @@ const formData = reactive({
     additional_comments: "",
 });
 
+const page = usePage();
+const { alertState, success, errorA, warning, hideAlert } = useAlert()
+
+watch(() => page.props.flash, (value) => {
+    if (!value) return
+
+    if (value.success) success(value.success)
+    if (value.warning) warning(value.warning)
+    if (value.error) errorA(value.error)
+}, {immediate: true, deep: true})
+
 //Archivos
 const cover = useImageUpload({
     maxSizeMB: 1,
     acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
     onError: (message) => {
-        alert(message);
+        warning(message);
     },
 });
 
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
-    onError: (msg) => alert(msg)
+    onError: (msg) => warning(msg)
 })
+
+const platinum = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+const golden = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+const silver = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
 
 //Horarios
 const addSession = () => {
@@ -98,7 +135,7 @@ const flatpickrTimeConfig = {
 
 const handleSubmit = () => {
     if (!cover.file.value) {
-        alert("Por favor selecciona una imagen de portada para el curso");
+        warning("Por favor selecciona una imagen de portada para el congreso");
         return;
     }
     formData.cover_image = cover.file.value;
@@ -106,6 +143,10 @@ const handleSubmit = () => {
     if (pdf.file.value) {
         formData.program_pdf = pdf.file.value;
     }
+
+    formData.platinum_sponsors = platinum.files.value;
+    formData.golden_sponsors = golden.files.value;
+    formData.silver_sponsors = silver.files.value;
 
     router.post("/conferences/new", formData);
 };
@@ -359,7 +400,74 @@ const handleCancel = () => {
                     </div>
                 </div>
             </div>
-
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-900/50">
+                    <h4 class="text-base font-semibold text-[var(--primary-navy)] dark:text-white/90">Patrocinadores</h4>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div class="">
+                        <div class="pb-5">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Platino
+                            </label>
+                            <Dropzone multiple 
+                                :previews="platinum.previews.value" 
+                                :is-dragging="platinum.isDragging.value" 
+                                :max-files="20"
+                                :columns="'7'"
+                                @change="platinum.handleChange" 
+                                @drop="platinum.handleDrop" 
+                                @drag-enter="platinum.handleDragEnter"
+                                @drag-leave="platinum.handleDragLeave" 
+                                @remove-at="platinum.removeAt" 
+                                @remove="platinum.reset"
+                                />  
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <hr>
+                        <div class="py-5">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Oro
+                            </label>
+                            <Dropzone multiple 
+                                :previews="golden.previews.value" 
+                                :is-dragging="golden.isDragging.value" 
+                                :max-files="20"
+                                :columns="'7'"
+                                @change="golden.handleChange" 
+                                @drop="golden.handleDrop" 
+                                @drag-enter="golden.handleDragEnter"
+                                @drag-leave="golden.handleDragLeave" 
+                                @remove-at="golden.removeAt" 
+                                @remove="golden.reset"
+                                />  
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <hr>
+                        <div class="pt-5">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Plata
+                            </label>
+                            <Dropzone multiple 
+                                :previews="silver.previews.value" 
+                                :is-dragging="silver.isDragging.value" 
+                                :max-files="20"
+                                :columns="'7'"
+                                @change="silver.handleChange" 
+                                @drop="silver.handleDrop" 
+                                @drag-enter="silver.handleDragEnter"
+                                @drag-leave="silver.handleDragLeave" 
+                                @remove-at="silver.removeAt" 
+                                @remove="silver.reset" 
+                                />  
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-900/50">
                     <h4 class="text-base font-semibold text-[var(--primary-navy)] dark:text-white/90">Costos y detalles de pago</h4>
@@ -510,4 +618,15 @@ const handleCancel = () => {
             </div>
         </div>
     </div>
+    <Alerta
+        :show="alertState.show"
+        :message="alertState.message"
+        :title="alertState.title"
+        :type="alertState.type"
+        :buttonText="alertState.buttonText"
+        :cancelText="alertState.cancelText"
+        @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
+        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()"
+        @close="hideAlert()"
+    />
 </template>

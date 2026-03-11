@@ -77,7 +77,7 @@ class ConferencesController extends Controller
             $conference->sessions()->createMany($request->sessions);
 
             $this->updateConferenceMedia($conference, $request);
-
+            
             return redirect()
                     ->route('conferences.index')
                     ->with('success', 'Congreso creado exitosamente');
@@ -202,7 +202,13 @@ class ConferencesController extends Controller
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
-            'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp'
+            //Patocinadores
+            'platinum_sponsors.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'golden_sponsors.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'silver_sponsors.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'platinum_delete.*' => 'nullable|numeric',
+            'golden_delete.*' => 'nullable|numeric',
+            'silver_delete.*' => 'nullable|numeric',
         ];
 
         if ($request->isMethod('post')) {
@@ -220,6 +226,7 @@ class ConferencesController extends Controller
             'cover_image.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
             'program_pdf.mimes' => 'El programa del congreso debe ser un PDF.',
             'bank_detail_id.exists' => 'Seleccione una cuenta válida',
+            '*.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
             '*.required' => 'Este campo es obligatorio.',
             '*.string' => 'El campo debe ser una cadena de texto.',
             '*.max' => 'El campo no debe exceder los :max caracteres.',
@@ -239,11 +246,44 @@ class ConferencesController extends Controller
                         ->toMediaCollection('conference_covers');
         }
 
-        if ($request->hasFile('sponsor_logos')) {
-            $conference->clearMediaCollection('conference_sponsor_logos');
-            foreach ($request->file('sponsor_logos') as $logo) {
-                $conference ->addMedia($logo)
-                            ->toMediaCollection('conference_sponsor_logos');
+        if ($request->hasFile('platinum_sponsors')) {
+            foreach ($request->file('platinum_sponsors') as $logo) {
+                $conference->addMedia($logo)->toMediaCollection('conference_platinum_sponsors');
+            }
+        }
+
+        if (!empty($request->input('platinum_delete'))) {
+            foreach ($request->get('platinum_delete') as $item) {
+                $media = $conference->getMedia('conference_platinum_sponsors')->where('id', $item)->first();
+                if ($media) $media->delete();
+            }
+        }
+
+        //Oro
+        if ($request->hasFile('golden_sponsors')) {
+            foreach ($request->file('golden_sponsors') as $logo) {
+                $conference->addMedia($logo)->toMediaCollection('conference_golden_sponsors');
+            }
+        }
+
+        if (!empty($request->input('golden_delete'))) {
+            foreach ($request->get('golden_delete') as $item) {
+                $media = $conference->getMedia('conference_golden_sponsors')->where('id', $item)->first();
+                if ($media) $media->delete();
+            }
+        }
+
+        //Plata
+        if ($request->hasFile('silver_sponsors')) {
+            foreach ($request->file('silver_sponsors') as $logo) {
+                $conference->addMedia($logo)->toMediaCollection('conference_silver_sponsors');
+            }
+        }
+
+        if (!empty($request->input('silver_delete'))) {
+            foreach ($request->get('silver_delete') as $item) {
+                $media = $conference->getMedia('conference_silver_sponsors')->where('id', $item)->first();
+                if ($media) $media->delete();
             }
         }
 
@@ -325,7 +365,9 @@ class ConferencesController extends Controller
     {
         $conference->clearMediaCollection('conference_covers');
         $conference->clearMediaCollection('conference_gallery');
-        $conference->clearMediaCollection('conference_sponsor_logos');
+        $conference->clearMediaCollection('conference_platinum_sponsors');
+        $conference->clearMediaCollection('conference_golden_sponsors');
+        $conference->clearMediaCollection('conference_silver_sponsors');
         $conference->clearMediaCollection('conference_program');
     }
 }
