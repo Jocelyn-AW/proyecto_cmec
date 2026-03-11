@@ -7,6 +7,9 @@ use App\Models\BankDetail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Course;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 use function Illuminate\Log\log;
 
 class CoursesController extends Controller
@@ -84,7 +87,8 @@ class CoursesController extends Controller
     }
 
     public function update(Request $request) {
-        try {            
+        try {
+            DB::beginTransaction();       
             $this->mergeNullableFields($request);
 
             $validationRules = $this->getValidationArray();
@@ -100,16 +104,18 @@ class CoursesController extends Controller
 
             $this->updateCourseMedia($course, $request);
 
+            DB::commit();
+
             return redirect()
                 ->route('courses.index')
                 ->with('success', 'Curso actualizado exitosamente');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-
+            DB::rollBack();
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             log('e', array($e->getMessage()));
-
+            DB::rollBack();
             return redirect()
             ->back()
             ->with('error', 'Hubo un error al actualizar el curso. Intenta de nuevo más tarde.')
@@ -215,8 +221,11 @@ class CoursesController extends Controller
     private function deleteCourseMedia(Course $course)
     {
         $course->clearMediaCollection('courses_covers');
+        $course->clearMediaCollection('courses_previews');
         $course->clearMediaCollection('courses_gallery');
-        $course->clearMediaCollection('courses_sponsors_logos');
+        $course->clearMediaCollection('courses_platinum_sponsors');
+        $course->clearMediaCollection('courses_golden_sponsors');
+        $course->clearMediaCollection('courses_silver_sponsors');
         $course->clearMediaCollection('courses_program');
     }
 
@@ -227,10 +236,51 @@ class CoursesController extends Controller
             $course->addMediaFromRequest('cover_image')->toMediaCollection('courses_covers');
         }
 
-        if ($request->hasFile('sponsor_logos')) {
-            $course->clearMediaCollection('courses_sponsors_logos');
-            foreach ($request->file('sponsor_logos') as $logo) {
-                $course->addMedia($logo)->toMediaCollection('courses_sponsors_logos');
+        if ($request->hasFile('cover_preview_image')) {
+            $course->clearMediaCollection('courses_previews');
+            $course->addMediaFromRequest('cover_preview_image')->toMediaCollection('courses_previews');
+        }
+
+        //Platino
+        if ($request->hasFile('platinum_sponsors')) {
+            foreach ($request->file('platinum_sponsors') as $logo) {
+                $course->addMedia($logo)->toMediaCollection('courses_platinum_sponsors');
+            }
+        }
+
+        if (!empty($request->input('platinum_delete'))) {
+            foreach ($request->get('platinum_delete') as $item) {
+                $media = $course->getMedia('courses_platinum_sponsors')->where('id', $item)->first();
+                if ($media) $media->delete();
+            }
+        }
+
+        //Oro
+        if ($request->hasFile('golden_sponsors')) {
+            foreach ($request->file('golden_sponsors') as $logo) {
+                $course->addMedia($logo)->toMediaCollection('courses_golden_sponsors');
+            }
+        }
+
+        if (!empty($request->input('golden_delete'))) {
+            foreach ($request->get('golden_delete') as $item) {
+                $media = $course->getMedia('courses_golden_sponsors')->where('id', $item)->first();
+                if ($media) $media->delete();
+            }
+        }
+
+
+        //Plata
+        if ($request->hasFile('silver_sponsors')) {
+            foreach ($request->file('silver_sponsors') as $logo) {
+                $course->addMedia($logo)->toMediaCollection('courses_silver_sponsors');
+            }
+        }
+
+        if (!empty($request->input('silver_delete'))) {
+            foreach ($request->get('silver_delete') as $item) {
+                $media = $course->getMedia('courses_silver_sponsors')->where('id', $item)->first();
+                if ($media) $media->delete();
             }
         }
 
@@ -264,8 +314,14 @@ class CoursesController extends Controller
             'sessions.*.time'  => 'required|date_format:H:i',            
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'cover_preview_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
-            'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp'
+            'platinum_sponsors.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'golden_sponsors.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'silver_sponsors.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'platinum_delete.*' => 'nullable|numeric',
+            'golden_delete.*' => 'nullable|numeric',
+            'silver_delete.*' => 'nullable|numeric',
         ];
     }
 
@@ -274,8 +330,8 @@ class CoursesController extends Controller
         return [
             'cover_image.required' => 'La imagen de portada es obligatoria.',
             'cover_image.image' => 'El archivo debe ser una imagen.',
-            'cover_image.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
             'program_pdf.mimes' => 'El archivo del programa debe ser un PDF.',
+            '*.mimes' => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
             '*.required' => 'Este campo es obligatorio.',
             '*.string' => 'El campo debe ser una cadena de texto.',
             '*.max' => 'El campo no debe exceder los :max caracteres.',

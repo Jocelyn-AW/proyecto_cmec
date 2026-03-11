@@ -7,6 +7,8 @@ import "flatpickr/dist/flatpickr.css";
 import Dropzone from "@/Components/Dropzone.vue";
 import { reactive } from "vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
+import Alerta from "@/Components/Alerta.vue";
+import { useAlert } from "@/composables/useAlert";
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -52,6 +54,7 @@ const formData = reactive({
     additional_info: "",
 });
 
+const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
 const addSession = () => {
     formData.sessions.push({ date: '', time: '' })
@@ -61,28 +64,75 @@ const removeSession = (index) => {
     formData.sessions.splice(index, 1)
 }
 
-//una imagen
 const cover = useImageUpload({
     maxSizeMB: 1,
+    dimensions: {
+        minWidth: 1280,
+        minHeight: 400
+    },
     acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
     onError: (message) => {
-        alert(message);
+        
+        warning(message)
     },
 });
+
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
+const platinum_sponsor = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => alert(msg)
+    })
+
+const golden_sponsor = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => alert(msg)
+    })
+
+const silver_sponsor = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => alert(msg)
+    })
 
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
-    onError: (msg) => alert(msg)
+    onError: (msg) => warning(msg)
 })
 
 
 const handleSubmit = () => {
     if (!cover.file.value) {
-        alert("Por favor selecciona una imagen de portada para el curso");
+        warning("Por favor selecciona una imagen de portada para el curso");
         return;
     }
+
     formData.cover_image = cover.file.value;
+    formData.cover_preview_image = previewCover.file.value;
+    formData.platinum_sponsors = platinum_sponsor.files.value;
+    formData.golden_sponsors = golden_sponsor.files.value;
+    formData.silver_sponsors = silver_sponsor.files.value;
 
     if (pdf.file.value) {
         formData.program_pdf = pdf.file.value;
@@ -129,36 +179,51 @@ const flatpickrTimeConfig = {
                 </p>
             </div>
 
-            <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-            >
-                <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="">
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
+                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                    <div>
                         <span class="text-sm text-gray-700">
-                            Datos Generales</span
-                        >
+                            Datos Generales</span>
                     </div>
-                    <div class="col-span-3 space-y-6">
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-                            >
-                                Foto de Portada
-                            </label>
-                            <Dropzone
-                                :preview="cover.preview.value"
-                                :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)"
-                                @change="cover.handleChange"
-                                @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter"
-                                @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset"
-                            />
-                            
-                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                    <div class="lg:col-span-3 space-y-6">
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Foto de Portada
+                                </label>
+                                <Dropzone
+                                    :label="'Agregar imagen'"
+                                    :preview="cover.preview.value"
+                                    :is-dragging="cover.isDragging.value"
+                                    hint="Min. 1280 x 400 (max. 1MB) "
+                                    @change="cover.handleChange"
+                                    @drop="cover.handleDrop"
+                                    @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave"
+                                    @remove="cover.reset"
+                                />
+                                
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Previsualización
+                                </label>
+                                <Dropzone
+                                :label="'Agregar imagen'"
+                                    :preview="previewCover.preview.value"
+                                    :is-dragging="previewCover.isDragging.value"
+                                    hint="Min: 400 x 400 (max. 1MB)"
+                                    @change="previewCover.handleChange"
+                                    @drop="previewCover.handleDrop"
+                                    @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave"
+                                    @remove="previewCover.reset"
+                                />
+                                
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                            </div>
                         </div>
-
                         <div>
                             <label
                                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
@@ -216,14 +281,77 @@ const flatpickrTimeConfig = {
                     </div>
                 </div>
             </div>
-            <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-                >
-                <div class="grid grid-cols-4 gap-4 p-6">
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
+                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                    <div>
+                        <span class="text-sm text-gray-700">
+                            Patrocinadores</span>
+                    </div>
+                    <div class="col-span-3 space-y-6">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Platino
+                            </label>
+                            <Dropzone multiple 
+                                :previews="platinum_sponsor.previews.value" 
+                                :is-dragging="platinum_sponsor.isDragging.value" 
+                                :max-files="20"
+                                :columns="'6'"
+                                @change="platinum_sponsor.handleChange" 
+                                @drop="platinum_sponsor.handleDrop" 
+                                @drag-enter="platinum_sponsor.handleDragEnter"
+                                @drag-leave="platinum_sponsor.handleDragLeave" 
+                                @remove-at="platinum_sponsor.removeAt" 
+                                @remove="platinum_sponsor.reset" />  
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Oro
+                            </label>
+                            <Dropzone multiple 
+                                :previews="golden_sponsor.previews.value" 
+                                :is-dragging="golden_sponsor.isDragging.value" 
+                                :max-files="20"
+                                :columns="'6'"
+                                @change="golden_sponsor.handleChange" 
+                                @drop="golden_sponsor.handleDrop" 
+                                @drag-enter="golden_sponsor.handleDragEnter"
+                                @drag-leave="golden_sponsor.handleDragLeave" 
+                                @remove-at="golden_sponsor.removeAt" 
+                                @remove="golden_sponsor.reset" />  
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Plata
+                            </label>
+                            <Dropzone multiple 
+                                :previews="silver_sponsor.previews.value" 
+                                :is-dragging="silver_sponsor.isDragging.value" 
+                                :max-files="20"
+                                :columns="'6'"
+                                @change="silver_sponsor.handleChange" 
+                                @drop="silver_sponsor.handleDrop" 
+                                @drag-enter="silver_sponsor.handleDragEnter"
+                                @drag-leave="silver_sponsor.handleDragLeave" 
+                                @remove-at="silver_sponsor.removeAt" 
+                                @remove="silver_sponsor.reset" />  
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
+                <div class="grid lg:grid-cols-4 gap-4 p-6">
                     <div class="">
                         <span class="text-sm text-gray-700"> Detalles Adicionales</span>
                     </div>
-                    <div class="col-span-3 space-y-6">
+                    <div class="lg:col-span-3 space-y-6">
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
                                 Modalidad
@@ -376,7 +504,7 @@ const flatpickrTimeConfig = {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
                 >
-                <div class="grid grid-cols-4 gap-4 p-6">
+                <div class="grid  md.grid-cols-2 lg:grid-cols-4 gap-4 p-6">
                     <div class="">
                         <span class="text-sm text-gray-700">Costos</span>
                     </div>
@@ -449,7 +577,7 @@ const flatpickrTimeConfig = {
                     <div class="">
                         <span class="text-sm text-gray-700">Detalles de pago</span>
                     </div>
-                    <div class="col-span-3">
+                    <div class="lg:col-span-3">
                         <label
                             class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
                         >
@@ -501,4 +629,16 @@ const flatpickrTimeConfig = {
             </div>
         </div>
     </div>
+
+    <Alerta
+        :show="alertState.show"
+        :message="alertState.message"
+        :title="alertState.title"
+        :type="alertState.type"
+        :buttonText="alertState.buttonText"
+        :cancelText="alertState.cancelText"
+        @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
+        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()"
+        @close="hideAlert()"
+    />
 </template>
