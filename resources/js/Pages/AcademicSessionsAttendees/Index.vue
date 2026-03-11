@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DataTable from '@/Components/DataTable.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
@@ -19,17 +19,48 @@ const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
 const selectedItem = ref(null);
-const togglingId = ref(null); // evita doble click mientras se procesa
 
+// INICIOS FILTROS REDIRECCION
+// agregar un filtro nuevo:
+// 1. agrega ref aquí
+// 2. agregalo a activeFilters (lo que ven los componentes)
+// 3. agregalo a filtersPayload (lo que recibe el controlador con prefijo _filters_)
+// 
 const event_id = ref(route().params.event_id ?? '')
 const did_attend = ref(route().params.did_attend ?? '')
+// const search  = ref(route().params.search ?? '')   // ejemplo
 
-const filters = { event_id, did_attend }
-const hasActiveFilters = () => event_id.value !== '' || did_attend.value !== ''
+/**
+ * objeto de filtros que se pasa a los componentes hijos (EditAttendee, UploadDiploma por ejemplo)
+ * y que también usa DataTable para mantener los query params en la URL
+ */
+const activeFilters = computed(() => ({
+    event_id: event_id.value,
+    did_attend: did_attend.value,
+    // search:  search.value,
+}))
+
+/**
+ * Objeto con los mismos filtros pero con el prefijo _filters_ que espera el controlador
+ * en los métodos que hacen redirect (update, delete, uploadDiploma, changeDidAttend).
+ * Se usa en router.delete, router.get, etc.
+ */
+const filtersPayload = computed(() => ({
+    _filters_event_id: event_id.value !== '' ? event_id.value : undefined,
+    _filters_did_attend: did_attend.value !== '' ? did_attend.value : undefined,
+    // _filters_search:  search.value !== '' ? search.value : undefined,
+}))
+
+const hasActiveFilters = computed(() =>
+    Object.values(activeFilters.value).some(v => v !== '' && v !== null && v !== undefined)
+)
+
 const clearFilters = () => {
     event_id.value = ''
     did_attend.value = ''
+    // search.value  = ''
 }
+// FINAL FILTROS REDIRECCION
 
 const truncate = (text, max = 30) => {
     if (!text) return ''
@@ -99,7 +130,10 @@ const handleOnEdit = (attendee) => {
 }
 
 const onChangeAttend = (attendee) => {
-    router.get(route('attendees.change-attend', attendee.id))
+    router.get(route('attendees.change-attend', attendee.id),
+        filtersPayload.value,   // ADICION DE FILTROS
+        { preserveScroll: true }
+    )
 }
 
 const handleOnDelete = (attendeeId) => {
@@ -109,7 +143,10 @@ const handleOnDelete = (attendeeId) => {
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
-            router.delete(route('attendees.delete', attendeeId));
+            router.delete(route('attendees.delete', attendeeId), {
+                data: filtersPayload.value,   // ADICION DE FILTROS
+                preserveScroll: true,
+            })
         }
     })
 }
@@ -121,26 +158,6 @@ const openDiploma = (attendee) => {
         selectedItem.value = attendee;
         showUploadDiploma.value = true;
     }
-}
-
-const toggleAttendance = (attendee) => {
-    warning("Todavia no implementamos esa caracteristica!")
-    /* if (togglingId.value === attendee.id) return;
-    togglingId.value = attendee.id; */
-    /* router.post(
-        route('attendees.update', attendee.id),
-        {
-            _method: 'put',
-            did_attend: !attendee.did_attend,
-        },
-        {
-            preserveScroll: true,
-            only: ['attendees'],
-            onFinish: () => {
-                togglingId.value = null;
-            }
-        }
-    ); */
 }
 
 const onCreateSuccess = () => {
@@ -177,7 +194,7 @@ const onEditSuccess = () => {
             ]" :paginator="props.attendees" :searchable="true" :per-page-options="[10, 25, 50, 100]"
                 :allow-create="true" :allow-actions="true" :allow-edit="true" :allow-delete="true"
                 @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']"
-                :filter-values="filters">
+                :filter-values="activeFilters">
 
                 <template #filters>
                     <div class="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -208,7 +225,7 @@ const onEditSuccess = () => {
                         </select>
 
                         <!-- Limpiar -->
-                        <button v-if="hasActiveFilters()" @click="clearFilters" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-gray-300
+                        <button v-if="hasActiveFilters" @click="clearFilters" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-gray-300
                        dark:border-gray-700 text-sm text-gray-500 hover:text-red-500
                        hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                             <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
@@ -292,13 +309,17 @@ const onEditSuccess = () => {
 
             <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.activeEvents"
                 :errors="props.errors" @close="showCreateDrawer = false" @success="onCreateSuccess" />
-            <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
-                :events="props.allEvents" :errors="props.errors" @close="showEditDrawer = false"
-                @success="onEditSuccess" />
-            <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem" @close="showUploadDiploma = false" />
 
-            <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" @close="showPaymentDetails = false"
-                :payment-details="paymentDetails" />
+            <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
+                :events="props.allEvents" :errors="props.errors" :active-filters="activeFilters"
+                @close="showEditDrawer = false" @success="onEditSuccess" />
+
+            <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem ?? {}"
+                :diploma-url="selectedItem?.diploma_url ?? ''" :active-filters="activeFilters"
+                @close="showUploadDiploma = false" />
+
+            <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" :payment-details="paymentDetails"
+                @close="showPaymentDetails = false" />
         </div>
     </div>
 

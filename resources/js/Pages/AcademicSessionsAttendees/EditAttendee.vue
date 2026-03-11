@@ -36,9 +36,20 @@ const props = defineProps({
     errors: {
         type: Object,
         default: () => ({})
+    },
+    activeFilters: {
+        type: Object,
+        default: () => ({})
     }
 })
 
+// FILTROS
+const filtersPayload = computed(() => ({
+    _filters_event_id: props.activeFilters?.event_id ?? '',
+    _filters_did_attend: props.activeFilters?.did_attend ?? '',
+    // _filters_search:  props.activeFilters?.search ?? '',
+}))
+// FIN FILTROS
 const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
 const emit = defineEmits(['close', 'success', 'error'])
@@ -81,8 +92,6 @@ const createForm = reactive({
     price: '',
     cmec_member_id: null,
     specialty: '',
-    /* birth_date: '',
-    special_needs: '', */
     payment_method: '',
     reference: '',
 })
@@ -110,8 +119,6 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     createForm.specialty = '';
-    /* createForm.birth_date = '';
-    createForm.special_needs = ''; */
     createForm.payment_method = '';
     createForm.reference = '';
     selectedEvent.value = null;
@@ -149,7 +156,10 @@ const submitCreate = () => {
     createForm.event_type = 'academic_session';
     createForm.price = price.value;
 
-    router.post(route('attendees.update', createForm.id), createForm, {
+    router.post(route('attendees.update', createForm.id), {
+        ...createForm,
+        ...filtersPayload.value, // FILTROS
+    }, {
         onSuccess: () => {
             cleanForm();
             emit('success');
@@ -207,7 +217,7 @@ watch(selectedCity, (value) => {
                     <option v-for="event in events" :key="event.id" :value="event">{{ event.topic }}</option>
                 </select>
                 <span v-if="errors?.event_id" class="text-red-500 text-xs flex justify-end">{{ errors?.event_id
-                    }}</span>
+                }}</span>
             </div>
 
             <!-- NOMBRE -->
@@ -225,7 +235,7 @@ watch(selectedCity, (value) => {
                 <input v-model="createForm.specialty" type="text"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <span v-if="errors?.specialty" class="text-red-500 text-xs flex justify-end">{{ errors?.specialty
-                    }}</span>
+                }}</span>
             </div>
 
             <!-- EMAIL + TELÉFONO -->
@@ -243,30 +253,6 @@ watch(selectedCity, (value) => {
                     <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
                 </div>
             </div>
-
-            <!-- FECHA DE NACIMIENTO + NECESIDADES ESPECIALES -->
-            <!-- <div class="flex gap-2 w-full">
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Fecha de nacimiento
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.birth_date" type="date"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.birth_date" class="text-red-500 text-xs flex justify-end">{{ errors?.birth_date
-                    }}</span>
-                </div>
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Necesidades especiales
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.special_needs" type="text" placeholder="Ej. silla de ruedas"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.special_needs" class="text-red-500 text-xs flex justify-end">{{
-                        errors?.special_needs }}</span>
-                </div>
-            </div> -->
 
             <!-- ORIGEN -->
             <div>
@@ -299,7 +285,7 @@ watch(selectedCity, (value) => {
                     <option value="guest">No miembro (invitado)</option>
                 </select>
                 <span v-if="errors?.person_type" class="text-red-500 text-xs flex justify-end">{{ errors?.person_type
-                    }}</span>
+                }}</span>
             </div>
 
             <!-- FOLIO CMEC -->
@@ -336,7 +322,7 @@ watch(selectedCity, (value) => {
                 </p>
                 <div class="flex gap-9 w-full">
                     <span v-if="errors?.price" class="grow text-red-500 text-xs flex justify-end">{{ errors?.price
-                        }}</span>
+                    }}</span>
                     <span v-if="errors?.payment_method" class="grow text-red-500 text-xs flex justify-end">{{
                         errors?.payment_method }}</span>
                 </div>
@@ -361,7 +347,7 @@ watch(selectedCity, (value) => {
                         placeholder="Referencia o número de transacción" />
                 </div>
                 <span v-if="errors?.reference" class="text-red-500 text-xs flex justify-end">{{ errors?.reference
-                    }}</span>
+                }}</span>
             </div>
 
             <hr class="my-2">

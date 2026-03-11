@@ -43,6 +43,13 @@ const props = defineProps({
     }
 })
 
+// FILTROS
+const filtersPayload = computed(() => ({
+    _filters_event_id:   props.activeFilters?.event_id   ?? '',
+    _filters_did_attend: props.activeFilters?.did_attend ?? '',
+    // _filters_search:  props.activeFilters?.search ?? '',
+}))
+// FIN FILTROS
 const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
 const emit = defineEmits(['close', 'success', 'error'])
@@ -85,8 +92,6 @@ const createForm = reactive({
     price: '',
     cmec_member_id: null,
     specialty: '',
-    /* birth_date: '',
-    special_needs: '', */
     payment_method: '',
     reference: '',
 })
@@ -114,8 +119,6 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     createForm.specialty = '';
-    /* createForm.birth_date = '';
-    createForm.special_needs = ''; */
     createForm.payment_method = '';
     createForm.reference = '';
     selectedEvent.value = null;
@@ -153,12 +156,9 @@ const submitCreate = () => {
     createForm.event_type = 'webinar';
     createForm.price = price.value;
 
-    /* console.log('Filtros activos:', props.activeFilters) */
-
     router.post(route('attendees.update', createForm.id), {
         ...createForm,
-        _filters_event_id: props.activeFilters?.event_id ?? '',
-        _filters_did_attend: props.activeFilters?.did_attend ?? '',
+        ...filtersPayload.value, // FILTROS
     }, {
         onSuccess: () => {
             cleanForm();
@@ -253,30 +253,6 @@ watch(selectedCity, (value) => {
                     <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
                 </div>
             </div>
-
-            <!-- FECHA DE NACIMIENTO + NECESIDADES ESPECIALES -->
-            <!-- <div class="flex gap-2 w-full">
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Fecha de nacimiento
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.birth_date" type="date"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.birth_date" class="text-red-500 text-xs flex justify-end">{{ errors?.birth_date
-                    }}</span>
-                </div>
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Necesidades especiales
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.special_needs" type="text" placeholder="Ej. silla de ruedas"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.special_needs" class="text-red-500 text-xs flex justify-end">{{
-                        errors?.special_needs }}</span>
-                </div>
-            </div> -->
 
             <!-- ORIGEN -->
             <div>

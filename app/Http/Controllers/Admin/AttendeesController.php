@@ -139,16 +139,14 @@ class AttendeesController extends Controller
             $data['person_id'] = $this->getMemberByCmecId($request);
 
             $attendee = Attendee::create($data);
-            $payment = $this->registerPayment($attendee, $data);
+            $this->registerPayment($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
                 ->with('success', 'Asistente creado exitosamente');
         } catch (ValidationException $e) {
-
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-
             return redirect()
                 ->back()
                 ->with('error', 'Ocurrió un error al crear el asistente. Por favor, inténtalo de nuevo.')
@@ -169,11 +167,9 @@ class AttendeesController extends Controller
             $attendee->update($data);
             $this->registerPayment($attendee, $data);
 
-            return redirect()->route('attendees.index', array_filter([
-                'event'      => $data['event_type'],
-                'event_id'   => $request->get('_filters_event_id'),
-                'did_attend' => $request->get('_filters_did_attend'),
-            ], fn($v) => $v !== null && $v !== ''))->with('success', 'Asistente actualizado exitosamente');
+            return redirect()
+                ->route('attendees.index', $this->getActiveFilters($request, $data['event_type']))
+                ->with('success', 'Asistente actualizado exitosamente');
         } catch (ValidationException $e) {
             Log::error($e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
@@ -189,18 +185,16 @@ class AttendeesController extends Controller
     public function delete(Request $request, $id)
     {
         $attendee = Attendee::findOrFail($id);
+
         if ($attendee->payments()->count() > 0) {
             $attendee->payments()->delete();
         }
         $attendee->clearMediaCollection('diplomas');
-
         $attendee->delete();
 
-        return redirect()->route('attendees.index', array_filter([
-            'event'      => $attendee->event_type,
-            'event_id'   => $request->get('event_id'),
-            'did_attend' => $request->get('did_attend'),
-        ], fn($v) => $v !== null && $v !== ''))->with('success', 'Asistente eliminado exitosamente');
+        return redirect()
+            ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
+            ->with('success', 'Asistente eliminado exitosamente');
     }
 
     public function uploadDiploma(Request $request, $id)
@@ -208,12 +202,13 @@ class AttendeesController extends Controller
         $attendee = Attendee::findOrFail($id);
 
         if ($request->hasFile('diploma')) {
+            $attendee->clearMediaCollection('diplomas');
             $attendee->addMediaFromRequest('diploma')
                 ->toMediaCollection('diplomas');
         }
 
         return redirect()
-            ->route('attendees.index', ['event' => $attendee->event_type])
+            ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
             ->with('success', 'Diploma subido exitosamente');
     }
 
@@ -225,11 +220,8 @@ class AttendeesController extends Controller
             $attendee->did_attend = !$attendee->did_attend;
             $attendee->update();
 
-            return redirect()->route('attendees.index', array_filter([
-                'event'      => $attendee->event_type,
-                'event_id'   => $request->get('event_id'),
-                'did_attend' => $request->get('did_attend'),
-            ], fn($v) => $v !== null && $v !== ''));
+            return redirect()
+                ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type));
         } catch (\Exception $e) {
             return redirect()
                 ->back()
@@ -377,5 +369,19 @@ class AttendeesController extends Controller
             Log::error($e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * extraemos los filtros activos del request y los combinamos con el event_type
+     * agregar aqui filtros nuevos para que se propague en todos los redirects
+     */
+    private function getActiveFilters(Request $request, string $event_type): array
+    {
+        return array_filter([
+            'event'      => $event_type,
+            'event_id'   => $request->get('_filters_event_id'),
+            'did_attend' => $request->get('_filters_did_attend'),
+            // 'search'  => $request->get('_filters_search'),   // ejemplo
+        ], fn($v) => $v !== null && $v !== '');
     }
 }
