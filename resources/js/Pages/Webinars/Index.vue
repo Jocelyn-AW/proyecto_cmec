@@ -170,10 +170,8 @@ const openPdf = (webinar) => {
 }
 
 const openGallery = (webinar) => {
-    //console.log(webinar.sessions[0].sessionable_type)
-    //console.log(session.sessions[0].sessionable_type)
     router.get(route('albums.index', {
-        event_type: webinar.sessions[0].sessionable_type,
+        event_type: webinar.sessions?.[0]?.sessionable_type ?? 'webinar',
         event_id: webinar.id,
     }))
 }
