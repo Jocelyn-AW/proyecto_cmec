@@ -58,6 +58,7 @@ const emit = defineEmits(['close', 'success', 'error'])
 
 const page = usePage();
 const isPayed = ref(false)
+const isFree = ref(false)
 const selectedEvent = ref(null)
 const selectedState = ref('')
 const selectedCity = ref('')
@@ -66,7 +67,8 @@ const paymentMethods =  {
     'debit_card': 'Tarjeta de Débito', 
     'credit_card': 'Tarjeta de Crédito', 
     'transfer': 'Transferencia', 
-    'stripe': 'En línea (stripe)'
+    'stripe': 'En línea (stripe)',
+    'free' : 'Sin costo'
 }
 
 const flatpickrConfig = {
@@ -99,11 +101,15 @@ const price = computed(() => {
     return priceMap[createForm.person_type] ?? createForm.price
 })
 
-// const isPayed = computed(() => {
-//     console.log(props.data?.payments?.[0]?.status == 'paid');
-    
-//     return props.data?.payments?.[0]?.status == 'paid'
-// })
+const shouldHaveReference = computed(() => {
+    const validMethods = ['debit_card', 'credit_card', 'transfer', 'stripe'];
+    const validStatus = ['paid', 'cancelled'];
+
+    const hasValidMethod = validMethods.includes(createForm.payment_method);
+    const hasValidStatus = validStatus.includes(createForm.status);
+
+    return hasValidMethod && hasValidStatus;
+})
 
 const generateRandomString = (length = 5) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -192,6 +198,7 @@ const setDataToForm = () => {
     createForm.special_needs = props.data.special_needs || '';
 
     isPayed.value = props.data.payments?.[0]?.status == 'paid';
+    isFree.value = parseInt(props.data.payments?.[0]?.amount) == 0;
 }
 
 const submitCreate = () => {
@@ -245,6 +252,14 @@ watch(() => createForm.person_type, (newVal) => {
 
 watch(price, (val) => {
     createForm.price = val
+
+    if (parseInt(val) <= 0) {        
+        createForm.payment_method = 'free';
+        createForm.status = 'paid';
+        isFree.value = true;
+    } else {
+        isFree.value = false;
+    }
 })
 
 watch(selectedCity, (value) => {
@@ -392,13 +407,13 @@ watch(selectedState, (value, old) => {
                 <div class="flex gap-2 w-full">
                     <input
                         :value="price"
-                        :disabled="isPayed" :class="isPayed ? 'disabled' :''"
+                        :disabled="isPayed || isFree" :class="isPayed || isFree ? 'disabled' :''"
                         type="number" min="0" step="0.01"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         placeholder="Cantidad a pagar"
                     />
                     <select name="method" id="method" v-model="createForm.payment_method"
-                    :disabled="isPayed" :class="isPayed ? 'disabled' :''"
+                    :disabled="isPayed || isFree" :class="isPayed || isFree ? 'disabled' :''"
                     class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="" selected>Seleccionar método de pago</option>
                         <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
@@ -410,7 +425,7 @@ watch(selectedState, (value, old) => {
                 </div>
                 <div class="flex gap-2 w-full mt-3">
                     <select name="status" id="status" v-model="createForm.status" 
-                    :disabled="isPayed" :class="isPayed ? 'disabled' :''"
+                    :disabled="isPayed || isFree" :class="isPayed || isFree ? 'disabled' :''"
                     class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="" selected>Seleccionar estatus de pago</option>
                         <option value="paid">Pagado</option>
@@ -420,7 +435,7 @@ watch(selectedState, (value, old) => {
                 </div>
                 <span v-if="errors?.status" class="grow text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
                 <div class="flex mt-3" 
-                    v-if="createForm.payment_method != 'cash' && createForm.payment_method != '' && createForm.status != 'pending' && createForm.status != ''">
+                    v-if="shouldHaveReference || createForm.reference">
                     <input
                         v-model="createForm.reference"
                         type="text"

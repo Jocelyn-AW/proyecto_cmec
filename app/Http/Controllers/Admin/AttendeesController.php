@@ -252,7 +252,7 @@ class AttendeesController extends Controller
             'person_id' => 'nullable|integer',
             'person_type' => 'required|string|in:member,resident,guest,surgeon,nurse',
 
-            'payment_method' => 'required|string|in:debit_card,credit_card,cash,transfer,stripe',
+            'payment_method' => 'required|string|in:debit_card,credit_card,cash,transfer,stripe,free',
             'reference' => 'nullable|string',
             'specialty' => 'nullable|string|max:200'
         ];
@@ -263,7 +263,8 @@ class AttendeesController extends Controller
 
         if (
             $request->input('status', 'pending') != Constants::STATUS_PENDING &&
-            $request->input('payment_method', 'cash') != Constants::METHOD_CASH
+            $request->input('payment_method', 'cash') != Constants::METHOD_CASH &&
+            $request->input('payment_method', 'cash') != Constants::METHOD_FREE
         ) {
             $rules['reference'] = 'required|string|max:100';
         }
