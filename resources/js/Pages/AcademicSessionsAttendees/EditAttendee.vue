@@ -67,6 +67,8 @@ const price = computed(() => {
     return priceMap[createForm.person_type] ?? createForm.price ?? ''
 })
 
+const isPaid = computed(() => createForm.status === 'paid')
+
 const generateRandomString = (length = 5) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -277,13 +279,17 @@ watch(selectedCity, (value) => {
             <!-- TIPO DE PARTICIPANTE -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de participante</label>
-                <select v-model="createForm.person_type"
+                <select v-model="createForm.person_type" :disabled="isPaid"
+                    :class="isPaid ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
                     <option value="resident">Residente</option>
                     <option value="guest">No miembro (invitado)</option>
                 </select>
+                <span v-if="isPaid" class="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                    🔒 No editable cuando el pago está confirmado
+                </span>
                 <span v-if="errors?.person_type" class="text-red-500 text-xs flex justify-end">{{ errors?.person_type
                 }}</span>
             </div>
@@ -311,7 +317,9 @@ watch(selectedCity, (value) => {
                             class="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-3 py-2 text-sm text-gray-500 cursor-not-allowed"
                             placeholder="Selecciona sesión academica y tipo" />
                     </div>
-                    <select v-model="createForm.payment_method"
+                    <!-- método de pago -->
+                    <select v-model="createForm.payment_method" :disabled="isPaid"
+                        :class="isPaid ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar método de pago</option>
                         <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
@@ -329,7 +337,8 @@ watch(selectedCity, (value) => {
 
                 <!-- ESTATUS -->
                 <div class="flex gap-2 w-full mt-3">
-                    <select v-model="createForm.status"
+                    <select v-model="createForm.status" :disabled="isPaid"
+                        :class="isPaid ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar estatus de pago</option>
                         <option value="paid">Pagado</option>
@@ -337,17 +346,22 @@ watch(selectedCity, (value) => {
                         <option value="cancelled">Cancelado</option>
                     </select>
                 </div>
+                <span v-if="isPaid" class="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                    🔒 El estatus, método de pago y tipo de participante están bloqueados porque el pago ya fue
+                    confirmado
+                </span>
                 <span v-if="errors?.status" class="text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
 
                 <!-- REFERENCIA (condicional) -->
                 <div class="flex mt-3"
                     v-if="createForm.payment_method !== 'cash' && createForm.payment_method !== '' && createForm.status !== 'pending' && createForm.status !== ''">
-                    <input v-model="createForm.reference" type="text"
+                    <input v-model="createForm.reference" type="text" :disabled="isPaid"
+                        :class="isPaid ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Referencia o número de transacción" />
                 </div>
                 <span v-if="errors?.reference" class="text-red-500 text-xs flex justify-end">{{ errors?.reference
-                }}</span>
+                    }}</span>
             </div>
 
             <hr class="my-2">
