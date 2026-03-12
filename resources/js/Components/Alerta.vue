@@ -167,7 +167,7 @@ const alertConfig = computed(() => {
                                         {{ alertConfig.title }}
                                     </h3>
                                     <div class="mt-2">
-                                        <p class="text-sm text-gray-500">
+                                        <p class="text-sm text-gray-500 white-space">
                                             {{ message }}
                                         </p>
                                     </div>

@@ -771,3 +771,19 @@ span.flatpickr-weekday,
   cursor: not-allowed;
   border-color: var(--color-gray-300);
 }
+
+.white-space {
+  white-space: pre-line;
+}
+
+.md\:grid-cols-6 {
+    @media (width >= 768px) {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+}
+
+.md\:grid-cols-7 {
+    @media (width >= 768px) {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+}
