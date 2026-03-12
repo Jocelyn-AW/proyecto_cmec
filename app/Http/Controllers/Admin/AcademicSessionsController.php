@@ -190,52 +190,6 @@ class AcademicSessionsController extends Controller
         }
     }
 
-    //  galeria 
-
-    public function gallery($id)
-    {
-        $academicSession = AcademicSession::findOrFail($id);
-
-        return Inertia::render('AcademicSessions/AcademicSessionGallery', [
-            'academicsession' => $academicSession->only('id', 'topic'),
-            'images' => $academicSession->getMedia('academic_sessions_gallery')->map(fn($media) => [
-                'id' => $media->id,
-                'url' => $media->getUrl()
-            ]),
-        ]);
-    }
-
-    public function updateGallery(Request $request, $id)
-    {
-        try {
-            $academicSession = AcademicSession::findOrFail($id);
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $academicSession->addMedia($image)->toMediaCollection('academic_sessions_gallery');
-                }
-            }
-            return redirect()->route('academicsessions.gallery', $id)->with('success', 'Galería actualizada');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar la galería.');
-        }
-    }
-
-    public function deleteGalleryImage($id, $mediaId)
-    {
-        try {
-            $academicSession = AcademicSession::findOrFail($id);
-            $mediaItem = $academicSession->getMedia('academic_sessions_gallery')->find($mediaId);
-
-            if ($mediaItem) {
-                $mediaItem->delete();
-                return redirect()->route('academicsessions.gallery', $id)->with('success', 'Imagen eliminada');
-            }
-            return response()->json(['success' => false, 'message' => 'No encontrada'], 404);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error'], 500);
-        }
-    }
-
     private function deleteAcademicSessionMedia(AcademicSession $academicSession)
     {
         $academicSession->clearMediaCollection('academic_sessions_covers');

@@ -211,62 +211,6 @@ class WebinarsController extends Controller
         }
     }
 
-    public function gallery($id)
-    {
-        $webinar = Webinar::findOrFail($id);
-
-        return Inertia::render('Webinars/WebinarGallery', [
-            'webinar' => $webinar->only('id', 'topic'),
-            'images' => $webinar->getMedia('webinars_gallery')->map(function ($media) {
-                return [
-                    'id' => $media->id,
-                    'url' => $media->getUrl()
-                ];
-            }),
-        ]);
-    }
-
-    public function updateGallery(Request $request, $id)
-    {
-        try {
-            $webinar = Webinar::findOrFail($id);
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $webinar->addMedia($image)->toMediaCollection('webinars_gallery');
-                }
-            }
-
-            return redirect()
-                ->route('webinars.gallery', $id)
-                ->with('success', 'Galería actualizada exitosamente');
-        } catch (\Exception $e) {
-
-            return redirect()
-                ->route('webinars.gallery', $id)
-                ->with('error', 'Hubo un error al actualizar la galería. Intenta de nuevo más tarde.');
-        }
-    }
-
-    public function deleteGalleryImage($id, $mediaId)
-    {
-        try {
-            $webinar = Webinar::findOrFail($id);
-            $mediaItem = $webinar->getMedia('webinars_gallery')->where('id', $mediaId)->first();
-
-            if ($mediaItem) {
-                $mediaItem->delete();
-                return redirect()
-                    ->route('webinars.gallery', $id)
-                    ->with('success', 'Imagen eliminada exitosamente');
-            } else {
-                return response()->json(['success' => false, 'message' => 'Imagen no encontrada.'], 404);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al eliminar la imagen.'], 500);
-        }
-    }
-
     private function deleteWebinarMedia(Webinar $webinar)
     {
         $webinar->clearMediaCollection('webinars_covers');
