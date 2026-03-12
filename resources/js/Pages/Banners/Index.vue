@@ -188,12 +188,12 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
             </div>
 
             <!-- FILTROS -->
-            <div class="px-6">
+            <!-- <div class="px-6">
                 <div
                     class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-4">
                     <div class="flex flex-wrap gap-4 items-end">
 
-                        <!-- BUSCAR POR TÍTULO -->
+                        // BUSCAR POR TÍTULO
                         <div class="flex-1 min-w-[180px]">
                             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                                 Buscar por título
@@ -210,7 +210,7 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                             </div>
                         </div>
 
-                        <!-- ESTADO -->
+                        // ESTADO
                         <div class="min-w-[150px]">
                             <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                                 Estado
@@ -223,8 +223,8 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                             </select>
                         </div>
 
-                        <!-- FILTRO FECHA (solo para no-home) -->
-                        <!-- <template v-if="selectedType !== 'home'">
+                        // FILTRO FECHA (solo para no-home)
+                        <template v-if="selectedType !== 'home'">
                             <div class="min-w-[150px]">
                                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
                                     Fecha desde
@@ -247,11 +247,11 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                 class="h-10 px-3 text-xs text-gray-500 hover:text-red-500 transition-colors self-end">
                                 Limpiar fechas
                             </button>
-                        </template> -->
+                        </template>
 
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
 
         <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6 lg:p-8">

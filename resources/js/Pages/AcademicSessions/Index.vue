@@ -128,7 +128,15 @@ const openPdf = (session) => {
     }
 }
 
-const openGallery = (session) => router.get(route('academicsessions.gallery', session.id))
+//const openGallery = (session) => router.get(route('academicsessions.gallery', session.id))
+
+const openGallery = (session) => {
+    //console.log(session.sessions[0].sessionable_type)
+    router.get(route('albums.index', {
+        event_type: session.sessions[0].sessionable_type,
+        event_id: session.id,
+    }))
+}
 </script>
 
 <template>

@@ -5,6 +5,7 @@ import { useAlert } from '@/composables/useAlert'
 import { useFileUpload } from '@/composables/useImageDropped'
 import Dropzone from '@/Components/Dropzone.vue'
 import Alerta from '@/Components/Alerta.vue'
+import AppLoader from '@/Components/AppLoader.vue'
 import { onMounted, ref } from 'vue'
 
 defineOptions({ layout: AuthenticatedLayout })
@@ -28,6 +29,7 @@ onMounted(() => {
 
 // subida de fotos
 const showUploader = ref(false)
+const isUploading = ref(false)  // ← NUEVO
 
 const { files, previews, isDragging, handleChange, handleDrop,
     handleDragEnter, handleDragLeave, removeAt, reset } = useFileUpload({
@@ -44,11 +46,19 @@ const submitPhotos = () => {
     const form = new FormData()
     files.value.forEach((f, i) => form.append(`images[${i}]`, f))
 
+    isUploading.value = true  // ← BLOQUEAR
+
     router.post(route('albums.photos.upload', props.album.id), form, {
         forceFormData: true,
         onSuccess: () => {
             reset()
             showUploader.value = false
+        },
+        onError: () => {
+            errorA('Error al subir las fotos. Intenta de nuevo.')
+        },
+        onFinish: () => {
+            isUploading.value = false  // ← DESBLOQUEAR siempre
         },
     })
 }
@@ -119,7 +129,7 @@ const onKeydown = (e) => {
                 </button>
             </div>
 
-            <!-- subir imagenes-->
+            <!-- subir imagenes -->
             <div v-if="showUploader" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
                 <Dropzone multiple :previews="previews" :is-dragging="isDragging" :max-files="20" @change="handleChange"
                     @drop="handleDrop" @drag-enter="handleDragEnter" @drag-leave="handleDragLeave" @remove-at="removeAt"
@@ -129,7 +139,7 @@ const onKeydown = (e) => {
                         class="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition-colors">
                         Cancelar
                     </button>
-                    <button @click="submitPhotos" :disabled="!files.length"
+                    <button @click="submitPhotos" :disabled="!files.length || isUploading"
                         class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
                         Subir {{ files.length ? `(${files.length})` : '' }}
                     </button>
@@ -141,7 +151,7 @@ const onKeydown = (e) => {
                 <div v-for="(photo, index) in photos" :key="photo.id"
                     class="group relative aspect-square overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
 
-                    <img :src="photo.thumb ?? photo.url" :alt="`Foto ${index + 1}`"
+                    <img :src="photo.url" :alt="`Foto ${index + 1}`"
                         class="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
 
                     <!-- overlay con acciones -->
@@ -190,6 +200,21 @@ const onKeydown = (e) => {
         </div>
     </div>
 
+    <!-- OVERLAY DE CARGA -->
+    <Teleport to="body">
+        <Transition enter-active-class="duration-200 ease-out" enter-from-class="opacity-0" enter-to-class="opacity-100"
+            leave-active-class="duration-200 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
+            <div v-if="isUploading"
+                class="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-4 bg-black/60 backdrop-blur-sm">
+                <AppLoader :size="72" color="#ffffff" />
+                <p class="text-white text-sm font-medium tracking-wide">
+                    Subiendo fotos, por favor espera...
+                </p>
+            </div>
+        </Transition>
+    </Teleport>
+
+    <!-- LIGHTBOX -->
     <Teleport to="body">
         <Transition enter-active-class="transition-opacity duration-200" enter-from-class="opacity-0"
             leave-active-class="transition-opacity duration-200" leave-to-class="opacity-0">

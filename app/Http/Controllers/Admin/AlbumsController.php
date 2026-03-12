@@ -28,7 +28,7 @@ class AlbumsController extends Controller
     private array $eventRoutes = [
         Constants::EVENT_WEBINAR          => 'webinars.index',
         Constants::EVENT_COURSE           => 'courses.index',
-        Constants::EVENT_ACADEMIC_SESSION => 'academic-sessions.index',
+        Constants::EVENT_ACADEMIC_SESSION => 'academicsessions.index',
         Constants::EVENT_CONFERENCE       => 'conferences.index',
         Constants::EVENT_PRECONFERENCE    => 'conferences.index',
     ];

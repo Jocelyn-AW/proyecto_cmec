@@ -4,6 +4,8 @@ import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
 import { onMounted, ref } from 'vue'
 import Alerta from '@/Components/Alerta.vue'
+import AlbumCreateModal from './AlbumCreateModal.vue'
+import AlbumEditModal from './AlbumEditModal.vue'
 
 defineOptions({ layout: AuthenticatedLayout })
 
@@ -31,20 +33,6 @@ const showCreate = ref(false)
 const createForm = ref({ title: '', description: '' })
 const createError = ref('')
 
-const submitCreate = () => {
-    if (!createForm.value.title.trim()) {
-        createError.value = 'El título es obligatorio.'
-        return
-    }
-    createError.value = ''
-    router.post(route('albums.store'), {
-        title: createForm.value.title,
-        description: createForm.value.description,
-        event_type: props.event_type,
-        event_id: props.event_id,
-    })
-}
-
 // editar album 
 const showEdit = ref(false)
 const editForm = ref({ id: null, title: '', description: '' })
@@ -54,18 +42,6 @@ const openEdit = (album) => {
     editForm.value = { id: album.id, title: album.title, description: album.description ?? '' }
     editError.value = ''
     showEdit.value = true
-}
-
-const submitEdit = () => {
-    if (!editForm.value.title.trim()) {
-        editError.value = 'El título es obligatorio.'
-        return
-    }
-    editError.value = ''
-    router.patch(route('albums.update', editForm.value.id), {
-        title: editForm.value.title,
-        description: editForm.value.description,
-    })
 }
 
 // eliminar album
@@ -105,7 +81,7 @@ const openAlbum = (album) => {
                         <span v-if="back_route">/</span>
                         <span>Álbumes</span>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-800">Álbumes de galería</h3>
+                    <h3 class="text-lg font-semibold text-gray-800">Galería de álbumes</h3>
                     <p class="text-sm text-gray-500">Organiza las fotos en álbumes</p>
                 </div>
                 <button @click="showCreate = true; createForm = { title: '', description: '' }"
@@ -184,77 +160,11 @@ const openAlbum = (album) => {
         </div>
     </div>
 
-    <!-- crear album -->
-    <Teleport to="body">
-        <Transition enter-active-class="duration-150 ease-out" enter-from-class="opacity-0"
-            leave-active-class="duration-100 ease-in" leave-to-class="opacity-0">
-            <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showCreate = false" />
-                <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Nuevo álbum</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-                        <input v-model="createForm.title" type="text" autofocus
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <span v-if="createError" class="text-red-500 text-xs">{{ createError }}</span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Descripción <span class="text-gray-400 font-normal">(opcional)</span>
-                        </label>
-                        <textarea v-model="createForm.description" rows="3"
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-                    </div>
-                    <div class="flex justify-end gap-2 pt-2">
-                        <button @click="showCreate = false"
-                            class="px-4 py-2 text-sm text-gray-600 rounded-lg border hover:bg-gray-50 transition-colors">
-                            Cancelar
-                        </button>
-                        <button @click="submitCreate"
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                            Crear álbum
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Transition>
-    </Teleport>
+    <AlbumCreateModal :show="showCreate" :event-type="event_type" :event-id="event_id" @close="showCreate = false"
+        @created="success('Álbum creado correctamente')" @error="(msg) => errorA(msg)" />
 
-    <!-- editar album  -->
-    <Teleport to="body">
-        <Transition enter-active-class="duration-150 ease-out" enter-from-class="opacity-0"
-            leave-active-class="duration-100 ease-in" leave-to-class="opacity-0">
-            <div v-if="showEdit" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="showEdit = false" />
-                <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Editar álbum</h2>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-                        <input v-model="editForm.title" type="text"
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                        <span v-if="editError" class="text-red-500 text-xs">{{ editError }}</span>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Descripción <span class="text-gray-400 font-normal">(opcional)</span>
-                        </label>
-                        <textarea v-model="editForm.description" rows="3"
-                            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-                    </div>
-                    <div class="flex justify-end gap-2 pt-2">
-                        <button @click="showEdit = false"
-                            class="px-4 py-2 text-sm text-gray-600 rounded-lg border hover:bg-gray-50 transition-colors">
-                            Cancelar
-                        </button>
-                        <button @click="submitEdit"
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                            Guardar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Transition>
-    </Teleport>
+    <AlbumEditModal :show="showEdit" :album="editForm" @close="showEdit = false"
+        @updated="success('Álbum actualizado correctamente')" @error="(msg) => errorA(msg)" />
 
     <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
         :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"

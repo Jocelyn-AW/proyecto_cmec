@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Album extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, SoftDeletes;
 
     protected $table = Constants::TABLE_ALBUMS;
 
@@ -56,5 +58,14 @@ class Album extends Model implements HasMedia
         return Attribute::make(function () {
             return $this->getMedia('album_photos')->count();
         });
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(400)
+            ->height(400)
+            ->sharpen(10)
+            ->nonQueued();
     }
 }
