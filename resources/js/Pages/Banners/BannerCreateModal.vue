@@ -12,6 +12,10 @@ const props = defineProps({
     nextOrder: {
         type: Number,
         default: 0
+    },
+    eventType: {
+        type: String,
+        default: 'home'
     }
 })
 
@@ -20,7 +24,6 @@ const emit = defineEmits(['close', 'created', 'warning', 'error', 'info'])
 const form = ref({
     title: '',
     link: '',
-    order: 0
 })
 
 const isSubmitting = ref(false)
@@ -32,7 +35,7 @@ const { file: imageFile, preview: imagePreview, handleChange: onImageChange, res
 })
 
 const resetForm = () => {
-    form.value = { title: '', link: '', order: 0 }
+    form.value = { title: '', link: '' }
     resetImage()
 }
 
@@ -41,33 +44,17 @@ const close = () => {
     emit('close')
 }
 
-const handleImageChange = (event) => {
-    onImageChange(event)
-}
+const handleImageChange = (event) => onImageChange(event)
 
-/* DRAG AND DROP DE LA IMAGEN */
-const onDragOver = (e) => {
-    e.preventDefault()
-    isDragging.value = true
-}
-
-const onDragLeave = (e) => {
-    e.preventDefault()
-    isDragging.value = false
-}
-
+const onDragOver = (e) => { e.preventDefault(); isDragging.value = true }
+const onDragLeave = (e) => { e.preventDefault(); isDragging.value = false }
 const onDrop = (e) => {
     e.preventDefault()
     isDragging.value = false
-
     const files = e.dataTransfer.files
     if (!files || files.length === 0) return
-
-    const syntheticEvent = { target: { files } }
-    onImageChange(syntheticEvent)
+    onImageChange({ target: { files } })
 }
-
-/* ------------------- */
 
 const submit = async () => {
     if (!imageFile.value) {
@@ -81,6 +68,7 @@ const submit = async () => {
     formData.append('image', imageFile.value)
     formData.append('order', props.nextOrder)
     formData.append('title', form.value.title)
+    formData.append('event_type', props.eventType)
 
     if (form.value.link && form.value.link.trim() !== '') {
         formData.append('link', form.value.link)
@@ -93,12 +81,8 @@ const submit = async () => {
             close()
             emit('created')
         },
-        onError: () => {
-            emit('error', 'Error al crear el banner, verifique que los datos sean correctos')
-        },
-        onFinish: () => {
-            isSubmitting.value = false
-        }
+        onError: () => emit('error', 'Error al crear el banner, verifique que los datos sean correctos'),
+        onFinish: () => { isSubmitting.value = false }
     })
 }
 </script>
@@ -123,9 +107,8 @@ const submit = async () => {
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Imagen <span class="text-red-500">*</span>
                 </label>
-
-                <div @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop" @click="$refs.fileInput.click()"
-                    :class="[
+                <div @dragover="onDragOver" @dragleave="onDragLeave" @drop="onDrop"
+                    @click="$refs.fileInput.click()" :class="[
                         'relative flex flex-col items-center justify-center w-full h-36 rounded-lg border-2 border-dashed cursor-pointer transition-all',
                         isDragging
                             ? 'border-green-500 bg-green-50'
@@ -137,7 +120,6 @@ const submit = async () => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                             d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4" />
                     </svg>
-
                     <p class="text-sm text-gray-500">
                         <span class="font-medium text-green-600">Haz clic para seleccionar</span>
                         &nbsp;o arrastra y suelta aquí
@@ -155,7 +137,7 @@ const submit = async () => {
                 </p>
             </div>
 
-            <!-- título -->
+            <!-- titulo -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Título <span class="text-red-500">*</span>
@@ -179,7 +161,6 @@ const submit = async () => {
                 class="rounded-md border border-transparent py-2 px-4 text-sm text-slate-600 transition-all hover:bg-slate-100 disabled:opacity-50">
                 Cancelar
             </button>
-
             <button @click="submit" :disabled="isSubmitting || !imageFile || !form.title.trim()"
                 class="rounded-md bg-green-600 py-2 px-4 text-sm text-white transition-all shadow-md hover:bg-green-700 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ isSubmitting ? 'Creando...' : 'Crear banner' }}

@@ -52,6 +52,10 @@ const price = computed(() => {
     return priceMap[createForm.person_type] ?? ''
 })
 
+const isFree = computed(() => {
+    return Number(price.value) === 0
+})
+
 const generateRandomString = (length = 5) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -131,6 +135,11 @@ const submitCreate = () => {
 // sync precio con el computed (solo lectura)
 watch(price, (val) => {
     createForm.price = val
+
+    if (Number(val) === 0) {
+        createForm.payment_method = 'cash'
+        createForm.status = 'paid'
+    }
 })
 
 watch(() => createForm.person_type, (newVal) => {
@@ -290,7 +299,8 @@ watch(selectedCity, (value) => {
                             class="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-3 py-2 text-sm text-gray-500 cursor-not-allowed"
                             placeholder="Selecciona webinar y tipo" />
                     </div>
-                    <select v-model="createForm.payment_method"
+                    <select v-model="createForm.payment_method" :disabled="isFree"
+                        :class="isFree ? 'opacity-60 cursor-not-allowed' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar método de pago</option>
                         <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
@@ -308,7 +318,8 @@ watch(selectedCity, (value) => {
 
                 <!-- ESTATUS -->
                 <div class="flex gap-2 w-full mt-3">
-                    <select v-model="createForm.status"
+                    <select v-model="createForm.status" :disabled="isFree"
+                        :class="isFree ? 'opacity-60 cursor-not-allowed' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar estatus de pago</option>
                         <option value="paid">Pagado</option>

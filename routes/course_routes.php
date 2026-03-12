@@ -11,6 +11,6 @@ Route::put('/{id}', [CoursesController::class, 'update'])->name('update');
 Route::delete('/{id}', [CoursesController::class, 'delete'])->name('delete');
 Route::get('/changeStaus/{id}', [CoursesController::class, 'changeStatus'])->name('change-status');
 
-Route::get('/{id}/gallery', [CoursesController::class, 'gallery'])->name('gallery');
+/* Route::get('/{id}/gallery', [CoursesController::class, 'gallery'])->name('gallery');
 Route::post('/{id}/gallery', [CoursesController::class, 'updateGallery'])->name('gallery.update');
-Route::delete('/{id}/gallery/{mediaId}', [CoursesController::class, 'deleteGalleryImage'])->name('gallery.delete');
+Route::delete('/{id}/gallery/{mediaId}', [CoursesController::class, 'deleteGalleryImage'])->name('gallery.delete'); */

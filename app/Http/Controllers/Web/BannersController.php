@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Http\Controllers\Mail\MailsController;
+use App\Http\Helpers\Constants;
 use App\Models\AcademicSession;
 use App\Models\Course;
 use App\Models\EventSession;
@@ -92,8 +93,14 @@ class BannersController extends Controller
         });
 
         // draggin de los diferentes tipos de eventos en la db, home default
-        $existingTypes = Banner::select('event_type')->distinct()->pluck('event_type')->toArray();
-        $eventTypes = collect(array_unique(array_merge(['home'], $existingTypes)))->values();
+        $eventTypes = collect([
+            'home',
+            Constants::EVENT_WEBINAR,
+            Constants::EVENT_ACADEMIC_SESSION,
+            Constants::EVENT_COURSE,
+            Constants::EVENT_CONFERENCE,
+            Constants::EVENT_PRECONFERENCE,
+        ])->values();
 
         return Inertia::render('Banners/Index', [
             'banners'    => $banners,
@@ -150,11 +157,11 @@ class BannersController extends Controller
                 'event_type' => 'required|string|max:255',
             ]);
 
-            // si viene event_id, event_type es obligatorio (ya lo garantiza el or defecto 'home')
-            // si NO viene event_id, se limpia event_type para que quede 'home'
             if (empty($data['event_id'])) {
-                $data['event_type'] = 'home';
-                $data['event_id']   = null;
+                $data['event_id'] = null;
+                if (empty($data['event_type'])) {
+                    $data['event_type'] = 'home';
+                }
             }
 
             $banner = Banner::create($data);
@@ -164,21 +171,11 @@ class BannersController extends Controller
                     ->toMediaCollection('banners');
             }
 
-            return redirect()->route('banners.index');
-            // return response()->json([
-            //     'message' => 'success',
-            //     'data' => [
-            //         'banner' => $banner
-            //     ]
-            // ], 200);
-        } catch (Exception $e) {
-
-            /* return response()->json([
-                'message' => $e->getMessage(),
-            ], 500); */
-            return redirect()->back()->withErrors([
-                'message' => $e->getMessage()
+            return redirect()->route('banners.index', [
+                'event_type' => $data['event_type']
             ]);
+        } catch (Exception $e) {
+            return redirect()->back()->withErrors(['message' => $e->getMessage()]);
         }
     }
 
@@ -205,8 +202,10 @@ class BannersController extends Controller
             ]);
 
             if (empty($data['event_id'])) {
-                $data['event_type'] = 'home';
-                $data['event_id']   = null;
+                $data['event_id'] = null;
+                if (empty($data['event_type'])) {
+                    $data['event_type'] = 'home';
+                }
             }
 
             $banner = Banner::findOrFail($id);

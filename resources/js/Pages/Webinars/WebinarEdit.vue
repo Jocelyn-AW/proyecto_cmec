@@ -31,7 +31,7 @@ const props = defineProps({
     },
 });
 const isSubmitting = ref(false);
-const updateBanner = ref(false)
+/* const updateBanner = ref(false) */
 const formData = reactive({
     _method: 'put',
     id: null,
@@ -187,7 +187,7 @@ const handleSubmit = () => {
         data.append('program_pdf', pdf.file.value);
     }
 
-    if (updateBanner.value) {
+    /* if (updateBanner.value) {
         data.append('update_banner', '1');
         data.append('banner_title', formData.topic);
         if (cover.file.value) {
@@ -196,7 +196,7 @@ const handleSubmit = () => {
         if (formData.link && formData.link.trim() !== '') {
             data.append('banner_link', formData.link);
         }
-    }
+    } */
 
     router.post(route('webinars.update', formData.id), data, {
         forceFormData: true,
@@ -274,7 +274,7 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Descripcion
                             </label>
-                            <textarea v-model="formData.description" rows="2" maxlength="500"
+                            <textarea v-model="formData.description" rows="2" maxlength="5000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
                                 <span v-if="errors.description" class="text-red-500 text-sm font-medium">
@@ -288,7 +288,7 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Objetivos
                             </label>
-                            <textarea v-model="formData.objectives" rows="3" maxlength="1000"
+                            <textarea v-model="formData.objectives" rows="3" maxlength="2000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
                                 <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
@@ -309,7 +309,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- Switch: Actualizar Banner -->
-                        <div
+                        <!-- <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Actualizar el banner de
@@ -323,7 +323,7 @@ const flatpickrTimeConfig = {
                                 <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
                             </button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>

@@ -87,7 +87,7 @@ class WebinarsController extends Controller
 
             $this->updateWebinarMedia($webinar, $request);
 
-            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+            /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
                     title: $request->input('banner_title', $webinar->topic),
                     image: $request->file('banner_image'),
@@ -95,7 +95,7 @@ class WebinarsController extends Controller
                     eventId: $webinar->id,
                     eventType: 'webinar'
                 );
-            }
+            } */
 
             return redirect()
                 ->route('webinars.index')
@@ -150,7 +150,7 @@ class WebinarsController extends Controller
 
             $this->updateWebinarMedia($webinar, $request);
 
-            if ($request->input('update_banner') === '1') {
+            /* if ($request->input('update_banner') === '1') {
 
                 $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
 
@@ -174,7 +174,7 @@ class WebinarsController extends Controller
                         ->route('webinars.index')
                         ->with('success', 'Webinar actualizado, pero no se pudo crear el banner porque no hay imagen de portada.');
                 }
-            }
+            } */
 
             return redirect()
                 ->route('webinars.index')
@@ -208,62 +208,6 @@ class WebinarsController extends Controller
             return redirect()
                 ->route('webinars.index')
                 ->with('error', 'Hubo un error al eliminar el webinar. Intenta de nuevo más tarde.');
-        }
-    }
-
-    public function gallery($id)
-    {
-        $webinar = Webinar::findOrFail($id);
-
-        return Inertia::render('Webinars/WebinarGallery', [
-            'webinar' => $webinar->only('id', 'topic'),
-            'images' => $webinar->getMedia('webinars_gallery')->map(function ($media) {
-                return [
-                    'id' => $media->id,
-                    'url' => $media->getUrl()
-                ];
-            }),
-        ]);
-    }
-
-    public function updateGallery(Request $request, $id)
-    {
-        try {
-            $webinar = Webinar::findOrFail($id);
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $webinar->addMedia($image)->toMediaCollection('webinars_gallery');
-                }
-            }
-
-            return redirect()
-                ->route('webinars.gallery', $id)
-                ->with('success', 'Galería actualizada exitosamente');
-        } catch (\Exception $e) {
-
-            return redirect()
-                ->route('webinars.gallery', $id)
-                ->with('error', 'Hubo un error al actualizar la galería. Intenta de nuevo más tarde.');
-        }
-    }
-
-    public function deleteGalleryImage($id, $mediaId)
-    {
-        try {
-            $webinar = Webinar::findOrFail($id);
-            $mediaItem = $webinar->getMedia('webinars_gallery')->where('id', $mediaId)->first();
-
-            if ($mediaItem) {
-                $mediaItem->delete();
-                return redirect()
-                    ->route('webinars.gallery', $id)
-                    ->with('success', 'Imagen eliminada exitosamente');
-            } else {
-                return response()->json(['success' => false, 'message' => 'Imagen no encontrada.'], 404);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al eliminar la imagen.'], 500);
         }
     }
 

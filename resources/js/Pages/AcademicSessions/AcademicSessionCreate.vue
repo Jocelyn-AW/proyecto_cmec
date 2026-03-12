@@ -8,7 +8,7 @@ import Dropzone from "@/Components/Dropzone.vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue';
 import { useAlert } from '@/composables/useAlert';
-import { ref, watch,computed } from "vue";
+import { ref, watch, computed } from "vue";
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -24,10 +24,10 @@ defineProps({
 const { alertState, warning, hideAlert } = useAlert();
 const page = usePage();
 
-const createBanner = computed({
+/* const createBanner = computed({
     get: () => form.create_banner === '1',
     set: (val) => { form.create_banner = val ? '1' : '0'; }
-});
+}); */
 
 const form = useForm({
     topic: "",
@@ -48,10 +48,10 @@ const form = useForm({
     program_pdf: null,
     sessions: [{ date: "", time: "" }],
 
-    create_banner: '0',
+    /* create_banner: '0',
     banner_title: '',
     banner_link: '',
-    banner_image: null,
+    banner_image: null, */
 });
 
 const addSession = () => {
@@ -95,9 +95,9 @@ const handleSubmit = () => {
     }
 
     form.cover_image = cover.file.value;
-    form.banner_image = cover.file.value;
+    /* form.banner_image = cover.file.value;
     form.banner_title = form.topic;
-    form.banner_link = form.link ?? '';
+    form.banner_link = form.link ?? ''; */
 
     if (pdf.file.value) {
         form.program_pdf = pdf.file.value;
@@ -243,7 +243,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- CREAR BANNER -->
-                        <div
+                        <!-- <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -259,7 +259,7 @@ const flatpickrTimeConfig = {
                                 <span :class="createBanner ? 'translate-x-5' : 'translate-x-0'"
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
                             </button>
-                        </div>
+                        </div> -->
 
                     </div>
                 </div>

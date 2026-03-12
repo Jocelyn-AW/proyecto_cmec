@@ -76,7 +76,7 @@ class AcademicSessionsController extends Controller
 
             $this->updateAcademicSessionMedia($academicSession, $request);
 
-            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+            /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
                     title: $request->input('banner_title', $academicSession->topic),
                     image: $request->file('banner_image'),
@@ -84,7 +84,7 @@ class AcademicSessionsController extends Controller
                     eventId: $academicSession->id,
                     eventType: 'academic_session'
                 );
-            }
+            } */
 
             return redirect()
                 ->route('academicsessions.index')
@@ -133,7 +133,7 @@ class AcademicSessionsController extends Controller
 
             $this->updateAcademicSessionMedia($academicSession, $request);
 
-            if ($request->input('update_banner') === '1') {
+            /* if ($request->input('update_banner') === '1') {
 
                 $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
 
@@ -158,7 +158,7 @@ class AcademicSessionsController extends Controller
                         ->route('academicsessions.index')
                         ->with('success', 'Sesión actualizada, pero no se pudo crear el banner porque no hay imagen de portada.');
                 }
-            }
+            } */
 
             return redirect()
                 ->route('academicsessions.index')
@@ -187,52 +187,6 @@ class AcademicSessionsController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('academicsessions.index')
                 ->with('error', 'Hubo un error al eliminar la sesión académica.');
-        }
-    }
-
-    //  galeria 
-
-    public function gallery($id)
-    {
-        $academicSession = AcademicSession::findOrFail($id);
-
-        return Inertia::render('AcademicSessions/AcademicSessionGallery', [
-            'academicsession' => $academicSession->only('id', 'topic'),
-            'images' => $academicSession->getMedia('academic_sessions_gallery')->map(fn($media) => [
-                'id' => $media->id,
-                'url' => $media->getUrl()
-            ]),
-        ]);
-    }
-
-    public function updateGallery(Request $request, $id)
-    {
-        try {
-            $academicSession = AcademicSession::findOrFail($id);
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $academicSession->addMedia($image)->toMediaCollection('academic_sessions_gallery');
-                }
-            }
-            return redirect()->route('academicsessions.gallery', $id)->with('success', 'Galería actualizada');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar la galería.');
-        }
-    }
-
-    public function deleteGalleryImage($id, $mediaId)
-    {
-        try {
-            $academicSession = AcademicSession::findOrFail($id);
-            $mediaItem = $academicSession->getMedia('academic_sessions_gallery')->find($mediaId);
-
-            if ($mediaItem) {
-                $mediaItem->delete();
-                return redirect()->route('academicsessions.gallery', $id)->with('success', 'Imagen eliminada');
-            }
-            return response()->json(['success' => false, 'message' => 'No encontrada'], 404);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error'], 500);
         }
     }
 

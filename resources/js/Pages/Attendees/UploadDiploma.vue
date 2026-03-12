@@ -20,8 +20,19 @@ const props = defineProps({
     attendee: {
         type: Object,
         default: () => ({})
+    },
+    activeFilters: {
+        type: Object,
+        default: () => ({})
     }
 })
+
+// FILTROS
+const filtersPayload = computed(() => ({
+    _filters_event_id: props.activeFilters?.event_id ?? '',
+    _filters_did_attend: props.activeFilters?.did_attend ?? '',
+    // _filters_search:  props.activeFilters?.search ?? '',
+}))
 
 const emit = defineEmits(['close'])
 
@@ -33,6 +44,10 @@ const diploma = useFileUpload({
     onError: (msg) => alert(msg)
 })
 
+// Si ya hay diploma y el usuario no ha seleccionado uno nuevo, mostrar el actual
+const hasExistingDiploma = computed(() => !!props.diplomaUrl)
+const isReplacing = computed(() => hasExistingDiploma.value && !!diploma.file.value)
+
 const submit = () => {
     if (!diploma.file.value) {
         alert('Por favor selecciona un archivo PDF')
@@ -43,6 +58,11 @@ const submit = () => {
 
     const formData = new FormData()
     formData.append('diploma', diploma.file.value)
+    
+    //filtros activos
+    Object.entries(filtersPayload.value).forEach(([key, value]) => {
+        formData.append(key, value ?? '')
+    })
 
     router.post(route('attendees.upload-diploma', props.attendee.id), formData, {
         forceFormData: true,
@@ -91,6 +111,7 @@ const maxWidthClass = computed(() => {
                     leave-to-class="opacity-0 scale-95 translate-y-4">
                     <div v-if="show"
                         :class="[maxWidthClass, 'relative w-full bg-white rounded-2xl shadow-2xl overflow-hidden']">
+
                         <!-- Header -->
                         <div class="px-6 pt-6 pb-4 border-b border-slate-100">
                             <div class="flex items-center justify-between">
@@ -104,10 +125,11 @@ const maxWidthClass = computed(() => {
                                     </div>
                                     <div>
                                         <h2 class="text-lg font-semibold text-slate-900">
-                                            Agregar diploma
+                                            {{ hasExistingDiploma ? 'Reemplazar diploma' : 'Agregar diploma' }}
                                         </h2>
                                         <p class="text-sm text-slate-500">
-                                            Sube el diploma en formato PDF
+                                            {{ hasExistingDiploma ? 'Sube un nuevo PDF para reemplazar el actual' :
+                                                'Sube el diploma en formato PDF' }}
                                         </p>
                                     </div>
                                 </div>
@@ -124,18 +146,54 @@ const maxWidthClass = computed(() => {
                         <!-- Content -->
                         <div class="p-6">
                             <div class="space-y-4">
-                                <!-- Dropzone Container -->
+
+                                <!-- ← DIPLOMA ACTUAL (solo si existe y no se ha seleccionado uno nuevo) -->
+                                <Transition enter-active-class="duration-200 ease-out"
+                                    enter-from-class="opacity-0 -translate-y-2"
+                                    enter-to-class="opacity-100 translate-y-0">
+                                    <div v-if="hasExistingDiploma && !diploma.file.value"
+                                        class="flex items-center justify-between gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 shrink-0">
+                                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-amber-900">Diploma actual</p>
+                                                <p class="text-xs text-amber-600">Selecciona un nuevo PDF para
+                                                    reemplazarlo</p>
+                                            </div>
+                                        </div>
+                                        <a :href="diplomaUrl" target="_blank"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors shrink-0">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Ver PDF
+                                        </a>
+                                    </div>
+                                </Transition>
+
+                                <!-- Dropzone (siempre visible para poder subir/reemplazar) -->
                                 <div v-if="!diploma.file.value"
                                     class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-1 transition-colors hover:border-blue-300 hover:bg-blue-50/30">
                                     <Dropzone :preview="diploma.preview.value" :is-dragging="diploma.isDragging.value"
-                                        accept="application/pdf"
-                                        label="Arrastra tu PDF aqui o haz clic para seleccionar" hint="PDF (max. 5MB)"
+                                        accept="application/pdf" :label="hasExistingDiploma
+                                            ? 'Arrastra el nuevo PDF aquí o haz clic para reemplazar'
+                                            : 'Arrastra tu PDF aquí o haz clic para seleccionar'" hint="PDF (max. 5MB)"
                                         @change="diploma.handleChange" @drop="diploma.handleDrop"
                                         @drag-enter="diploma.handleDragEnter" @drag-leave="diploma.handleDragLeave"
                                         @remove="diploma.reset" />
                                 </div>
 
-                                <!-- File selected indicator -->
+                                <!-- Archivo seleccionado -->
                                 <Transition enter-active-class="duration-200 ease-out"
                                     enter-from-class="opacity-0 -translate-y-2"
                                     enter-to-class="opacity-100 translate-y-0" leave-active-class="duration-150 ease-in"
@@ -143,7 +201,8 @@ const maxWidthClass = computed(() => {
                                     leave-to-class="opacity-0 -translate-y-2">
                                     <div v-if="diploma.file.value"
                                         class="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100">
-                                        <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100">
+                                        <div
+                                            class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 shrink-0">
                                             <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -156,10 +215,15 @@ const maxWidthClass = computed(() => {
                                             </p>
                                             <p class="text-xs text-blue-600">
                                                 {{ (diploma.file.value.size / 1024 / 1024).toFixed(2) }} MB
+                                                <span v-if="isReplacing" class="ml-1 text-amber-600 font-medium">
+                                                    · Reemplazará el diploma actual
+                                                </span>
                                             </p>
                                         </div>
+                                        <!-- Botón para cambiar el PDF seleccionado -->
                                         <button @click="diploma.reset"
-                                            class="p-1.5 rounded-lg text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors">
+                                            class="p-1.5 rounded-lg text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                                            title="Cambiar archivo">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M6 18L18 6M6 6l12 12" />
@@ -167,6 +231,7 @@ const maxWidthClass = computed(() => {
                                         </button>
                                     </div>
                                 </Transition>
+
                             </div>
                         </div>
 
@@ -186,10 +251,18 @@ const maxWidthClass = computed(() => {
                                         <path class="opacity-75" fill="currentColor"
                                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                     </svg>
-                                    <span>{{ isSubmitting ? 'Subiendo...' : 'Agregar diploma' }}</span>
+                                    <span>
+                                        {{ isSubmitting
+                                            ? 'Subiendo...'
+                                            : isReplacing
+                                                ? 'Reemplazar diploma'
+                                                : 'Agregar diploma'
+                                        }}
+                                    </span>
                                 </button>
                             </div>
                         </div>
+
                     </div>
                 </Transition>
             </div>

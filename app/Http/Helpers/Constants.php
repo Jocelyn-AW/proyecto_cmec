@@ -25,6 +25,7 @@ class Constants {
     const TABLE_WEBINARS = 'webinars';
     const TABLE_EVENT_SESSIONS = 'event_sessions';
     const TABLE_ACADEMIC_SESSIONS = 'academic_sessions';
+    const TABLE_ALBUMS = 'albums';
 
 
     //tipos de evento

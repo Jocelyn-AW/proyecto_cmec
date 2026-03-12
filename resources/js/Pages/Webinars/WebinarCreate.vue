@@ -35,7 +35,7 @@ defineProps({
 });
 
 const { alertState, success, errorA, warning } = useAlert()
-const createBanner = ref(false)
+/* const createBanner = ref(false) */
 const isSubmitting = ref(false);
 const formData = reactive({
     topic: "",
@@ -48,7 +48,7 @@ const formData = reactive({
     resident_price: "",
     guest_price: "",
     bank_detail_id: "",
-    format: "",
+    format: "online",
     address: "",
     additional_info: "",
     sessions: [
@@ -115,14 +115,14 @@ const handleSubmit = () => {
         data.append('program_pdf', pdf.file.value)
     }
 
-    if (createBanner.value) {
+    /* if (createBanner.value) {
         data.append('create_banner', '1')
         data.append('banner_title', formData.topic)
         data.append('banner_image', cover.file.value)
         if (formData.link && formData.link.trim() !== '') {
             data.append('banner_link', formData.link)
         }
-    }
+    } */
 
     router.post('/webinars/new', data, {
         forceFormData: true,
@@ -199,14 +199,14 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
-                            }}</span>
+                                }}</span>
                         </div>
 
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Descripcion
                             </label>
-                            <textarea v-model="formData.description" rows="2" maxlength="500"
+                            <textarea v-model="formData.description" rows="2" maxlength="5000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
                                 <span v-if="errors.description" class="text-red-500 text-sm font-medium">
@@ -220,7 +220,7 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Objetivos
                             </label>
-                            <textarea v-model="formData.objectives" rows="3" maxlength="1000"
+                            <textarea v-model="formData.objectives" rows="3" maxlength="2000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
                                 <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
@@ -241,7 +241,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- Switch: Generar Banner -->
-                        <div
+                        <!-- <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Generar banner para
@@ -255,7 +255,7 @@ const flatpickrTimeConfig = {
                                 <span :class="createBanner ? 'translate-x-5' : 'translate-x-0'"
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
                             </button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -282,7 +282,7 @@ const flatpickrTimeConfig = {
                                 <option value="online">En línea</option>
                             </select>
                             <span v-if="errors.format" class="text-red-500 text-sm flex justify-start">{{ errors.format
-                            }}</span>
+                                }}</span>
                         </div>
 
                         <!-- CAMPOS MODALIDAD -->
@@ -323,7 +323,7 @@ const flatpickrTimeConfig = {
                                 <input type="text" v-model="formData.link"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                                 <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
-                                }}</span>
+                                    }}</span>
                             </div>
 
                         </template>

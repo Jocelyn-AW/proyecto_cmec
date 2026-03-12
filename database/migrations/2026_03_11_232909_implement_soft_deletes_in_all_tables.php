@@ -21,7 +21,7 @@ return new class extends Migration
         'courses',
         'directory_data',
         'event_sessions',
-        'event_speakers',
+        //'event_speakers',
         'invoice_data',
         'members',
         'memberships',

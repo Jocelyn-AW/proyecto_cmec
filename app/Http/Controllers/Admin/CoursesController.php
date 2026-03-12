@@ -161,7 +161,9 @@ class CoursesController extends Controller
         }
     }
 
-    public function gallery($id)
+
+    // GALERIA COMENTADA
+    /* public function gallery($id)
     {
         $course = Course::findOrFail($id);
 
@@ -216,7 +218,7 @@ class CoursesController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al eliminar la imagen.'], 500);
         }
-    }
+    } */
 
     private function deleteCourseMedia(Course $course)
     {

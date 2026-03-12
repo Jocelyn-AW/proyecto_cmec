@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import DataTable from '@/Components/DataTable.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
@@ -19,7 +19,53 @@ const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
 const selectedItem = ref(null);
-const togglingId = ref(null); // evita doble click mientras se procesa
+
+// INICIOS FILTROS REDIRECCION
+// agregar un filtro nuevo:
+// 1. agrega ref aquí
+// 2. agregalo a activeFilters (lo que ven los componentes)
+// 3. agregalo a filtersPayload (lo que recibe el controlador con prefijo _filters_)
+// 
+const event_id = ref(route().params.event_id ?? '')
+const did_attend = ref(route().params.did_attend ?? '')
+// const search  = ref(route().params.search ?? '')   // ejemplo
+
+/**
+ * objeto de filtros que se pasa a los componentes hijos (EditAttendee, UploadDiploma por ejemplo)
+ * y que también usa DataTable para mantener los query params en la URL
+ */
+const activeFilters = computed(() => ({
+    event_id: event_id.value,
+    did_attend: did_attend.value,
+    // search:  search.value,
+}))
+
+/**
+ * Objeto con los mismos filtros pero con el prefijo _filters_ que espera el controlador
+ * en los métodos que hacen redirect (update, delete, uploadDiploma, changeDidAttend).
+ * Se usa en router.delete, router.get, etc.
+ */
+const filtersPayload = computed(() => ({
+    _filters_event_id: event_id.value !== '' ? event_id.value : undefined,
+    _filters_did_attend: did_attend.value !== '' ? did_attend.value : undefined,
+    // _filters_search:  search.value !== '' ? search.value : undefined,
+}))
+
+const hasActiveFilters = computed(() =>
+    Object.values(activeFilters.value).some(v => v !== '' && v !== null && v !== undefined)
+)
+
+const clearFilters = () => {
+    event_id.value = ''
+    did_attend.value = ''
+    // search.value  = ''
+}
+// FINAL FILTROS REDIRECCION
+
+const truncate = (text, max = 30) => {
+    if (!text) return ''
+    return text.length > max ? text.substring(0, max) + '…' : text
+}
 
 const props = defineProps({
     attendees: {
@@ -84,7 +130,10 @@ const handleOnEdit = (attendee) => {
 }
 
 const onChangeAttend = (attendee) => {
-    router.get(route('attendees.change-attend', attendee.id))
+    router.get(route('attendees.change-attend', attendee.id),
+        filtersPayload.value,   // ADICION DE FILTROS
+        { preserveScroll: true }
+    )
 }
 
 const handleOnDelete = (attendeeId) => {
@@ -94,7 +143,10 @@ const handleOnDelete = (attendeeId) => {
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
-            router.delete(route('attendees.delete', attendeeId));
+            router.delete(route('attendees.delete', attendeeId), {
+                data: filtersPayload.value,   // ADICION DE FILTROS
+                preserveScroll: true,
+            })
         }
     })
 }
@@ -106,26 +158,6 @@ const openDiploma = (attendee) => {
         selectedItem.value = attendee;
         showUploadDiploma.value = true;
     }
-}
-
-const toggleAttendance = (attendee) => {
-    warning("Todavia no implementamos esa caracteristica!")
-    /* if (togglingId.value === attendee.id) return;
-    togglingId.value = attendee.id; */
-    /* router.post(
-        route('attendees.update', attendee.id),
-        {
-            _method: 'put',
-            did_attend: !attendee.did_attend,
-        },
-        {
-            preserveScroll: true,
-            only: ['attendees'],
-            onFinish: () => {
-                togglingId.value = null;
-            }
-        }
-    ); */
 }
 
 const onCreateSuccess = () => {
@@ -148,7 +180,8 @@ const onEditSuccess = () => {
         <div class="space-y-5">
             <div class="">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Asistentes a sesiones academicas</h3>
-                <p class="text-sm text-gray-500">Administra los asistentes registrados a sesiones academicas desde esta sección</p>
+                <p class="text-sm text-gray-500">Administra los asistentes registrados a sesiones academicas desde esta
+                    sección</p>
             </div>
             <DataTable :columns="[
                 { label: 'Sesión Academica', key: 'event_name' },
@@ -160,7 +193,49 @@ const onEditSuccess = () => {
                 { label: 'Asistencia', key: 'did_attend', align: 'center' },
             ]" :paginator="props.attendees" :searchable="true" :per-page-options="[10, 25, 50, 100]"
                 :allow-create="true" :allow-actions="true" :allow-edit="true" :allow-delete="true"
-                @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']">
+                @create="handleOnCreate" @edit="handleOnEdit" @delete="handleOnDelete" :only="['attendees']"
+                :filter-values="activeFilters">
+
+                <template #filters>
+                    <div class="flex flex-wrap items-center gap-3 px-4 py-3">
+
+                        <!-- Sesión académica -->
+                        <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            Sesión académica
+                        </label>
+                        <select v-model="event_id" class="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-2 text-sm text-gray-700
+                       dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                       focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Todas las sesiones</option>
+                            <option v-for="e in allEvents" :key="e.id" :value="e.id">
+                                {{ truncate(e.topic, 35) }}
+                            </option>
+                        </select>
+
+                        <!-- Asistencia -->
+                        <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            Asistencia
+                        </label>
+                        <select v-model="did_attend" class="rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700
+                       dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200
+                       focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500">
+                            <option value="">Todos</option>
+                            <option :value="1">Sí asistió</option>
+                            <option :value="0">No asistió</option>
+                        </select>
+
+                        <!-- Limpiar -->
+                        <button v-if="hasActiveFilters" @click="clearFilters" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-gray-300
+                       dark:border-gray-700 text-sm text-gray-500 hover:text-red-500
+                       hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+                                class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Limpiar
+                        </button>
+                    </div>
+                </template>
 
                 <template #cell-date="{ item }">
                     {{ new Date(item.date).toLocaleDateString('en-GB') }}
@@ -212,8 +287,7 @@ const onEditSuccess = () => {
 
                 <template #actionButtons="{ item }">
                     <button :title="item.diploma_url ? 'Ver diploma PDF' : 'Subir diploma'" @click="openDiploma(item)"
-                        :disabled="!item.did_attend"
-                        :class="item.diploma_url
+                        :disabled="!item.did_attend" :class="item.diploma_url
                             ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
                             : 'bg-transparent text-gray-300 border-gray-200 hover:bg-gray-100 hover:text-gray-500',
                             item.did_attend ? '' : 'disabled text-white'"
@@ -235,13 +309,17 @@ const onEditSuccess = () => {
 
             <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.activeEvents"
                 :errors="props.errors" @close="showCreateDrawer = false" @success="onCreateSuccess" />
-            <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
-                :events="props.allEvents" :errors="props.errors" @close="showEditDrawer = false"
-                @success="onEditSuccess" />
-            <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem" @close="showUploadDiploma = false" />
 
-            <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" @close="showPaymentDetails = false"
-                :payment-details="paymentDetails" />
+            <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
+                :events="props.allEvents" :errors="props.errors" :active-filters="activeFilters"
+                @close="showEditDrawer = false" @success="onEditSuccess" />
+
+            <UploadDiploma :show="showUploadDiploma" :attendee="selectedItem ?? {}"
+                :diploma-url="selectedItem?.diploma_url ?? ''" :active-filters="activeFilters"
+                @close="showUploadDiploma = false" />
+
+            <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" :payment-details="paymentDetails"
+                @close="showPaymentDetails = false" />
         </div>
     </div>
 
