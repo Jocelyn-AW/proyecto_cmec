@@ -8,6 +8,8 @@ import Dropzone from "@/Components/Dropzone.vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import { computed, onMounted, onUpdated, reactive, watch } from "vue";
 import { usePage } from "@inertiajs/vue3";
+import Alerta from "@/Components/Alerta.vue";
+import { useAlert } from "@/composables/useAlert";
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -54,25 +56,82 @@ const formData = reactive({
     additional_info: "",
 });
 
+const { alertState, success, errorA, warning, hideAlert } = useAlert()
+
+//Media files
 const cover = useImageUpload({
     maxSizeMB: 1,
+    dimensions: {
+        minWidth: 1280,
+        minHeight: 400,
+    },
     acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
     onError: (message) => {
-        alert(message);
+        
+        warning(message)
     },
 });
+
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
+const currentPlatinum = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+const currentGolden = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+const currentSilver = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
 
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
-    onError: (msg) => alert(msg)
+    onError: (msg) => warning(msg)
 })
 
+//Load saved files
 const currentCover = computed(() => {
     if (cover.file.value) {
         return cover.preview.value;
     } else if (props.course?.cover_url) {
         return props.course?.cover_url;
+    } else {
+        return null;
+    }
+});
+
+const currentPreview = computed(() => {
+    if (previewCover.file.value) {
+        return previewCover.preview.value;
+    } else if (props.course?.cover_preview_url) {
+        return props.course?.cover_preview_url;
     } else {
         return null;
     }
@@ -92,6 +151,12 @@ const currentPdf = computed(() => {
         return null;
     }
 });
+
+onMounted(() => {
+    currentPlatinum.initExisting(props.course?.platinum_sponsors_urls)
+    currentGolden.initExisting(props.course?.golden_sponsors_urls)
+    currentSilver.initExisting(props.course?.silver_sponsors_urls)    
+})
 
 const getTimeFromDateTime = (dateTime) => {
     if (!dateTime) return "";
@@ -130,7 +195,7 @@ const fillForm = (course) => {
 
 const handleSubmit = () => {
     if (!cover.file.value && !props.course?.cover_url) {
-        alert("Por favor selecciona una imagen de portada para el curso");
+        warning("Por favor selecciona una imagen de portada para el curso");
         return;
     }
     
@@ -141,6 +206,16 @@ const handleSubmit = () => {
     if (pdf.file.value) {
         formData.program_pdf = pdf.file.value ?? currentPdf.value;
     }
+
+    formData.cover_preview_image = previewCover.file.value;
+
+    formData.platinum_sponsors = currentPlatinum.files.value;
+    formData.golden_sponsors = currentGolden.files.value;
+    formData.silver_sponsors = currentSilver.files.value;
+
+    formData.platinum_delete = currentPlatinum.deletedExistingIds.value;
+    formData.golden_delete = currentGolden.deletedExistingIds.value;
+    formData.silver_delete = currentSilver.deletedExistingIds.value;
 
     router.post(route('courses.update', formData.id), formData, {
         forceFormData: true
@@ -202,31 +277,49 @@ watch(() => props.course, (newCourse) => {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
             >
-                <div class="grid grid-cols-4 gap-4 p-6">
+                <div class="grid lg:grid-cols-4 gap-4 p-6">
                     <div class="">
                         <span class="text-sm text-gray-700">
-                            Datos Generales</span
-                        >
+                            Datos Generales</span>
                     </div>
-                    <div class="col-span-3 space-y-6">
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
-                            >
-                                Foto de Portada
-                            </label>
-                            <Dropzone
-                                :preview="currentCover"
-                                :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)"
-                                @change="cover.handleChange"
-                                @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter"
-                                @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset"
-                            />
-                            
-                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                    <div class="lg:col-span-3 space-y-6">
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Foto de Portada
+                                </label>
+                                <Dropzone
+                                    :label="'Agregar imagen'"
+                                    :preview="currentCover"
+                                    :is-dragging="cover.isDragging.value"
+                                    hint="Min. 400 x 400 (max. 1MB) "
+                                    @change="cover.handleChange"
+                                    @drop="cover.handleDrop"
+                                    @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave"
+                                    @remove="cover.reset"
+                                />
+                                
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                    Previsualización
+                                </label>
+                                <Dropzone
+                                    :label="'Agregar imagen'"
+                                    :preview="currentPreview"
+                                    :is-dragging="previewCover.isDragging.value"
+                                    hint="Min. 400 x 400 (max. 1MB) "
+                                    @change="previewCover.handleChange"
+                                    @drop="previewCover.handleDrop"
+                                    @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave"
+                                    @remove="previewCover.reset"
+                                />
+                                
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                            </div>
                         </div>
 
                         <div>
@@ -282,6 +375,77 @@ watch(() => props.course, (newCourse) => {
                             />
                             <span v-if="errors.organized_by" class="text-red-500 text-xs flex justify-end">{{ errors.organized_by }}</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
+                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                    <div>
+                        <span class="text-sm text-gray-700">
+                            Patrocinadores</span>
+                    </div>
+                    <div class="col-span-3 space-y-6">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Platino
+                            </label>
+                            <Dropzone multiple
+                                :all-previews="currentPlatinum.allPreviews.value"
+                                :total-count="currentPlatinum.totalCount.value"
+                                :is-dragging="currentPlatinum.isDragging.value"
+                                :max-files="20"
+                                :columns="'6'"
+                                @change="currentPlatinum.handleChange"
+                                @drop="currentPlatinum.handleDrop"
+                                @drag-enter="currentPlatinum.handleDragEnter"
+                                @drag-leave="currentPlatinum.handleDragLeave"
+                                @remove-item="currentPlatinum.removeItem"
+                                @remove="currentPlatinum.reset"
+                                />
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Oro
+                            </label>
+                            <Dropzone multiple
+                                :all-previews="currentGolden.allPreviews.value"
+                                :total-count="currentGolden.totalCount.value"
+                                :is-dragging="currentGolden.isDragging.value"
+                                :max-files="20"
+                                :columns="'6'"
+                                @change="currentGolden.handleChange"
+                                @drop="currentGolden.handleDrop"
+                                @drag-enter="currentGolden.handleDragEnter"
+                                @drag-leave="currentGolden.handleDragLeave"
+                                @remove-item="currentGolden.removeItem"
+                                @remove="currentGolden.reset"
+                                /> 
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Plata
+                            </label>
+                            <Dropzone multiple
+                                :all-previews="currentSilver.allPreviews.value"
+                                :total-count="currentSilver.totalCount.value"
+                                :is-dragging="currentSilver.isDragging.value"
+                                :max-files="20"
+                                :columns="'6'"
+                                @change="currentSilver.handleChange"
+                                @drop="currentSilver.handleDrop"
+                                @drag-enter="currentSilver.handleDragEnter"
+                                @drag-leave="currentSilver.handleDragLeave"
+                                @remove-item="currentSilver.removeItem"
+                                @remove="currentSilver.reset"
+                                /> 
+                            
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        
                     </div>
                 </div>
             </div>
@@ -573,4 +737,16 @@ watch(() => props.course, (newCourse) => {
             </div>
         </div>
     </div>
+
+    <Alerta
+        :show="alertState.show"
+        :message="alertState.message"
+        :title="alertState.title"
+        :type="alertState.type"
+        :buttonText="alertState.buttonText"
+        :cancelText="alertState.cancelText"
+        @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
+        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()"
+        @close="hideAlert()"
+    />
 </template>

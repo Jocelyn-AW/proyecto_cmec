@@ -9,10 +9,11 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\EventSession;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -48,8 +49,11 @@ class Course extends Model implements HasMedia
 
     protected $appends = [
         'cover_url',
+        'cover_preview_url',
         'gallery_urls',
-        'sponsors_logos_urls',
+        'platinum_sponsors_urls',
+        'golden_sponsors_urls',
+        'silver_sponsors_urls',
         'program_url',
     ];
 
@@ -60,6 +64,7 @@ class Course extends Model implements HasMedia
         'is_active' => 'boolean'
     ];
 
+    //Relations
     public function attendees()
     {
         return $this->morphMany(Attendee::class, 'event');
@@ -75,9 +80,21 @@ class Course extends Model implements HasMedia
         return $this->morphMany(Payment::class, 'event_payed');
     }
 
+    public function bankDetails()
+    {
+        return $this->morphOne(BankDetail::class, 'event');
+    }
+
+    //Media Collections
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('courses_covers')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->singleFile()
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('courses_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
             ->singleFile()
@@ -88,7 +105,17 @@ class Course extends Model implements HasMedia
             ->useDisk('public')
             ->withResponsiveImages();
 
-        $this->addMediaCollection('courses_sponsors_logos')
+        $this->addMediaCollection('courses_platinum_sponsors')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('courses_golden_sponsors')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('courses_silver_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
             ->withResponsiveImages();
@@ -98,10 +125,19 @@ class Course extends Model implements HasMedia
             ->useDisk('public');
     }
 
+
+    //Media Attributes
     protected function coverUrl(): Attribute
     {
         return Attribute::make(function () {
             return $this->getFirstMediaUrl('courses_covers');
+        });
+    }
+
+    protected function coverPreviewUrl(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getFirstMediaUrl('courses_previews');
         });
     }
 
@@ -114,11 +150,38 @@ class Course extends Model implements HasMedia
         });
     }
 
-    protected function sponsorsLogosUrls(): Attribute
+    protected function platinumSponsorsUrls(): Attribute
     {
         return Attribute::make(function () {
-            return $this->getMedia('courses_sponsors_logos')->map(function ($media) {
-                return $media->getUrl();
+            return $this->getMedia('courses_platinum_sponsors')->map(function ($media) {                
+                return [
+                    'id' => $media->id,
+                    'url' =>  $media->getUrl()
+                ];
+            });
+        });
+    }
+
+    protected function goldenSponsorsUrls(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getMedia('courses_golden_sponsors')->map(function ($media) {
+                return [
+                    'id' => $media->id,
+                    'url' =>  $media->getUrl()
+                ];
+            });
+        });
+    }
+
+    protected function silverSponsorsUrls(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getMedia('courses_silver_sponsors')->map(function ($media) {
+                return [
+                    'id' => $media->id,
+                    'url' =>  $media->getUrl()
+                ];
             });
         });
     }
@@ -129,12 +192,5 @@ class Course extends Model implements HasMedia
             $media = $this->getFirstMedia('courses_program');
             return $media ? $media->getUrl() : null;
         });
-    }
-
-    public function bankDetails()
-    {
-        return $this->morphOne(BankDetail::class, 'event');
-    }
-
-    
+    }      
 }

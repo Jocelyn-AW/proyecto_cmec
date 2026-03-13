@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router } from '@inertiajs/vue3';
-import { reactive, computed, watch } from 'vue';
+import { reactive, computed, watch, onMounted } from 'vue';
 import flatPickr from "vue-flatpickr-component";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
@@ -31,6 +31,12 @@ const props = defineProps({
     }
 });
 
+onMounted(() => {
+    currentPlatinum.initExisting(props.conference?.platinum_sponsors_urls)
+    currentGolden.initExisting(props.conference?.golden_sponsors_urls)
+    currentSilver.initExisting(props.conference?.silver_sponsors_urls)    
+})
+
 //Archivos
 const cover = useImageUpload({
     maxSizeMB: 1,
@@ -46,6 +52,31 @@ const pdf = useFileUpload({
     onError: (msg) => alert(msg)
 })
 
+const currentPlatinum = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+const currentGolden = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+const currentSilver = useFileUpload({
+        multiple: true,
+        maxFiles: 20,
+        maxSizeMB: 2,
+        acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+        onError: (msg) => warning(msg)
+    })
+
+//Cargar archivos guardados
 const currentCover = computed(() => {
     if (cover.file.value) {
         return cover.preview.value;
@@ -164,6 +195,14 @@ const handleSubmit = () => {
     if (pdf.file.value) {
         formData.program_pdf = pdf.file.value ?? currentPdf.value;
     }
+
+    formData.platinum_sponsors = currentPlatinum.files.value;
+    formData.golden_sponsors = currentGolden.files.value;
+    formData.silver_sponsors = currentSilver.files.value;
+
+    formData.platinum_delete = currentPlatinum.deletedExistingIds.value;
+    formData.golden_delete = currentGolden.deletedExistingIds.value;
+    formData.silver_delete = currentSilver.deletedExistingIds.value;
 
     router.post(route('conferences.update', formData.id), formData, {
         forceFormData: true
@@ -424,6 +463,76 @@ watch(() => props.conference, (newConference) => {
                             class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1">
                             + Agregar fecha
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 dark:border-gray-800 dark:bg-gray-900/50">
+                    <h4 class="text-base font-semibold text-[var(--primary-navy)] dark:text-white/90">Patrocinadores</h4>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div class="">
+                        <div class="pb-5">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Platino
+                            </label>
+
+                            <Dropzone multiple
+                                :all-previews="currentPlatinum.allPreviews.value"
+                                :total-count="currentPlatinum.totalCount.value"
+                                :is-dragging="currentPlatinum.isDragging.value"
+                                :max-files="20"
+                                :columns="'7'"
+                                @change="currentPlatinum.handleChange"
+                                @drop="currentPlatinum.handleDrop"
+                                @drag-enter="currentPlatinum.handleDragEnter"
+                                @drag-leave="currentPlatinum.handleDragLeave"
+                                @remove-item="currentPlatinum.removeItem"
+                                @remove="currentPlatinum.reset"
+                                />
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <hr>
+                        <div class="py-5">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Oro
+                            </label>
+                            <Dropzone multiple
+                                :all-previews="currentGolden.allPreviews.value"
+                                :total-count="currentGolden.totalCount.value"
+                                :is-dragging="currentGolden.isDragging.value"
+                                :max-files="20"
+                                :columns="'7'"
+                                @change="currentGolden.handleChange"
+                                @drop="currentGolden.handleDrop"
+                                @drag-enter="currentGolden.handleDragEnter"
+                                @drag-leave="currentGolden.handleDragLeave"
+                                @remove-item="currentGolden.removeItem"
+                                @remove="currentGolden.reset"
+                                /> 
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
+                        <hr>
+                        <div class="pt-5">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
+                                Plata
+                            </label>
+                            <Dropzone multiple
+                                :all-previews="currentSilver.allPreviews.value"
+                                :total-count="currentSilver.totalCount.value"
+                                :is-dragging="currentSilver.isDragging.value"
+                                :max-files="20"
+                                :columns="'7'"
+                                @change="currentSilver.handleChange"
+                                @drop="currentSilver.handleDrop"
+                                @drag-enter="currentSilver.handleDragEnter"
+                                @drag-leave="currentSilver.handleDragLeave"
+                                @remove-item="currentSilver.removeItem"
+                                @remove="currentSilver.reset"
+                                />
+                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{ errors.cover_image }}</span>
+                        </div>
                     </div>
                 </div>
             </div>

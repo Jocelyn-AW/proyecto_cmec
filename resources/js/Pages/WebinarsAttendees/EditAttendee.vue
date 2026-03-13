@@ -1,16 +1,19 @@
 <script setup>
 import { router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
 import states from '@/composables/useStatesAndCities';
 
-const { warning } = useAlert()
+const { success, errorA, warning } = useAlert()
 
 const selectedState = ref('')
 const selectedCity = ref('')
 const selectedEvent = ref(null)
+const isSubmitting = ref(false)
+const isFree = ref(false)
+const isPayed = ref(false)
 
 const cities = computed(() => {
     return selectedState.value ? states[selectedState.value] : []
@@ -36,8 +39,24 @@ const props = defineProps({
     errors: {
         type: Object,
         default: () => ({})
+    },
+    flash: {
+        type: Object,
+        default: () => ({})
+    },
+    activeFilters: {
+        type: Object,
+        default: () => ({})
     }
 })
+
+// FILTROS
+const filtersPayload = computed(() => ({
+    _filters_event_id: props.activeFilters?.event_id ?? '',
+    _filters_did_attend: props.activeFilters?.did_attend ?? '',
+    // _filters_search:  props.activeFilters?.search ?? '',
+}))
+// FIN FILTROS
 
 const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
@@ -56,6 +75,13 @@ const price = computed(() => {
     return priceMap[createForm.person_type] ?? createForm.price ?? ''
 })
 
+const shouldHaveReference = computed(() => {
+    const validMethods = ['debit_card', 'credit_card', 'transfer', 'stripe'];
+    const validStatus = ['paid', 'cancelled'];
+    return validMethods.includes(createForm.payment_method)
+        && validStatus.includes(createForm.status);
+})
+
 const generateRandomString = (length = 5) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -64,6 +90,15 @@ const generateRandomString = (length = 5) => {
     }
     return result;
 };
+
+const paymentMethods = {
+    'cash': 'Efectivo',
+    'debit_card': 'Tarjeta de Débito',
+    'credit_card': 'Tarjeta de Crédito',
+    'transfer': 'Transferencia',
+    'stripe': 'En línea (stripe)',
+    'free': 'Sin costo',
+}
 
 const createForm = reactive({
     _method: 'put',
@@ -81,19 +116,9 @@ const createForm = reactive({
     price: '',
     cmec_member_id: null,
     specialty: '',
-    /* birth_date: '',
-    special_needs: '', */
     payment_method: '',
     reference: '',
 })
-
-const paymentMethods = {
-    'cash': 'Efectivo',
-    'debit_card': 'Tarjeta de Débito',
-    'credit_card': 'Tarjeta de Crédito',
-    'transfer': 'Transferencia',
-    'stripe': 'En línea (stripe)'
-}
 
 const cleanForm = () => {
     createForm.id = null;
@@ -110,13 +135,13 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     createForm.specialty = '';
-    /* createForm.birth_date = '';
-    createForm.special_needs = ''; */
     createForm.payment_method = '';
     createForm.reference = '';
     selectedEvent.value = null;
     selectedState.value = '';
     selectedCity.value = '';
+    isFree.value = false;
+    isPayed.value = false;
 }
 
 const setDataToForm = () => {
@@ -134,35 +159,64 @@ const setDataToForm = () => {
     createForm.cmec_member_id = props.data.cmec_member_id || null;
     createForm.price = props.data.price || '';
     createForm.specialty = props.data.specialty || '';
-
-    const lastPayment = props.data.payments?.[0] || null;
-    createForm.payment_method = lastPayment?.payment_method || '';
-    createForm.reference = lastPayment?.reference || '';
+    createForm.payment_method = props.data.payments?.[0]?.payment_method || '';
+    createForm.reference = props.data.payments?.[0]?.reference || '';
 
     selectedEvent.value = props.events.find(e => e.id === props.data.event_id) || null;
     selectedState.value = props.data.state || '';
     selectedCity.value = props.data.city || '';
+
+    isPayed.value = props.data.payments?.[0]?.status === 'paid';
+    isFree.value = parseInt(props.data.price) <= 0;
 }
 
 const submitCreate = () => {
+    if (isSubmitting.value) return;
+
+    isSubmitting.value = true;
     createForm.event_id = selectedEvent?.value?.id;
     createForm.event_type = 'webinar';
     createForm.price = price.value;
 
-    router.post(route('attendees.update', createForm.id), createForm, {
+    router.post(route('attendees.update', createForm.id), {
+        ...createForm,
+        ...filtersPayload.value,
+    }, {
         onSuccess: () => {
             cleanForm();
             emit('success');
         },
         onError: () => {
             warning('Hubo un error en la actualización.');
+        },
+        onFinish: () => {
+            isSubmitting.value = false;
         }
     })
 }
 
-// sync precio con el computed (para leer)
+onMounted(() => {
+    if (page.props.success || props.flash?.success) {
+        success(page.props.success || props.flash.success)
+    }
+    if (page.props.error || props.flash?.error) {
+        errorA(page.props.error || props.flash.error)
+    }
+    if (page.props.warning || props.flash?.warning) {
+        warning(page.props.warning || props.flash.warning)
+    }
+})
+
 watch(price, (val) => {
     createForm.price = val
+
+    if (parseInt(val) <= 0) {
+        createForm.payment_method = 'free';
+        createForm.status = 'paid';
+        isFree.value = true;
+    } else {
+        isFree.value = false;
+    }
 })
 
 watch(() => createForm.person_type, (newVal) => {
@@ -175,9 +229,7 @@ watch(() => createForm.person_type, (newVal) => {
 
 watch(() => props.show, (newVal) => {
     cleanForm();
-    if (newVal) {
-        setDataToForm();
-    }
+    if (newVal) setDataToForm();
 })
 
 watch(selectedState, (value, old) => {
@@ -194,9 +246,8 @@ watch(selectedCity, (value) => {
 </script>
 
 <template>
-    <Drawer :show="show" size="xl" @close="emit('close')">
+    <Drawer :show="show" title="Editar participante" subtitle="webinars" size="xl" @close="emit('close')">
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Editar participante</h3>
 
             <!-- EVENTO -->
             <div>
@@ -244,30 +295,6 @@ watch(selectedCity, (value) => {
                 </div>
             </div>
 
-            <!-- FECHA DE NACIMIENTO + NECESIDADES ESPECIALES -->
-            <!-- <div class="flex gap-2 w-full">
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Fecha de nacimiento
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.birth_date" type="date"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.birth_date" class="text-red-500 text-xs flex justify-end">{{ errors?.birth_date
-                    }}</span>
-                </div>
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Necesidades especiales
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.special_needs" type="text" placeholder="Ej. silla de ruedas"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.special_needs" class="text-red-500 text-xs flex justify-end">{{
-                        errors?.special_needs }}</span>
-                </div>
-            </div> -->
-
             <!-- ORIGEN -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Origen</label>
@@ -291,13 +318,17 @@ watch(selectedCity, (value) => {
             <!-- TIPO DE PARTICIPANTE -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de participante</label>
-                <select v-model="createForm.person_type"
+                <select v-model="createForm.person_type" :disabled="isPayed"
+                    :class="isPayed ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                     class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
                     <option value="resident">Residente</option>
                     <option value="guest">No miembro (invitado)</option>
                 </select>
+                <span v-if="isPayed" class="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                    🔒 No editable cuando el pago está confirmado
+                </span>
                 <span v-if="errors?.person_type" class="text-red-500 text-xs flex justify-end">{{ errors?.person_type
                     }}</span>
             </div>
@@ -325,7 +356,8 @@ watch(selectedCity, (value) => {
                             class="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-3 py-2 text-sm text-gray-500 cursor-not-allowed"
                             placeholder="Selecciona webinar y tipo" />
                     </div>
-                    <select v-model="createForm.payment_method"
+                    <select v-model="createForm.payment_method" :disabled="isFree || isPayed"
+                        :class="isFree || isPayed ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar método de pago</option>
                         <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
@@ -343,7 +375,8 @@ watch(selectedCity, (value) => {
 
                 <!-- ESTATUS -->
                 <div class="flex gap-2 w-full mt-3">
-                    <select v-model="createForm.status"
+                    <select v-model="createForm.status" :disabled="isFree || isPayed"
+                        :class="isFree || isPayed ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar estatus de pago</option>
                         <option value="paid">Pagado</option>
@@ -351,12 +384,16 @@ watch(selectedCity, (value) => {
                         <option value="cancelled">Cancelado</option>
                     </select>
                 </div>
+                <span v-if="isPayed" class="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                    🔒 El estatus, método de pago y tipo de participante están bloqueados porque el pago ya fue
+                    confirmado
+                </span>
                 <span v-if="errors?.status" class="text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
 
-                <!-- REFERENCIA (condicional) -->
-                <div class="flex mt-3"
-                    v-if="createForm.payment_method !== 'cash' && createForm.payment_method !== '' && createForm.status !== 'pending' && createForm.status !== ''">
-                    <input v-model="createForm.reference" type="text"
+                <!-- REFERENCIA -->
+                <div class="flex mt-3" v-if="shouldHaveReference || createForm.reference">
+                    <input v-model="createForm.reference" type="text" :disabled="isFree || isPayed"
+                        :class="isFree || isPayed ? 'cursor-not-allowed opacity-60 bg-gray-50' : ''"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Referencia o número de transacción" />
                 </div>
@@ -381,9 +418,9 @@ watch(selectedCity, (value) => {
                     Cancelar
                 </button>
                 <button type="button"
-                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                    @click="submitCreate">
-                    Guardar
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSubmitting" @click="submitCreate">
+                    {{ isSubmitting ? 'Guardando...' : 'Guardar' }}
                 </button>
             </div>
         </template>

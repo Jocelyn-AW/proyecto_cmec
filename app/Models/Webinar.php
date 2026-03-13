@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Http\Helpers\Constants;
+use App\Traits\HasSponsorMedia;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Webinar extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, SoftDeletes, HasSponsorMedia;
 
     /**
      * The table associated with the model.
@@ -45,9 +47,12 @@ class Webinar extends Model implements HasMedia
 
     protected $appends = [
         'cover_url',
+        'cover_preview_url',
         'gallery_urls',
-        'sponsors_logos_urls',
         'program_url',
+        'platinum_sponsors_urls', //
+        'golden_sponsors_urls', //  <- sponsor
+        'silver_sponsors_urls', //
     ];
 
     protected $casts = [
@@ -70,9 +75,20 @@ class Webinar extends Model implements HasMedia
         return $this->morphMany(EventSession::class, 'sessionable');
     }
 
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'event_payed');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('webinars_covers')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->singleFile()
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('webinars_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
             ->singleFile()
@@ -91,12 +107,21 @@ class Webinar extends Model implements HasMedia
         $this->addMediaCollection('webinars_program')
             ->acceptsMimeTypes(['application/pdf'])
             ->useDisk('public');
+
+        $this->registerSponsorMediaCollections(); // <----- sponsor
     }
 
     protected function coverUrl(): Attribute
     {
         return Attribute::make(function () {
             return $this->getFirstMediaUrl('webinars_covers');
+        });
+    }
+
+    protected function coverPreviewUrl(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getFirstMediaUrl('webinars_previews');
         });
     }
 
@@ -129,5 +154,11 @@ class Webinar extends Model implements HasMedia
     public function bankDetails()
     {
         return $this->morphOne(BankDetail::class, 'event');
+    }
+
+    // sponsor
+    public function sponsorCollectionPrefix(): string
+    {
+        return 'webinars';
     }
 }

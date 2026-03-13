@@ -7,6 +7,7 @@ import "flatpickr/dist/flatpickr.css";
 import Dropzone from "@/Components/Dropzone.vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import { computed, reactive, watch, ref } from "vue";
+import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -31,7 +32,8 @@ const props = defineProps({
     },
 });
 const isSubmitting = ref(false);
-const updateBanner = ref(false)
+const sponsorsRef = ref(null)
+/* const updateBanner = ref(false) */
 const formData = reactive({
     _method: 'put',
     id: null,
@@ -69,6 +71,20 @@ const cover = useImageUpload({
     },
 });
 
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
@@ -80,6 +96,16 @@ const currentCover = computed(() => {
         return cover.preview.value;
     } else if (props.webinar?.cover_url) {
         return props.webinar?.cover_url;
+    } else {
+        return null;
+    }
+});
+
+const currentPreview = computed(() => {
+    if (previewCover.file.value) {
+        return previewCover.preview.value;
+    } else if (props.webinar?.cover_preview_url) {
+        return props.webinar?.cover_preview_url;
     } else {
         return null;
     }
@@ -147,10 +173,17 @@ watch(() => props.webinar, (newWebinar) => {
 
 const handleSubmit = () => {
 
+    const sponsorsData = sponsorsRef.value.getData()
+
     if (isSubmitting.value) return;
 
     if (!cover.file.value && !props.webinar?.cover_url) {
         alert("Por favor selecciona una imagen de portada para el webinar");
+        return;
+    }
+
+    if (!previewCover.file.value && !props.webinar?.cover_preview_url) {
+        alert("Por favor selecciona una imagen de preview para el webinar");
         return;
     }
 
@@ -183,11 +216,25 @@ const handleSubmit = () => {
         data.append('cover_image', cover.file.value);
     }
 
+    if (previewCover.file.value) {
+        data.append('cover_preview_image', previewCover.file.value);
+    }
+
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value);
     }
 
-    if (updateBanner.value) {
+    // archivos nuevos
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
+
+    // ids a eliminar
+    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
+    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
+    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))
+
+    /* if (updateBanner.value) {
         data.append('update_banner', '1');
         data.append('banner_title', formData.topic);
         if (cover.file.value) {
@@ -196,7 +243,7 @@ const handleSubmit = () => {
         if (formData.link && formData.link.trim() !== '') {
             data.append('banner_link', formData.link);
         }
-    }
+    } */
 
     router.post(route('webinars.update', formData.id), data, {
         forceFormData: true,
@@ -247,17 +294,31 @@ const flatpickrTimeConfig = {
                     <div class="">
                         <span class="text-sm text-gray-700">Datos Generales</span>
                     </div>
-                    <div class="col-span-3 space-y-6">
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Foto de Portada
-                            </label>
-                            <Dropzone :preview="currentCover" :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset" />
-                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
-                                errors.cover_image }}</span>
+                    <div class="lg:col-span-3 space-y-6">
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Foto de Portada
+                                </label>
+                                <Dropzone :preview="currentCover" :is-dragging="cover.isDragging.value"
+                                    hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
+                                    @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Previsualización
+                                </label>
+                                <Dropzone :preview="currentPreview" :is-dragging="previewCover.isDragging.value"
+                                    hint="Min. 400 x 400 (max. 1MB) " @change="previewCover.handleChange"
+                                    @drop="previewCover.handleDrop" @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
+
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
                         </div>
 
                         <div>
@@ -274,7 +335,7 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Descripcion
                             </label>
-                            <textarea v-model="formData.description" rows="2" maxlength="500"
+                            <textarea v-model="formData.description" rows="2" maxlength="5000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
                                 <span v-if="errors.description" class="text-red-500 text-sm font-medium">
@@ -288,7 +349,7 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Objetivos
                             </label>
-                            <textarea v-model="formData.objectives" rows="3" maxlength="1000"
+                            <textarea v-model="formData.objectives" rows="3" maxlength="2000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
                                 <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
@@ -309,7 +370,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- Switch: Actualizar Banner -->
-                        <div
+                        <!-- <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Actualizar el banner de
@@ -323,10 +384,14 @@ const flatpickrTimeConfig = {
                                 <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
                             </button>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
+
+            <SponsorsSection ref="sponsorsRef" :initial-platinum="webinar.platinum_sponsors_urls"
+                :initial-golden="webinar.golden_sponsors_urls" :initial-silver="webinar.silver_sponsors_urls"
+                :errors="errors" @error="warning" />
 
             <!-- DETALLES ADICIONALES -->
             <div

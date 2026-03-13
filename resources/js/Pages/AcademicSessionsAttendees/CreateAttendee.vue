@@ -1,7 +1,7 @@
 <script setup>
 import { router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
 import states from '@/composables/useStatesAndCities';
@@ -11,6 +11,8 @@ const { warning } = useAlert()
 const selectedState = ref('')
 const selectedCity = ref('')
 const selectedEvent = ref(null)
+const isSubmitting = ref(false)
+const isFree = ref(false)
 
 const cities = computed(() => {
     return selectedState.value ? states[selectedState.value] : []
@@ -32,7 +34,11 @@ const props = defineProps({
     errors: {
         type: Object,
         default: () => ({})
-    }
+    },
+    flash: {
+        type: Object,
+        default: () => ({})
+    },
 })
 
 const page = usePage();
@@ -52,6 +58,13 @@ const price = computed(() => {
     return priceMap[createForm.person_type] ?? ''
 })
 
+const shouldHaveReference = computed(() => {
+    const validMethods = ['debit_card', 'credit_card', 'transfer', 'stripe'];
+    const validStatus = ['paid', 'cancelled'];
+    return validMethods.includes(createForm.payment_method)
+        && validStatus.includes(createForm.status);
+})
+
 const generateRandomString = (length = 5) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -66,7 +79,8 @@ const paymentMethods = {
     'debit_card': 'Tarjeta de Débito',
     'credit_card': 'Tarjeta de Crédito',
     'transfer': 'Transferencia',
-    'stripe': 'En línea (stripe)'
+    'stripe': 'En línea (stripe)',
+    'free': 'Sin costo',
 }
 
 const createForm = reactive({
@@ -83,8 +97,6 @@ const createForm = reactive({
     price: '',
     cmec_member_id: null,
     specialty: '',
-    birth_date: '',
-    special_needs: '',
     payment_method: '',
     reference: '',
 })
@@ -103,16 +115,18 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     createForm.specialty = '';
-    /* createForm.birth_date = '';
-    createForm.special_needs = ''; */
     createForm.payment_method = '';
     createForm.reference = '';
     selectedEvent.value = null;
     selectedState.value = '';
     selectedCity.value = '';
+    isFree.value = false;
 }
 
 const submitCreate = () => {
+    if (isSubmitting.value) return;
+
+    isSubmitting.value = true;
     createForm.event_id = selectedEvent?.value?.id;
     createForm.event_type = 'academic_session';
     createForm.price = price.value;
@@ -124,13 +138,38 @@ const submitCreate = () => {
         },
         onError: () => {
             //
+        },
+        onFinish: () => {
+            isSubmitting.value = false;
         }
     })
 }
 
+onMounted(() => {
+    if (page.props.success || props.flash?.success) {
+        success(page.props.success || props.flash.success)
+    }
+    if (page.props.error || props.flash?.error) {
+        errorA(page.props.error || props.flash.error)
+    }
+    if (page.props.warning || props.flash?.warning) {
+        warning(page.props.warning || props.flash.warning)
+    }
+})
+
 // sync precio con el computed (solo lectura)
 watch(price, (val) => {
     createForm.price = val
+
+    if (parseInt(val) <= 0) {
+        createForm.payment_method = 'free';
+        createForm.status = 'paid';
+        isFree.value = true;
+    } else {
+        isFree.value = false;
+        createForm.payment_method = '';
+        createForm.status = '';
+    }
 })
 
 watch(() => createForm.person_type, (newVal) => {
@@ -141,10 +180,9 @@ watch(() => createForm.person_type, (newVal) => {
     }
 })
 
+
 watch(() => props.show, (newVal) => {
-    if (newVal) {
-        cleanForm();
-    }
+    if (newVal) cleanForm();
 })
 
 watch(selectedState, (value) => {
@@ -158,9 +196,8 @@ watch(selectedCity, (value) => {
 </script>
 
 <template>
-    <Drawer :show="show" size="xl" @close="emit('close')">
+    <Drawer :show="show" title="Nuevo participante" subtitle="sesiones académicas" size="xl" @close="emit('close')">
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo participante</h3>
 
             <!-- EVENTO -->
             <div>
@@ -207,30 +244,6 @@ watch(selectedCity, (value) => {
                     <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
                 </div>
             </div>
-
-            <!-- FECHA DE NACIMIENTO + NECESIDADES ESPECIALES -->
-            <!-- <div class="flex gap-2 w-full">
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Fecha de nacimiento
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.birth_date" type="date"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.birth_date" class="text-red-500 text-xs flex justify-end">{{ errors?.birth_date
-                        }}</span>
-                </div>
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Necesidades especiales
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.special_needs" type="text" placeholder="Ej. silla de ruedas"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.special_needs" class="text-red-500 text-xs flex justify-end">{{
-                        errors?.special_needs }}</span>
-                </div>
-            </div> -->
 
             <!-- ORIGEN -->
             <div>
@@ -290,7 +303,8 @@ watch(selectedCity, (value) => {
                             class="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-3 py-2 text-sm text-gray-500 cursor-not-allowed"
                             placeholder="Selecciona sesión academica y tipo" />
                     </div>
-                    <select v-model="createForm.payment_method"
+                    <select v-model="createForm.payment_method" :disabled="isFree"
+                        :class="isFree ? 'opacity-60 cursor-not-allowed' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar método de pago</option>
                         <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
@@ -308,7 +322,8 @@ watch(selectedCity, (value) => {
 
                 <!-- ESTATUS -->
                 <div class="flex gap-2 w-full mt-3">
-                    <select v-model="createForm.status"
+                    <select v-model="createForm.status" :disabled="isFree"
+                        :class="isFree ? 'opacity-60 cursor-not-allowed' : ''"
                         class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Seleccionar estatus de pago</option>
                         <option value="paid">Pagado</option>
@@ -319,8 +334,7 @@ watch(selectedCity, (value) => {
                 <span v-if="errors?.status" class="text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
 
                 <!-- REFERENCIA-->
-                <div class="flex mt-3"
-                    v-if="createForm.payment_method !== 'cash' && createForm.payment_method !== '' && createForm.status !== 'pending' && createForm.status !== ''">
+                <div class="flex mt-3" v-if="shouldHaveReference">
                     <input v-model="createForm.reference" type="text"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Referencia o número de transacción" />
@@ -346,9 +360,9 @@ watch(selectedCity, (value) => {
                     Cancelar
                 </button>
                 <button type="button"
-                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                    @click="submitCreate">
-                    Guardar
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSubmitting" @click="submitCreate">
+                    {{ isSubmitting ? 'Guardando...' : 'Guardar' }}
                 </button>
             </div>
         </template>

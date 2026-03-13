@@ -94,7 +94,10 @@ const openPdf = (conference) => {
 }
 
 const openGallery = (conference) => {
-    router.get(route('conferences.gallery', conference.id));
+    router.get(route('albums.index', {
+        event_type: conference.sessions?.[0]?.sessionable_type ?? 'conference',
+        event_id: conference.id,
+    }))
 }
 
 const onChangeStatus = (conference) => {

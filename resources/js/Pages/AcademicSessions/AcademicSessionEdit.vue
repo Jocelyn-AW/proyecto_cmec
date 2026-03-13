@@ -9,6 +9,7 @@ import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue';
 import { useAlert } from '@/composables/useAlert';
 import { ref, watch, computed } from "vue";
+import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -19,6 +20,14 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    errors: {
+        type: Object,
+        default: () => ({}),
+    },
+    auth: {
+        type: Object,
+        default: () => ({}),
+    },
     bank_details: {
         type: Array,
         default: () => [],
@@ -26,9 +35,9 @@ const props = defineProps({
 });
 
 const { alertState, warning, hideAlert } = useAlert();
-const page = usePage();
-
-const updateBanner = ref(false);
+const page = usePage()
+const sponsorsRef = ref(null)
+/* const updateBanner = ref(false); */
 
 const form = useForm({
     id: null,
@@ -67,6 +76,20 @@ const cover = useImageUpload({
     onError: (message) => warning(message),
 });
 
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
@@ -78,6 +101,16 @@ const currentCover = computed(() => {
         return cover.preview.value;
     } else if (props.academicSession?.cover_url) {
         return props.academicSession?.cover_url;
+    } else {
+        return null;
+    }
+});
+
+const currentPreview = computed(() => {
+    if (previewCover.file.value) {
+        return previewCover.preview.value;
+    } else if (props.academicSession?.cover_preview_url) {
+        return props.academicSession?.cover_preview_url;
     } else {
         return null;
     }
@@ -150,6 +183,7 @@ watch(
 
 const handleSubmit = () => {
     const data = new FormData();
+    const sponsorsData = sponsorsRef.value.getData()
 
     data.append('_method', 'PUT');
 
@@ -178,11 +212,25 @@ const handleSubmit = () => {
         data.append('cover_image', cover.file.value);
     }
 
+    if (previewCover.file.value) {
+        data.append('cover_preview_image', previewCover.file.value);
+    }
+
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value);
     }
 
-    if (updateBanner.value) {
+    // archivos nuevos
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
+
+    // ids a eliminar
+    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
+    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
+    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))
+
+    /* if (updateBanner.value) {
         data.append('update_banner', '1');
         data.append('banner_title', form.topic ?? '');
 
@@ -193,7 +241,7 @@ const handleSubmit = () => {
         if (form.link && form.link.trim() !== '') {
             data.append('banner_link', form.link);
         }
-    }
+    } */
 
     router.post(`/academicsessions/${form.id}`, data, {
         forceFormData: true,
@@ -245,21 +293,34 @@ const flatpickrTimeConfig = {
                         <span class="text-sm text-gray-700 dark:text-gray-400">Datos Generales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <!-- FOTO -->
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Foto de Portada
+                                </label>
+                                <Dropzone :preview="currentCover" :is-dragging="cover.isDragging.value"
+                                    hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
+                                    @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
+                                <span v-if="form.errors?.cover_image"
+                                    class="text-red-500 text-sm flex justify-start mt-1">
+                                    {{ form.errors?.cover_image }}
+                                </span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Previsualización
+                                </label>
+                                <Dropzone :preview="currentPreview" :is-dragging="previewCover.isDragging.value"
+                                    hint="Min. 400 x 400 (max. 1MB) " @change="previewCover.handleChange"
+                                    @drop="previewCover.handleDrop" @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
 
-                        <!-- FOTO -->
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Foto de Portada
-                            </label>
-                            <Dropzone :preview="currentCover" :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset" />
-                            <span v-if="form.errors?.cover_image" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.cover_image }}
-                            </span>
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
                         </div>
-
                         <!-- TEMA -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -320,7 +381,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- PATROCINIO -->
-                        <div>
+                        <!-- <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Patrocinado por
                                 <span
@@ -333,10 +394,10 @@ const flatpickrTimeConfig = {
                             <span v-if="form.errors?.sponsored_by" class="text-red-500 text-sm flex justify-start mt-1">
                                 {{ form.errors?.sponsored_by }}
                             </span>
-                        </div>
+                        </div> -->
 
                         <!-- ACTUALIZAR BANNER -->
-                        <div
+                        <!-- <div
                             class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
                             <div>
                                 <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -353,11 +414,15 @@ const flatpickrTimeConfig = {
                                 <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
                                     class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
                             </button>
-                        </div>
+                        </div> -->
 
                     </div>
                 </div>
             </div>
+
+            <SponsorsSection ref="sponsorsRef" :initial-platinum="academicSession.platinum_sponsors_urls"
+                :initial-golden="academicSession.golden_sponsors_urls"
+                :initial-silver="academicSession.silver_sponsors_urls" :errors="errors" @error="warning" />
 
             <!-- DETALLES ADICIONALES -->
             <div

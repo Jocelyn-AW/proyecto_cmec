@@ -10,7 +10,3 @@ Route::get('/{id}', [AcademicSessionsController::class, 'edit'])->name('edit');
 Route::put('/{id}', [AcademicSessionsController::class, 'update'])->name('update');
 Route::delete('/{id}', [AcademicSessionsController::class, 'delete'])->name('delete');
 Route::patch('/{id}/status', [AcademicSessionsController::class, 'statusChange'])->name('statusChange');
-
-Route::get('/{id}/gallery', [AcademicSessionsController::class, 'gallery'])->name('gallery');
-Route::post('/{id}/gallery', [AcademicSessionsController::class, 'updateGallery'])->name('gallery.update');
-Route::delete('/{id}/gallery/{mediaId}', [AcademicSessionsController::class, 'deleteGalleryImage'])->name('gallery.delete');

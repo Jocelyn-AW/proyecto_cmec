@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Web\BannersController;
+use App\Traits\HandlesSponsorMedia;
 use App\Http\Controllers\Controller;
 use function Illuminate\Log\log;
 use Illuminate\Http\Request;
 use App\Models\BankDetail;
 use App\Models\Webinar;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class WebinarsController extends Controller
 {
+    use HandlesSponsorMedia;
+
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
@@ -86,8 +90,9 @@ class WebinarsController extends Controller
             }
 
             $this->updateWebinarMedia($webinar, $request);
+            $this->updateSponsorMedia($webinar, $request);
 
-            if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
+            /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
                     title: $request->input('banner_title', $webinar->topic),
                     image: $request->file('banner_image'),
@@ -95,7 +100,7 @@ class WebinarsController extends Controller
                     eventId: $webinar->id,
                     eventType: 'webinar'
                 );
-            }
+            } */
 
             return redirect()
                 ->route('webinars.index')
@@ -103,6 +108,12 @@ class WebinarsController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
+            Log::error('Error al crear webinar', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
 
             return redirect()
                 ->back()
@@ -149,8 +160,9 @@ class WebinarsController extends Controller
             }
 
             $this->updateWebinarMedia($webinar, $request);
+            $this->updateSponsorMedia($webinar, $request);
 
-            if ($request->input('update_banner') === '1') {
+            /* if ($request->input('update_banner') === '1') {
 
                 $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
 
@@ -174,7 +186,7 @@ class WebinarsController extends Controller
                         ->route('webinars.index')
                         ->with('success', 'Webinar actualizado, pero no se pudo crear el banner porque no hay imagen de portada.');
                 }
-            }
+            } */
 
             return redirect()
                 ->route('webinars.index')
@@ -196,6 +208,7 @@ class WebinarsController extends Controller
         try {
             $webinar = Webinar::findOrFail($id);
             $this->deleteWebinarMedia($webinar);
+            $this->deleteSponsorMedia($webinar);
             BannersController::deleteFromEvent(eventId: $id, eventType: 'webinar');
             $webinar->sessions()->delete();
             $webinar->delete();
@@ -211,65 +224,10 @@ class WebinarsController extends Controller
         }
     }
 
-    public function gallery($id)
-    {
-        $webinar = Webinar::findOrFail($id);
-
-        return Inertia::render('Webinars/WebinarGallery', [
-            'webinar' => $webinar->only('id', 'topic'),
-            'images' => $webinar->getMedia('webinars_gallery')->map(function ($media) {
-                return [
-                    'id' => $media->id,
-                    'url' => $media->getUrl()
-                ];
-            }),
-        ]);
-    }
-
-    public function updateGallery(Request $request, $id)
-    {
-        try {
-            $webinar = Webinar::findOrFail($id);
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $webinar->addMedia($image)->toMediaCollection('webinars_gallery');
-                }
-            }
-
-            return redirect()
-                ->route('webinars.gallery', $id)
-                ->with('success', 'Galería actualizada exitosamente');
-        } catch (\Exception $e) {
-
-            return redirect()
-                ->route('webinars.gallery', $id)
-                ->with('error', 'Hubo un error al actualizar la galería. Intenta de nuevo más tarde.');
-        }
-    }
-
-    public function deleteGalleryImage($id, $mediaId)
-    {
-        try {
-            $webinar = Webinar::findOrFail($id);
-            $mediaItem = $webinar->getMedia('webinars_gallery')->where('id', $mediaId)->first();
-
-            if ($mediaItem) {
-                $mediaItem->delete();
-                return redirect()
-                    ->route('webinars.gallery', $id)
-                    ->with('success', 'Imagen eliminada exitosamente');
-            } else {
-                return response()->json(['success' => false, 'message' => 'Imagen no encontrada.'], 404);
-            }
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al eliminar la imagen.'], 500);
-        }
-    }
-
     private function deleteWebinarMedia(Webinar $webinar)
     {
         $webinar->clearMediaCollection('webinars_covers');
+        $webinar->clearMediaCollection('webinars_previews');
         $webinar->clearMediaCollection('webinars_gallery');
         $webinar->clearMediaCollection('webinars_sponsors_logos');
         $webinar->clearMediaCollection('webinars_program');
@@ -280,6 +238,11 @@ class WebinarsController extends Controller
         if ($request->hasFile('cover_image')) {
             $webinar->clearMediaCollection('webinars_covers');
             $webinar->addMediaFromRequest('cover_image')->toMediaCollection('webinars_covers');
+        }
+
+        if ($request->hasFile('cover_preview_image')) {
+            $webinar->clearMediaCollection('webinars_previews');
+            $webinar->addMediaFromRequest('cover_preview_image')->toMediaCollection('webinars_previews');
         }
 
         if ($request->hasFile('sponsor_logos')) {
@@ -315,12 +278,15 @@ class WebinarsController extends Controller
             'is_active' => 'boolean',
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'cover_preview_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
             'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             //Tiempo
             'sessions' => 'required|array|min:1',
             'sessions.*.date' => 'required|date',
             'sessions.*.time' => 'required|date_format:H:i',
+            // sponsors
+            $this->sponsorValidationRules(),
         ];
     }
 

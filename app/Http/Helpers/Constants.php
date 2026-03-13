@@ -25,6 +25,7 @@ class Constants {
     const TABLE_WEBINARS = 'webinars';
     const TABLE_EVENT_SESSIONS = 'event_sessions';
     const TABLE_ACADEMIC_SESSIONS = 'academic_sessions';
+    const TABLE_ALBUMS = 'albums';
 
 
     //tipos de evento
@@ -45,6 +46,7 @@ class Constants {
     const METHOD_CREDIT_CARD = 'credit_card';
     const METHOD_STRIPE = 'stripe';
     const METHOD_TRANSFER = 'transfer'; //trasferencia
+    const METHOD_FREE = 'free'; //gratuito
 
     //status de pago
     const STATUS_PAID = 'paid';

@@ -4,15 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Http\Helpers\Constants;
+use App\Traits\HasSponsorMedia;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicSession extends Model implements HasMedia
 {
-    use InteractsWithMedia;
+    use InteractsWithMedia, SoftDeletes, HasSponsorMedia;
 
     /**
      * tabla asociada al modelo 
@@ -39,8 +41,12 @@ class AcademicSession extends Model implements HasMedia
 
     protected $appends = [
         'cover_url',
+        'cover_preview_url',
         'gallery_urls',
         'program_url',
+        'platinum_sponsors_urls', // 
+        'golden_sponsors_urls', // <--sponsor
+        'silver_sponsors_urls', //
     ];
 
     protected $casts = [
@@ -65,6 +71,11 @@ class AcademicSession extends Model implements HasMedia
         return $this->morphMany(EventSession::class, 'sessionable');
     }
 
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'event_payed');
+    }
+
     public function bankDetails(): MorphOne
     {
         return $this->morphOne(BankDetail::class, 'event');
@@ -80,6 +91,12 @@ class AcademicSession extends Model implements HasMedia
             ->singleFile()
             ->withResponsiveImages();
 
+        $this->addMediaCollection('academic_sessions_previews')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->singleFile()
+            ->withResponsiveImages();
+
         $this->addMediaCollection('academic_sessions_gallery')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
@@ -88,19 +105,28 @@ class AcademicSession extends Model implements HasMedia
         $this->addMediaCollection('academic_sessions_program')
             ->acceptsMimeTypes(['application/pdf'])
             ->useDisk('public');
+
+        $this->registerSponsorMediaCollections(); // <-- sponsor
     }
 
     //atributos
 
     protected function coverUrl(): Attribute
     {
-        return Attribute::make(get: fn () => $this->getFirstMediaUrl('academic_sessions_covers'));
+        return Attribute::make(get: fn() => $this->getFirstMediaUrl('academic_sessions_covers'));
+    }
+
+    protected function coverPreviewUrl(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getFirstMediaUrl('academic_sessions_previews');
+        });
     }
 
     protected function galleryUrls(): Attribute
     {
         return Attribute::make(get: function () {
-            return $this->getMedia('academic_sessions_gallery')->map(fn ($media) => $media->getUrl());
+            return $this->getMedia('academic_sessions_gallery')->map(fn($media) => $media->getUrl());
         });
     }
 
@@ -110,5 +136,11 @@ class AcademicSession extends Model implements HasMedia
             $media = $this->getFirstMedia('academic_sessions_program');
             return $media ? $media->getUrl() : null;
         });
+    }
+
+    // sponsor
+    public function sponsorCollectionPrefix(): string
+    {
+        return 'academic_sessions';
     }
 }

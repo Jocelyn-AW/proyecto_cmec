@@ -11,7 +11,3 @@ Route::put('/{id}', [ConferencesController::class, 'update'])->name('update');
 Route::delete('/{id}', [ConferencesController::class, 'delete'])->name('delete');
 
 Route::get('/changeStaus/{id}', [ConferencesController::class, 'changeStatus'])->name('change-status');
-
-Route::get('/{id}/gallery', [ConferencesController::class, 'gallery'])->name('gallery');
-Route::post('/{id}/gallery', [ConferencesController::class, 'updateGallery'])->name('gallery.update');
-Route::delete('/{id}/gallery/{mediaId}', [ConferencesController::class, 'deleteGalleryImage'])->name('gallery.delete');

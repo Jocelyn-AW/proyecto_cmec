@@ -170,7 +170,10 @@ const openPdf = (webinar) => {
 }
 
 const openGallery = (webinar) => {
-    router.get(route('webinars.gallery', webinar.id));
+    router.get(route('albums.index', {
+        event_type: webinar.sessions?.[0]?.sessionable_type ?? 'webinar',
+        event_id: webinar.id,
+    }))
 }
 </script>
 
@@ -189,7 +192,6 @@ const openGallery = (webinar) => {
             <DataTable :columns="[
                 { label: 'Título', key: 'topic' },
                 { label: 'Fecha', key: 'date' },
-                { label: 'Descripción', key: 'description' },
                 { label: 'Duración', key: 'duration' },
                 { label: 'Organiza', key: 'organized_by' },
                 { label: 'Costo Miembro', key: 'member_price' },
@@ -205,8 +207,8 @@ const openGallery = (webinar) => {
                     <span :title="item.topic" class="block max-w-[200px] truncate">{{ item.topic }}</span>
                 </template>
 
-                <template #cell-description="{ item }">
-                    <span :title="item.description" class="block max-w-[200px] truncate">{{ item.description }}</span>
+                <template #cell-organized_by="{ item }">
+                    <span :title="item.organized_by" class="block max-w-[200px] truncate">{{ item.organized_by }}</span>
                 </template>
 
                 <template #cell-date="{ item }">
