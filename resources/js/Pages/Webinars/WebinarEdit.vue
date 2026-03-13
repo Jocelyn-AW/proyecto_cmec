@@ -191,12 +191,12 @@ const handleSubmit = () => {
         data.append('program_pdf', pdf.file.value);
     }
 
-    // Archivos nuevos
+    // archivos nuevos
     sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
     sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
     sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
 
-    // IDs a eliminar
+    // ids a eliminar
     sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
     sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
     sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))

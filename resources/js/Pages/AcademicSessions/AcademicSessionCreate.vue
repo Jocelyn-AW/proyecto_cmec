@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, useForm, usePage } from "@inertiajs/vue3";
+import { Head, useForm, usePage, router } from "@inertiajs/vue3";
 import flatPickr from "vue-flatpickr-component";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
@@ -9,6 +9,7 @@ import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue';
 import { useAlert } from '@/composables/useAlert';
 import { ref, watch, computed } from "vue";
+import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -18,11 +19,23 @@ defineProps({
     bank_details: {
         type: Array,
         default: () => [],
+    }, errors: {
+        type: Object,
+        default: () => ({}),
+    },
+    auth: {
+        type: Object,
+        default: () => ({}),
+    },
+    bank_details: {
+        type: Array,
+        default: () => [],
     },
 });
 
 const { alertState, warning, hideAlert } = useAlert();
 const page = usePage();
+const sponsorsRef = ref(null)
 
 /* const createBanner = computed({
     get: () => form.create_banner === '1',
@@ -89,25 +102,52 @@ watch(
 );
 
 const handleSubmit = () => {
+    if (form.processing) return;
+
     if (!cover.file.value) {
         warning("Por favor selecciona una imagen de portada para la sesión académica");
         return;
     }
 
-    form.cover_image = cover.file.value;
-    /* form.banner_image = cover.file.value;
-    form.banner_title = form.topic;
-    form.banner_link = form.link ?? ''; */
+    const sponsorsData = sponsorsRef.value.getData()
+
+    const data = new FormData()
+    data.append('topic', form.topic)
+    data.append('description', form.description)
+    data.append('objectives', form.objectives ?? '')
+    data.append('duration', form.duration)
+    data.append('organized_by', form.organized_by)
+    data.append('sponsored_by', form.sponsored_by ?? '')
+    data.append('format', form.format ?? '')
+    data.append('link', form.link ?? '')
+    data.append('address', form.address ?? '')
+    data.append('additional_info', form.additional_info ?? '')
+    data.append('member_price', form.member_price)
+    data.append('resident_price', form.resident_price ?? '')
+    data.append('guest_price', form.guest_price ?? '')
+    data.append('bank_detail_id', form.bank_detail_id ?? '')
+    data.append('cover_image', cover.file.value)
 
     if (pdf.file.value) {
-        form.program_pdf = pdf.file.value;
+        data.append('program_pdf', pdf.file.value)
     }
 
-    form.post('/academicsessions/new', {
+    form.sessions.forEach((session, index) => {
+        data.append(`sessions[${index}][date]`, session.date)
+        data.append(`sessions[${index}][time]`, session.time)
+    })
+
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
+
+    router.post('/academicsessions/new', data, {
         forceFormData: true,
-        onSuccess: () => form.reset(),
+        preserveScroll: true,
+        preserveState: true,
         onError: () => warning("Por favor revisa los campos con error"),
-    });
+        onSuccess: () => form.reset(),
+    })
 };
 
 const handleCancel = () => {
@@ -162,8 +202,8 @@ const flatpickrTimeConfig = {
                                 hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
                                 @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
                                 @remove="cover.reset" />
-                            <span v-if="form.errors?.cover_image" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.cover_image }}
+                            <span v-if="errors?.cover_image" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.cover_image }}
                             </span>
                         </div>
 
@@ -175,8 +215,8 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="form.topic"
                                 placeholder="Ej. Inteligencia Artificial en Medicina"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.topic" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.topic }}
+                            <span v-if="errors?.topic" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.topic }}
                             </span>
                         </div>
 
@@ -188,8 +228,8 @@ const flatpickrTimeConfig = {
                             <textarea v-model="form.description" rows="3" maxlength="5000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <span v-if="form.errors?.description" class="text-red-500 text-sm font-medium">
-                                    {{ form.errors?.description }}
+                                <span v-if="errors?.description" class="text-red-500 text-sm font-medium">
+                                    {{ errors?.description }}
                                 </span>
                                 <p class="text-xs text-gray-400 ml-auto">{{ form.description.length }}/5000</p>
                             </div>
@@ -207,8 +247,8 @@ const flatpickrTimeConfig = {
                             <textarea v-model="form.objectives" rows="3" maxlength="2000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <span v-if="form.errors?.objectives" class="text-red-500 text-sm font-medium">
-                                    {{ form.errors?.objectives }}
+                                <span v-if="errors?.objectives" class="text-red-500 text-sm font-medium">
+                                    {{ errors?.objectives }}
                                 </span>
                                 <p class="text-xs text-gray-400 ml-auto">{{ form.objectives.length }}/2000</p>
                             </div>
@@ -221,13 +261,13 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="text" v-model="form.organized_by" placeholder="Ej. Dpto. de Medicina Interna"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.organized_by" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.organized_by }}
+                            <span v-if="errors?.organized_by" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.organized_by }}
                             </span>
                         </div>
 
                         <!-- PATROCINIO -->
-                        <div>
+                        <!-- <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Patrocinado por
                                 <span
@@ -237,10 +277,10 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="text" v-model="form.sponsored_by" placeholder="Ej. Laboratorio XYZ"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.sponsored_by" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.sponsored_by }}
+                            <span v-if="errors?.sponsored_by" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.sponsored_by }}
                             </span>
-                        </div>
+                        </div> -->
 
                         <!-- CREAR BANNER -->
                         <!-- <div
@@ -265,6 +305,8 @@ const flatpickrTimeConfig = {
                 </div>
             </div>
 
+            <SponsorsSection ref="sponsorsRef" :errors="errors" @error="warning" />
+
             <!-- DETALLES ADICIONALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -286,8 +328,8 @@ const flatpickrTimeConfig = {
                                 <option value="hybrid">Híbrida</option>
                                 <option value="online">En línea</option>
                             </select>
-                            <span v-if="form.errors?.format" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.format }}
+                            <span v-if="errors?.format" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.format }}
                             </span>
                         </div>
 
@@ -302,8 +344,8 @@ const flatpickrTimeConfig = {
                                 <input type="text" v-model="form.address"
                                     placeholder="Ej. Av. Universidad 3000, Ciudad de México"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="form.errors?.address" class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.address }}
+                                <span v-if="errors?.address" class="text-red-500 text-sm flex justify-start mt-1">
+                                    {{ errors?.address }}
                                 </span>
                             </div>
 
@@ -319,9 +361,9 @@ const flatpickrTimeConfig = {
                                 <input type="text" v-model="form.additional_info"
                                     placeholder="Ej. Planta Alta, Auditorio 2"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="form.errors?.additional_info"
+                                <span v-if="errors?.additional_info"
                                     class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.additional_info }}
+                                    {{ errors?.additional_info }}
                                 </span>
                             </div>
 
@@ -336,8 +378,8 @@ const flatpickrTimeConfig = {
                                 </label>
                                 <input type="url" v-model="form.link" placeholder="https://meet.google.com/..."
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="form.errors?.link" class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.link }}
+                                <span v-if="errors?.link" class="text-red-500 text-sm flex justify-start mt-1">
+                                    {{ errors?.link }}
                                 </span>
                             </div>
 
@@ -357,8 +399,8 @@ const flatpickrTimeConfig = {
                                 hint="PDF (max. 5MB)" @change="pdf.handleChange" @drop="pdf.handleDrop"
                                 @drag-enter="pdf.handleDragEnter" @drag-leave="pdf.handleDragLeave"
                                 @remove="pdf.reset" />
-                            <span v-if="form.errors?.program_pdf" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.program_pdf }}
+                            <span v-if="errors?.program_pdf" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.program_pdf }}
                             </span>
                         </div>
 
@@ -375,9 +417,9 @@ const flatpickrTimeConfig = {
                                     <flat-pickr v-model="session.time" :config="flatpickrTimeConfig"
                                         placeholder="Selecciona una hora"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                    <span v-if="form.errors?.[`sessions.${index}.time`]"
+                                    <span v-if="errors?.[`sessions.${index}.time`]"
                                         class="text-red-500 text-xs mt-0.5 block">
-                                        {{ form.errors?.[`sessions.${index}.time`] }}
+                                        {{ errors?.[`sessions.${index}.time`] }}
                                     </span>
                                 </div>
 
@@ -386,9 +428,9 @@ const flatpickrTimeConfig = {
                                     <flat-pickr v-model="session.date" :config="flatpickrConfig"
                                         placeholder="Selecciona una fecha"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                    <span v-if="form.errors?.[`sessions.${index}.date`]"
+                                    <span v-if="errors?.[`sessions.${index}.date`]"
                                         class="text-red-500 text-xs mt-0.5 block">
-                                        {{ form.errors?.[`sessions.${index}.date`] }}
+                                        {{ errors?.[`sessions.${index}.date`] }}
                                     </span>
                                 </div>
 
@@ -405,8 +447,8 @@ const flatpickrTimeConfig = {
                                 </button>
                             </div>
 
-                            <span v-if="form.errors?.sessions" class="text-red-500 text-sm block mb-2">
-                                {{ form.errors?.sessions }}
+                            <span v-if="errors?.sessions" class="text-red-500 text-sm block mb-2">
+                                {{ errors?.sessions }}
                             </span>
 
                             <button type="button" @click="addSession"
@@ -427,8 +469,8 @@ const flatpickrTimeConfig = {
                             </label>
                             <input type="number" v-model="form.duration" min="1" placeholder="Ej. 3"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.duration" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.duration }}
+                            <span v-if="errors?.duration" class="text-red-500 text-sm flex justify-start mt-1">
+                                {{ errors?.duration }}
                             </span>
                         </div>
 
@@ -459,8 +501,8 @@ const flatpickrTimeConfig = {
                             <input v-model="form.member_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="form.errors?.member_price" class="text-red-500 text-sm flex justify-start mt-1">
-                            {{ form.errors?.member_price }}
+                        <span v-if="errors?.member_price" class="text-red-500 text-sm flex justify-start mt-1">
+                            {{ errors?.member_price }}
                         </span>
                     </div>
 
@@ -477,8 +519,8 @@ const flatpickrTimeConfig = {
                             <input v-model="form.resident_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="form.errors?.resident_price" class="text-red-500 text-xs flex justify-end mt-1">
-                            {{ form.errors?.resident_price }}
+                        <span v-if="errors?.resident_price" class="text-red-500 text-xs flex justify-end mt-1">
+                            {{ errors?.resident_price }}
                         </span>
                     </div>
 
@@ -495,8 +537,8 @@ const flatpickrTimeConfig = {
                             <input v-model="form.guest_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="form.errors?.guest_price" class="text-red-500 text-xs flex justify-end mt-1">
-                            {{ form.errors?.guest_price }}
+                        <span v-if="errors?.guest_price" class="text-red-500 text-xs flex justify-end mt-1">
+                            {{ errors?.guest_price }}
                         </span>
                     </div>
 
@@ -525,8 +567,8 @@ const flatpickrTimeConfig = {
                                 </option>
                             </select>
                         </div>
-                        <span v-if="form.errors?.bank_detail_id" class="text-red-500 text-xs flex justify-end mt-1">
-                            {{ form.errors?.bank_detail_id }}
+                        <span v-if="errors?.bank_detail_id" class="text-red-500 text-xs flex justify-end mt-1">
+                            {{ errors?.bank_detail_id }}
                         </span>
                     </div>
 

@@ -9,6 +9,7 @@ import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue';
 import { useAlert } from '@/composables/useAlert';
 import { ref, watch, computed } from "vue";
+import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -19,6 +20,14 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    errors: {
+        type: Object,
+        default: () => ({}),
+    },
+    auth: {
+        type: Object,
+        default: () => ({}),
+    },
     bank_details: {
         type: Array,
         default: () => [],
@@ -26,8 +35,8 @@ const props = defineProps({
 });
 
 const { alertState, warning, hideAlert } = useAlert();
-const page = usePage();
-
+const page = usePage()
+const sponsorsRef = ref(null)
 /* const updateBanner = ref(false); */
 
 const form = useForm({
@@ -150,6 +159,7 @@ watch(
 
 const handleSubmit = () => {
     const data = new FormData();
+    const sponsorsData = sponsorsRef.value.getData()
 
     data.append('_method', 'PUT');
 
@@ -181,6 +191,16 @@ const handleSubmit = () => {
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value);
     }
+
+    // archivos nuevos
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
+
+    // ids a eliminar
+    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
+    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
+    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))
 
     /* if (updateBanner.value) {
         data.append('update_banner', '1');
@@ -320,7 +340,7 @@ const flatpickrTimeConfig = {
                         </div>
 
                         <!-- PATROCINIO -->
-                        <div>
+                        <!-- <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Patrocinado por
                                 <span
@@ -333,7 +353,7 @@ const flatpickrTimeConfig = {
                             <span v-if="form.errors?.sponsored_by" class="text-red-500 text-sm flex justify-start mt-1">
                                 {{ form.errors?.sponsored_by }}
                             </span>
-                        </div>
+                        </div> -->
 
                         <!-- ACTUALIZAR BANNER -->
                         <!-- <div
@@ -358,6 +378,10 @@ const flatpickrTimeConfig = {
                     </div>
                 </div>
             </div>
+
+            <SponsorsSection ref="sponsorsRef" :initial-platinum="academicSession.platinum_sponsors_urls"
+                :initial-golden="academicSession.golden_sponsors_urls" :initial-silver="academicSession.silver_sponsors_urls"
+                :errors="errors" @error="warning" />
 
             <!-- DETALLES ADICIONALES -->
             <div

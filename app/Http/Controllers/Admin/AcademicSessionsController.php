@@ -8,10 +8,13 @@ use function Illuminate\Log\log;
 use App\Models\AcademicSession;
 use Illuminate\Http\Request;
 use App\Models\BankDetail;
+use App\Traits\HandlesSponsorMedia;
 use Inertia\Inertia;
 
 class AcademicSessionsController extends Controller
 {
+    use HandlesSponsorMedia;
+
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 9);
@@ -75,6 +78,7 @@ class AcademicSessionsController extends Controller
             }
 
             $this->updateAcademicSessionMedia($academicSession, $request);
+            $this->updateSponsorMedia($academicSession, $request);
 
             /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
@@ -132,6 +136,7 @@ class AcademicSessionsController extends Controller
             }
 
             $this->updateAcademicSessionMedia($academicSession, $request);
+            $this->updateSponsorMedia($academicSession, $request);
 
             /* if ($request->input('update_banner') === '1') {
 
@@ -177,6 +182,7 @@ class AcademicSessionsController extends Controller
         try {
             $academicSession = AcademicSession::findOrFail($id);
             $this->deleteAcademicSessionMedia($academicSession);
+            $this->deleteSponsorMedia($academicSession);
             BannersController::deleteFromEvent(eventId: $id, eventType: 'academic_session');
             $academicSession->sessions()->delete();
             $academicSession->delete();
@@ -195,6 +201,7 @@ class AcademicSessionsController extends Controller
         $academicSession->clearMediaCollection('academic_sessions_covers');
         $academicSession->clearMediaCollection('academic_sessions_gallery');
         $academicSession->clearMediaCollection('academic_sessions_program');
+        $academicSession->clearMediaCollection('academic_sessions_sponsors_logos');
     }
 
     private function updateAcademicSessionMedia(AcademicSession $academicSession, Request $request)
@@ -233,6 +240,8 @@ class AcademicSessionsController extends Controller
             'sessions' => 'required|array|min:1',
             'sessions.*.date' => 'required|date',
             'sessions.*.time' => 'required|date_format:H:i',
+            //sponsors
+            $this->sponsorValidationRules(),
         ];
     }
 
