@@ -35,7 +35,8 @@ const readableMethod = (paymentMethod) => {
         transfer: { label: 'Transferencia', icon: 'arrows' },
         debit_card: { label: 'Tarjeta de Débito', icon: 'card' },
         credit_card: { label: 'Tarjeta de Crédito', icon: 'card' },
-        stripe: { label: 'En línea (Stripe)', icon: 'globe' }
+        stripe: { label: 'En línea (Stripe)', icon: 'globe' },
+        free: { label: 'Sin costo' }
     }
     return methods[paymentMethod] || { label: 'Desconocido', icon: 'question' }
 }

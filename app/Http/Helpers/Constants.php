@@ -46,6 +46,7 @@ class Constants {
     const METHOD_CREDIT_CARD = 'credit_card';
     const METHOD_STRIPE = 'stripe';
     const METHOD_TRANSFER = 'transfer'; //trasferencia
+    const METHOD_FREE = 'free'; //gratuito
 
     //status de pago
     const STATUS_PAID = 'paid';

@@ -54,12 +54,15 @@ const page = usePage();
 const errors = computed(() => page.props.errors || props.errors || {})
 const emit = defineEmits(['close', 'success', 'error'])
 const selectedEvent = ref(null)
+const isFree = ref(false)
+const isPayed = ref(false)
 const paymentMethods =  {
     'cash': 'Efectivo',
     'debit_card': 'Tarjeta de Débito', 
     'credit_card': 'Tarjeta de Crédito', 
     'transfer': 'Transferencia', 
-    'stripe': 'En línea (stripe)'
+    'stripe': 'En línea (stripe)',
+    'free': 'Sin costo',
 }
 
 const price = computed(() => {    
@@ -89,6 +92,17 @@ onMounted(() => {
         warning(page.props.warning || props.flash.warning)
     }
 })
+
+const shouldHaveReference = computed(() => {
+    const validMethods = ['debit_card', 'credit_card', 'transfer', 'stripe'];
+    const validStatus = ['paid', 'cancelled'];
+
+    const hasValidMethod = validMethods.includes(createForm.payment_method);
+    const hasValidStatus = validStatus.includes(createForm.status);
+
+    return hasValidMethod && hasValidStatus;
+})
+
 
 const generateRandomString = (length = 5) => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -161,6 +175,8 @@ const setDataToForm = () => {
     createForm.payment_method = props.data.payments?.[0]?.payment_method || '';
     createForm.specialty = props.data.specialty || '';
     createForm.did_attend = props.data.did_attend === true;    
+
+    isPayed.value = props.data.payments?.[0]?.status == 'paid';
 }
 
 const submitCreate = () => {
@@ -202,6 +218,14 @@ watch(() => createForm.person_type, (newVal) => {
 
 watch(price, (val) => {
     createForm.price = val
+
+    if (parseInt(val) <= 0) {        
+        createForm.payment_method = 'free';
+        createForm.status = 'paid';
+        isFree.value = true;
+    } else {
+        isFree.value = false;
+    }
 })
 
 
@@ -229,11 +253,12 @@ watch(selectedState, (value, old) => {
 <template>
     <Drawer
         :show="show"
+        title="Editar participante" subtitle="cursos" 
         size="xl"
         @close="emit('close')"
         > 
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Editar participante</h3>
+            <!-- <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Editar participante</h3> -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ props.eventName }}</label>
                 <select name="event_id" id="event_id" v-model="selectedEvent" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -300,6 +325,7 @@ watch(selectedState, (value, old) => {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de participante</label>
                 <select name="person_type" id="person_type" v-model="createForm.person_type" 
+                :disabled="isPayed" :class="isPayed ? 'disabled' :''""
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="" selected>Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
@@ -322,12 +348,13 @@ watch(selectedState, (value, old) => {
                 <label class="block text-sm font-medium text-gray-700 mb-1">Detalles de Pago</label>
                 <div class="flex gap-2 w-full">
                     <input
-                        :value="price"
+                        :value="price" disabled
                         type="number" min="0" step="0.01"
-                        class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="grow rounded-lg disabled border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Cantidad a pagar"
                     />
-                    <select name="method" id="method" v-model="createForm.payment_method" 
+                    <select name="method" id="method" v-model="createForm.payment_method"
+                    :disabled="isFree || isPayed" :class="isFree || isPayed ? 'disabled' : ''"
                     class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="" selected>Seleccionar método de pago</option>
                         <option v-for="(method, key) in paymentMethods" :key="key" :value="key">{{ method }}</option>
@@ -339,6 +366,7 @@ watch(selectedState, (value, old) => {
                 </div>
                 <div class="flex gap-2 w-full mt-3">
                     <select name="status" id="status" v-model="createForm.status" 
+                    :disabled="isFree || isPayed" :class="isFree || isPayed ? 'disabled' : ''"
                     class="rounded-lg grow border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="" selected>Seleccionar estatus de pago</option>
                         <option value="paid">Pagado</option>
@@ -348,10 +376,11 @@ watch(selectedState, (value, old) => {
                 </div>
                 <span v-if="errors?.status" class="grow text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
                 <div class="flex mt-3" 
-                    v-if="createForm.payment_method != 'cash' && createForm.payment_method != '' && createForm.status != 'pending' && createForm.status != ''">
+                    v-if="shouldHaveReference || createForm.reference">
                     <input
                         v-model="createForm.reference"
                         type="text"
+                        :disabled="isPayed || isFree" :class="isPayed || isFree ? 'disabled' : ''"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Referencia o  Numero de transaccion"
                     />

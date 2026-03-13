@@ -81,7 +81,7 @@ const openPdf = (course) => {
 
 const openGallery = (course) => {
     router.get(route('albums.index', {
-        event_type: course.sessions[0].sessionable_type,
+        event_type: course.sessions?.[0]?.sessionable_type ?? 'course',
         event_id: course.id,
     }))
 }
