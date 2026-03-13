@@ -9,6 +9,7 @@ import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import Alerta from '@/Components/Alerta.vue'
 import { useAlert } from '@/composables/useAlert'
 import { reactive, ref } from "vue";
+import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 
 defineOptions({
@@ -35,6 +36,8 @@ defineProps({
 });
 
 const { alertState, success, errorA, warning } = useAlert()
+const sponsorsRef = ref(null)
+
 /* const createBanner = ref(false) */
 const isSubmitting = ref(false);
 const formData = reactive({
@@ -90,6 +93,7 @@ const handleSubmit = () => {
     isSubmitting.value = true;
 
     const data = new FormData()
+    const sponsorsData = sponsorsRef.value.getData()
     data.append('topic', formData.topic)
     data.append('description', formData.description)
     data.append('objectives', formData.objectives ?? '')
@@ -114,6 +118,10 @@ const handleSubmit = () => {
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value)
     }
+
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
 
     /* if (createBanner.value) {
         data.append('create_banner', '1')
@@ -199,7 +207,7 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <div>
@@ -260,6 +268,8 @@ const flatpickrTimeConfig = {
                 </div>
             </div>
 
+            <SponsorsSection ref="sponsorsRef" :errors="errors" @error="warning" />
+
             <!-- DETALLES ADICIONALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -282,7 +292,7 @@ const flatpickrTimeConfig = {
                                 <option value="online">En línea</option>
                             </select>
                             <span v-if="errors.format" class="text-red-500 text-sm flex justify-start">{{ errors.format
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <!-- CAMPOS MODALIDAD -->
@@ -323,7 +333,7 @@ const flatpickrTimeConfig = {
                                 <input type="text" v-model="formData.link"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                                 <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
-                                    }}</span>
+                                }}</span>
                             </div>
 
                         </template>

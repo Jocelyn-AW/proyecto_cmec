@@ -7,6 +7,7 @@ import "flatpickr/dist/flatpickr.css";
 import Dropzone from "@/Components/Dropzone.vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
 import { computed, reactive, watch, ref } from "vue";
+import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 defineOptions({
     layout: AuthenticatedLayout,
@@ -31,6 +32,7 @@ const props = defineProps({
     },
 });
 const isSubmitting = ref(false);
+const sponsorsRef = ref(null)
 /* const updateBanner = ref(false) */
 const formData = reactive({
     _method: 'put',
@@ -147,6 +149,8 @@ watch(() => props.webinar, (newWebinar) => {
 
 const handleSubmit = () => {
 
+    const sponsorsData = sponsorsRef.value.getData()
+
     if (isSubmitting.value) return;
 
     if (!cover.file.value && !props.webinar?.cover_url) {
@@ -186,6 +190,16 @@ const handleSubmit = () => {
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value);
     }
+
+    // Archivos nuevos
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
+
+    // IDs a eliminar
+    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
+    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
+    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))
 
     /* if (updateBanner.value) {
         data.append('update_banner', '1');
@@ -327,6 +341,10 @@ const flatpickrTimeConfig = {
                     </div>
                 </div>
             </div>
+
+            <SponsorsSection ref="sponsorsRef" :initial-platinum="webinar.platinum_sponsors_urls"
+                :initial-golden="webinar.golden_sponsors_urls" :initial-silver="webinar.silver_sponsors_urls"
+                :errors="errors" @error="warning" />
 
             <!-- DETALLES ADICIONALES -->
             <div

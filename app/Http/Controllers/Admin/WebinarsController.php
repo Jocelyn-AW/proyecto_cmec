@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Web\BannersController;
+use App\Traits\HandlesSponsorMedia;
 use App\Http\Controllers\Controller;
 use function Illuminate\Log\log;
 use Illuminate\Http\Request;
 use App\Models\BankDetail;
 use App\Models\Webinar;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class WebinarsController extends Controller
 {
+    use HandlesSponsorMedia;
+
     public function index(Request $request)
     {
         $perPage = $request->get('per_page', 10);
@@ -86,6 +90,7 @@ class WebinarsController extends Controller
             }
 
             $this->updateWebinarMedia($webinar, $request);
+            $this->updateSponsorMedia($webinar, $request);
 
             /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
                 BannersController::createFromEvent(
@@ -103,6 +108,12 @@ class WebinarsController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
+            Log::error('Error al crear webinar', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
 
             return redirect()
                 ->back()
@@ -149,6 +160,7 @@ class WebinarsController extends Controller
             }
 
             $this->updateWebinarMedia($webinar, $request);
+            $this->updateSponsorMedia($webinar, $request);
 
             /* if ($request->input('update_banner') === '1') {
 
@@ -196,6 +208,7 @@ class WebinarsController extends Controller
         try {
             $webinar = Webinar::findOrFail($id);
             $this->deleteWebinarMedia($webinar);
+            $this->deleteSponsorMedia($webinar);
             BannersController::deleteFromEvent(eventId: $id, eventType: 'webinar');
             $webinar->sessions()->delete();
             $webinar->delete();
@@ -265,6 +278,8 @@ class WebinarsController extends Controller
             'sessions' => 'required|array|min:1',
             'sessions.*.date' => 'required|date',
             'sessions.*.time' => 'required|date_format:H:i',
+            // sponsors
+            $this->sponsorValidationRules(),
         ];
     }
 

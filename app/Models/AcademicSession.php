@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Http\Helpers\Constants;
+use App\Traits\HasSponsorMedia;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicSession extends Model implements HasMedia
 {
-    use InteractsWithMedia, SoftDeletes;
+    use InteractsWithMedia, SoftDeletes, HasSponsorMedia;
 
     /**
      * tabla asociada al modelo 
@@ -42,6 +43,9 @@ class AcademicSession extends Model implements HasMedia
         'cover_url',
         'gallery_urls',
         'program_url',
+        'platinum_sponsors_urls', // 
+        'golden_sponsors_urls', // <--sponsor
+        'silver_sponsors_urls', //
     ];
 
     protected $casts = [
@@ -89,19 +93,21 @@ class AcademicSession extends Model implements HasMedia
         $this->addMediaCollection('academic_sessions_program')
             ->acceptsMimeTypes(['application/pdf'])
             ->useDisk('public');
+
+        $this->registerSponsorMediaCollections(); // <-- sponsor
     }
 
     //atributos
 
     protected function coverUrl(): Attribute
     {
-        return Attribute::make(get: fn () => $this->getFirstMediaUrl('academic_sessions_covers'));
+        return Attribute::make(get: fn() => $this->getFirstMediaUrl('academic_sessions_covers'));
     }
 
     protected function galleryUrls(): Attribute
     {
         return Attribute::make(get: function () {
-            return $this->getMedia('academic_sessions_gallery')->map(fn ($media) => $media->getUrl());
+            return $this->getMedia('academic_sessions_gallery')->map(fn($media) => $media->getUrl());
         });
     }
 
@@ -111,5 +117,11 @@ class AcademicSession extends Model implements HasMedia
             $media = $this->getFirstMedia('academic_sessions_program');
             return $media ? $media->getUrl() : null;
         });
+    }
+
+    // sponsor
+    public function sponsorCollectionPrefix(): string
+    {
+        return 'academic_sessions';
     }
 }
