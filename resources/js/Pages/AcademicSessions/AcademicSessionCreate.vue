@@ -36,6 +36,7 @@ defineProps({
 const { alertState, warning, hideAlert } = useAlert();
 const page = usePage();
 const sponsorsRef = ref(null)
+const isSubmitting = ref(false)
 
 /* const createBanner = computed({
     get: () => form.create_banner === '1',
@@ -116,7 +117,8 @@ watch(
 );
 
 const handleSubmit = () => {
-    if (form.processing) return;
+
+    if (isSubmitting.value) return;
 
     if (!cover.file.value) {
         warning("Por favor selecciona una imagen de portada para la sesión académica");
@@ -127,6 +129,8 @@ const handleSubmit = () => {
         warning("Por favor selecciona una imagen de preview para el webinar");
         return;
     }
+
+    isSubmitting.value = true;
 
     const sponsorsData = sponsorsRef.value.getData()
 
@@ -167,6 +171,7 @@ const handleSubmit = () => {
         preserveState: true,
         onError: () => warning("Por favor revisa los campos con error"),
         onSuccess: () => form.reset(),
+        onFinish: () => { isSubmitting.value = false },
     })
 };
 
@@ -616,13 +621,13 @@ const flatpickrTimeConfig = {
                         class="rounded-lg border border-gray-300 bg-transparent px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">
                         Cancelar
                     </button>
-                    <button type="button" @click="handleSubmit" :disabled="form.processing"
+                    <button type="button" @click="handleSubmit" :disabled="isSubmitting"
                         class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                        <svg v-if="form.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <svg v-if="isSubmitting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                         </svg>
-                        <span>{{ form.processing ? 'Guardando...' : 'Guardar Sesión Académica' }}</span>
+                        <span>{{ isSubmitting ? 'Guardando...' : 'Guardar Sesión Académica' }}</span>
                     </button>
                 </div>
             </div>

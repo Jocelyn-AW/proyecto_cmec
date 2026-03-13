@@ -1,16 +1,18 @@
 <script setup>
 import { router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, watch } from 'vue';
+import { computed, onMounted, watch } from 'vue';
 import Drawer from '@/Components/Drawer.vue';
 import { ref, reactive } from 'vue';
 import states from '@/composables/useStatesAndCities';
 
-const { warning } = useAlert()
+const { success, errorA, warning } = useAlert()
 
 const selectedState = ref('')
 const selectedCity = ref('')
 const selectedEvent = ref(null)
+const isSubmitting = ref(false)
+const isFree = ref(false)
 
 const cities = computed(() => {
     return selectedState.value ? states[selectedState.value] : []
@@ -32,7 +34,11 @@ const props = defineProps({
     errors: {
         type: Object,
         default: () => ({})
-    }
+    },
+    flash: {
+        type: Object,
+        default: () => ({})
+    },
 })
 
 const page = usePage();
@@ -52,8 +58,11 @@ const price = computed(() => {
     return priceMap[createForm.person_type] ?? ''
 })
 
-const isFree = computed(() => {
-    return Number(price.value) === 0
+const shouldHaveReference = computed(() => {
+    const validMethods = ['debit_card', 'credit_card', 'transfer', 'stripe'];
+    const validStatus = ['paid', 'cancelled'];
+    return validMethods.includes(createForm.payment_method)
+        && validStatus.includes(createForm.status);
 })
 
 const generateRandomString = (length = 5) => {
@@ -70,7 +79,8 @@ const paymentMethods = {
     'debit_card': 'Tarjeta de Débito',
     'credit_card': 'Tarjeta de Crédito',
     'transfer': 'Transferencia',
-    'stripe': 'En línea (stripe)'
+    'stripe': 'En línea (stripe)',
+    'free': 'Sin costo',
 }
 
 const createForm = reactive({
@@ -87,8 +97,6 @@ const createForm = reactive({
     price: '',
     cmec_member_id: null,
     specialty: '',
-    birth_date: '',
-    special_needs: '',
     payment_method: '',
     reference: '',
 })
@@ -107,16 +115,18 @@ const cleanForm = () => {
     createForm.cmec_member_id = null;
     createForm.price = '';
     createForm.specialty = '';
-    /* createForm.birth_date = '';
-    createForm.special_needs = ''; */
     createForm.payment_method = '';
     createForm.reference = '';
     selectedEvent.value = null;
     selectedState.value = '';
     selectedCity.value = '';
+    isFree.value = false;
 }
 
 const submitCreate = () => {
+    if (isSubmitting.value) return;
+
+    isSubmitting.value = true;
     createForm.event_id = selectedEvent?.value?.id;
     createForm.event_type = 'webinar';
     createForm.price = price.value;
@@ -128,17 +138,36 @@ const submitCreate = () => {
         },
         onError: () => {
             //
+        },
+        onFinish: () => {
+            isSubmitting.value = false;
         }
     })
 }
 
-// sync precio con el computed (solo lectura)
+onMounted(() => {
+    if (page.props.success || props.flash?.success) {
+        success(page.props.success || props.flash.success)
+    }
+    if (page.props.error || props.flash?.error) {
+        errorA(page.props.error || props.flash.error)
+    }
+    if (page.props.warning || props.flash?.warning) {
+        warning(page.props.warning || props.flash.warning)
+    }
+})
+
 watch(price, (val) => {
     createForm.price = val
 
-    if (Number(val) === 0) {
-        createForm.payment_method = 'cash'
-        createForm.status = 'paid'
+    if (parseInt(val) <= 0) {
+        createForm.payment_method = 'free';
+        createForm.status = 'paid';
+        isFree.value = true;
+    } else {
+        isFree.value = false;
+        createForm.payment_method = '';
+        createForm.status = '';
     }
 })
 
@@ -151,9 +180,7 @@ watch(() => createForm.person_type, (newVal) => {
 })
 
 watch(() => props.show, (newVal) => {
-    if (newVal) {
-        cleanForm();
-    }
+    if (newVal) cleanForm();
 })
 
 watch(selectedState, (value) => {
@@ -169,7 +196,6 @@ watch(selectedCity, (value) => {
 <template>
     <Drawer :show="show" title="Nuevo participante" subtitle="webinars" size="xl" @close="emit('close')">
         <div class="space-y-4">
-            <!-- <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo participante</h3> -->
 
             <!-- EVENTO -->
             <div>
@@ -216,30 +242,6 @@ watch(selectedCity, (value) => {
                     <span v-if="errors?.phone" class="text-red-500 text-xs flex justify-end">{{ errors?.phone }}</span>
                 </div>
             </div>
-
-            <!-- FECHA DE NACIMIENTO + NECESIDADES ESPECIALES -->
-            <!-- <div class="flex gap-2 w-full">
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Fecha de nacimiento
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.birth_date" type="date"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.birth_date" class="text-red-500 text-xs flex justify-end">{{ errors?.birth_date
-                        }}</span>
-                </div>
-                <div class="flex flex-col grow">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Necesidades especiales
-                        <span class="text-gray-400 font-normal">(opcional)</span>
-                    </label>
-                    <input v-model="createForm.special_needs" type="text" placeholder="Ej. silla de ruedas"
-                        class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <span v-if="errors?.special_needs" class="text-red-500 text-xs flex justify-end">{{
-                        errors?.special_needs }}</span>
-                </div>
-            </div> -->
 
             <!-- ORIGEN -->
             <div>
@@ -329,9 +331,8 @@ watch(selectedCity, (value) => {
                 </div>
                 <span v-if="errors?.status" class="text-red-500 text-xs flex justify-end">{{ errors?.status }}</span>
 
-                <!-- REFERENCIA-->
-                <div class="flex mt-3"
-                    v-if="createForm.payment_method !== 'cash' && createForm.payment_method !== '' && createForm.status !== 'pending' && createForm.status !== ''">
+                <!-- REFERENCIA -->
+                <div class="flex mt-3" v-if="shouldHaveReference">
                     <input v-model="createForm.reference" type="text"
                         class="grow rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Referencia o número de transacción" />
@@ -357,9 +358,9 @@ watch(selectedCity, (value) => {
                     Cancelar
                 </button>
                 <button type="button"
-                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                    @click="submitCreate">
-                    Guardar
+                    class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="isSubmitting" @click="submitCreate">
+                    {{ isSubmitting ? 'Guardando...' : 'Guardar' }}
                 </button>
             </div>
         </template>
