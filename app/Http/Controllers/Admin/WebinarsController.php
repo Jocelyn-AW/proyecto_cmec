@@ -227,6 +227,7 @@ class WebinarsController extends Controller
     private function deleteWebinarMedia(Webinar $webinar)
     {
         $webinar->clearMediaCollection('webinars_covers');
+        $webinar->clearMediaCollection('webinars_previews');
         $webinar->clearMediaCollection('webinars_gallery');
         $webinar->clearMediaCollection('webinars_sponsors_logos');
         $webinar->clearMediaCollection('webinars_program');
@@ -237,6 +238,11 @@ class WebinarsController extends Controller
         if ($request->hasFile('cover_image')) {
             $webinar->clearMediaCollection('webinars_covers');
             $webinar->addMediaFromRequest('cover_image')->toMediaCollection('webinars_covers');
+        }
+
+        if ($request->hasFile('cover_preview_image')) {
+            $webinar->clearMediaCollection('webinars_previews');
+            $webinar->addMediaFromRequest('cover_preview_image')->toMediaCollection('webinars_previews');
         }
 
         if ($request->hasFile('sponsor_logos')) {
@@ -272,6 +278,7 @@ class WebinarsController extends Controller
             'is_active' => 'boolean',
             //Archivos
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'cover_preview_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
             'sponsor_logos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             //Tiempo

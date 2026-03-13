@@ -81,6 +81,20 @@ const cover = useImageUpload({
     onError: (message) => warning(message),
 });
 
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
@@ -109,6 +123,11 @@ const handleSubmit = () => {
         return;
     }
 
+    if (!previewCover.file.value) {
+        warning("Por favor selecciona una imagen de preview para el webinar");
+        return;
+    }
+
     const sponsorsData = sponsorsRef.value.getData()
 
     const data = new FormData()
@@ -127,6 +146,7 @@ const handleSubmit = () => {
     data.append('guest_price', form.guest_price ?? '')
     data.append('bank_detail_id', form.bank_detail_id ?? '')
     data.append('cover_image', cover.file.value)
+    data.append('cover_preview_image', previewCover.file.value)
 
     if (pdf.file.value) {
         data.append('program_pdf', pdf.file.value)
@@ -192,21 +212,34 @@ const flatpickrTimeConfig = {
                         <span class="text-sm text-gray-700 dark:text-gray-400">Datos Generales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <!-- FOTO -->
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Foto de Portada
+                                </label>
+                                <Dropzone :preview="cover.preview.value" :is-dragging="cover.isDragging.value"
+                                    hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
+                                    @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
+                                <span v-if="errors?.cover_image" class="text-red-500 text-sm flex justify-start mt-1">
+                                    {{ errors?.cover_image }}
+                                </span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Previsualización
+                                </label>
+                                <Dropzone :preview="previewCover.preview.value"
+                                    :is-dragging="previewCover.isDragging.value" hint="Min: 400 x 400 (max. 1MB)"
+                                    @change="previewCover.handleChange" @drop="previewCover.handleDrop"
+                                    @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
 
-                        <!-- FOTO -->
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Foto de Portada
-                            </label>
-                            <Dropzone :preview="cover.preview.value" :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset" />
-                            <span v-if="errors?.cover_image" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ errors?.cover_image }}
-                            </span>
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
                         </div>
-
                         <!-- TEMA -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">

@@ -41,6 +41,7 @@ class AcademicSession extends Model implements HasMedia
 
     protected $appends = [
         'cover_url',
+        'cover_preview_url',
         'gallery_urls',
         'program_url',
         'platinum_sponsors_urls', // 
@@ -70,6 +71,11 @@ class AcademicSession extends Model implements HasMedia
         return $this->morphMany(EventSession::class, 'sessionable');
     }
 
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'event_payed');
+    }
+
     public function bankDetails(): MorphOne
     {
         return $this->morphOne(BankDetail::class, 'event');
@@ -80,6 +86,12 @@ class AcademicSession extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('academic_sessions_covers')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->singleFile()
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('academic_sessions_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
             ->singleFile()
@@ -102,6 +114,13 @@ class AcademicSession extends Model implements HasMedia
     protected function coverUrl(): Attribute
     {
         return Attribute::make(get: fn() => $this->getFirstMediaUrl('academic_sessions_covers'));
+    }
+
+    protected function coverPreviewUrl(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getFirstMediaUrl('academic_sessions_previews');
+        });
     }
 
     protected function galleryUrls(): Attribute

@@ -199,6 +199,7 @@ class AcademicSessionsController extends Controller
     private function deleteAcademicSessionMedia(AcademicSession $academicSession)
     {
         $academicSession->clearMediaCollection('academic_sessions_covers');
+        $academicSession->clearMediaCollection('academic_sessions_previews');
         $academicSession->clearMediaCollection('academic_sessions_gallery');
         $academicSession->clearMediaCollection('academic_sessions_program');
         $academicSession->clearMediaCollection('academic_sessions_sponsors_logos');
@@ -209,6 +210,11 @@ class AcademicSessionsController extends Controller
         if ($request->hasFile('cover_image')) {
             $academicSession->clearMediaCollection('academic_sessions_covers');
             $academicSession->addMediaFromRequest('cover_image')->toMediaCollection('academic_sessions_covers');
+        }
+
+        if ($request->hasFile('cover_preview_image')) {
+            $academicSession->clearMediaCollection('academic_sessions_previews');
+            $academicSession->addMediaFromRequest('cover_preview_image')->toMediaCollection('academic_sessions_previews');
         }
 
         if ($request->hasFile('program_pdf')) {
@@ -236,6 +242,7 @@ class AcademicSessionsController extends Controller
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
             'is_active' => 'boolean',
             'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'cover_preview_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
             'program_pdf' => 'nullable|mimes:pdf',
             'sessions' => 'required|array|min:1',
             'sessions.*.date' => 'required|date',

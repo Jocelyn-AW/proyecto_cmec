@@ -47,6 +47,7 @@ class Webinar extends Model implements HasMedia
 
     protected $appends = [
         'cover_url',
+        'cover_preview_url',
         'gallery_urls',
         'program_url',
         'platinum_sponsors_urls', //
@@ -74,9 +75,20 @@ class Webinar extends Model implements HasMedia
         return $this->morphMany(EventSession::class, 'sessionable');
     }
 
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'event_payed');
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('webinars_covers')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
+            ->useDisk('public')
+            ->singleFile()
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('webinars_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
             ->singleFile()
@@ -103,6 +115,13 @@ class Webinar extends Model implements HasMedia
     {
         return Attribute::make(function () {
             return $this->getFirstMediaUrl('webinars_covers');
+        });
+    }
+
+    protected function coverPreviewUrl(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->getFirstMediaUrl('webinars_previews');
         });
     }
 

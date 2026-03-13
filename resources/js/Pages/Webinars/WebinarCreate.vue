@@ -75,6 +75,20 @@ const cover = useImageUpload({
     },
 });
 
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
@@ -87,6 +101,11 @@ const handleSubmit = () => {
 
     if (!cover.file.value) {
         warning("Por favor selecciona una imagen de portada para el webinar");
+        return;
+    }
+
+    if (!previewCover.file.value) {
+        warning("Por favor selecciona una imagen de preview para el webinar");
         return;
     }
 
@@ -108,6 +127,7 @@ const handleSubmit = () => {
     data.append('address', formData.address ?? '')
     data.append('additional_info', formData.additional_info ?? '')
     data.append('cover_image', cover.file.value)
+    data.append('cover_preview_image', previewCover.file.value)
     data.append('bank_detail_id', formData.bank_detail_id ?? '')
 
     formData.sessions.forEach((session, index) => {
@@ -188,18 +208,32 @@ const flatpickrTimeConfig = {
                         <span class="text-sm text-gray-700">Datos Generales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Foto de Portada
-                            </label>
-                            <Dropzone :preview="cover.preview.value" :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset" />
-                            <span v-if="errors.cover_image" class="text-red-500 text-sm flex justify-start">{{
-                                errors.cover_image }}</span>
-                        </div>
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Foto de Portada
+                                </label>
+                                <Dropzone :preview="cover.preview.value" :is-dragging="cover.isDragging.value"
+                                    hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
+                                    @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
+                                <span v-if="errors.cover_image" class="text-red-500 text-sm flex justify-start">{{
+                                    errors.cover_image }}</span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Previsualización
+                                </label>
+                                <Dropzone :preview="previewCover.preview.value"
+                                    :is-dragging="previewCover.isDragging.value" hint="Min: 400 x 400 (max. 1MB)"
+                                    @change="previewCover.handleChange" @drop="previewCover.handleDrop"
+                                    @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
 
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
+                        </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Tema del Webinar
@@ -207,7 +241,7 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
-                            }}</span>
+                                }}</span>
                         </div>
 
                         <div>
@@ -292,7 +326,7 @@ const flatpickrTimeConfig = {
                                 <option value="online">En línea</option>
                             </select>
                             <span v-if="errors.format" class="text-red-500 text-sm flex justify-start">{{ errors.format
-                            }}</span>
+                                }}</span>
                         </div>
 
                         <!-- CAMPOS MODALIDAD -->
@@ -333,7 +367,7 @@ const flatpickrTimeConfig = {
                                 <input type="text" v-model="formData.link"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                                 <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
-                                }}</span>
+                                    }}</span>
                             </div>
 
                         </template>

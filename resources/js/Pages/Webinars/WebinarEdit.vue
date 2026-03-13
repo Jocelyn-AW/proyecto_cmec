@@ -71,6 +71,20 @@ const cover = useImageUpload({
     },
 });
 
+const previewCover = useImageUpload({
+    maxSizeMB: 1,
+    dimensions: {
+        minWidth: 400,
+        minHeight: 400,
+        maxWidth: 800,
+        maxHeight: 800,
+    },
+    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
+    onError: (message) => {
+        warning(message);
+    },
+});
+
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
@@ -82,6 +96,16 @@ const currentCover = computed(() => {
         return cover.preview.value;
     } else if (props.webinar?.cover_url) {
         return props.webinar?.cover_url;
+    } else {
+        return null;
+    }
+});
+
+const currentPreview = computed(() => {
+    if (previewCover.file.value) {
+        return previewCover.preview.value;
+    } else if (props.webinar?.cover_preview_url) {
+        return props.webinar?.cover_preview_url;
     } else {
         return null;
     }
@@ -158,6 +182,11 @@ const handleSubmit = () => {
         return;
     }
 
+    if (!previewCover.file.value && !props.webinar?.cover_preview_url) {
+        alert("Por favor selecciona una imagen de preview para el webinar");
+        return;
+    }
+
     isSubmitting.value = true;
 
     const data = new FormData();
@@ -185,6 +214,10 @@ const handleSubmit = () => {
 
     if (cover.file.value) {
         data.append('cover_image', cover.file.value);
+    }
+
+    if (previewCover.file.value) {
+        data.append('cover_preview_image', previewCover.file.value);
     }
 
     if (pdf.file.value) {
@@ -261,17 +294,31 @@ const flatpickrTimeConfig = {
                     <div class="">
                         <span class="text-sm text-gray-700">Datos Generales</span>
                     </div>
-                    <div class="col-span-3 space-y-6">
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Foto de Portada
-                            </label>
-                            <Dropzone :preview="currentCover" :is-dragging="cover.isDragging.value"
-                                hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange" @drop="cover.handleDrop"
-                                @drag-enter="cover.handleDragEnter" @drag-leave="cover.handleDragLeave"
-                                @remove="cover.reset" />
-                            <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
-                                errors.cover_image }}</span>
+                    <div class="lg:col-span-3 space-y-6">
+                        <div class="grid lg:grid-cols-3 gap-3">
+                            <div class="lg:col-span-2">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Foto de Portada
+                                </label>
+                                <Dropzone :preview="currentCover" :is-dragging="cover.isDragging.value"
+                                    hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
+                                    @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
+                                    @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                    Previsualización
+                                </label>
+                                <Dropzone :preview="currentPreview" :is-dragging="previewCover.isDragging.value"
+                                    hint="Min. 400 x 400 (max. 1MB) " @change="previewCover.handleChange"
+                                    @drop="previewCover.handleDrop" @drag-enter="previewCover.handleDragEnter"
+                                    @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
+
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
+                                    errors.cover_image }}</span>
+                            </div>
                         </div>
 
                         <div>
