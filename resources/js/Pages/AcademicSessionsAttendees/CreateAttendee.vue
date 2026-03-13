@@ -167,9 +167,8 @@ watch(selectedCity, (value) => {
 </script>
 
 <template>
-    <Drawer :show="show" size="xl" @close="emit('close')">
+    <Drawer :show="show" title="Nuevo participante" subtitle="sesiones académicas"  size="xl" @close="emit('close')">
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo participante</h3>
 
             <!-- EVENTO -->
             <div>

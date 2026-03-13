@@ -214,13 +214,8 @@ watch(selectedCity, (value) => {
 
 </script>
 <template>
-    <Drawer
-        :show="show"
-        size="xl"
-        @close="emit('close')"
-        > 
+    <Drawer :show="show" title="Nuevo participante" subtitle="cursos" size="xl" @close="emit('close')" > 
         <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Nuevo participante</h3>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ props.eventName }}</label>
                 <select name="event_id" id="event_id" v-model="selectedEvent" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
