@@ -4,20 +4,21 @@ namespace App\Models;
 
 use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Membership extends Model
+class MembershipPrice extends Model
 {
     use SoftDeletes;
 
-    protected $table = Constants::TABLE_MEMBERSHIPS;
+    protected $table = Constants::TABLE_MEMBERSHIP_PRICES;
 
     protected $fillable = [
         'id',
-        'name',
-        'description',
-        'benefits',
+        'membership_id',
+        'start_date',
+        'end_date',
+        'amount',
+        
     ];
 
     protected $dates = [
@@ -26,8 +27,9 @@ class Membership extends Model
         'deleted_at',
     ];
 
-    public function prices() :HasMany
-    {
-        return $this->hasMany(MembershipPrice::class, 'membership_id', 'id');
-    }
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'amount' => 'decimal:2',
+    ];
 }

@@ -17,6 +17,7 @@ class Constants {
     const TABLE_MEDIA = 'media';
     const TABLE_MEMBERS = 'members';
     const TABLE_MEMBERSHIPS = 'memberships';
+    const TABLE_MEMBERSHIP_PRICES = 'membership_prices';
     const TABLE_NEWS = 'news';
     const TABLE_PAYMENT_METHODS = 'payment_methods';
     const TABLE_PAYMENTS = 'payments';
@@ -32,13 +33,16 @@ class Constants {
     const EVENT_CONFERENCE = 'conference'; //congreso
     const EVENT_COURSE = 'course';
     const EVENT_WEBINAR = 'webinar';
-    const EVENT_PRECONFERENCE = 'preconference'; //pre-congreso
+    const EVENT_PRE_CONFERENCE = 'pre_conference'; //pre-congreso
+    const EVENT_TRANS_CONFERENCE = 'trans_conference'; //pre-congreso
     const EVENT_ACADEMIC_SESSION = 'academic_session'; //sesion academica
 
     //tipos de aistentes
     const PERSON_MEMBER = 'member';
     const PERSON_GUEST = 'guest';
     const PERSON_RESIDENT = 'resident';
+    const PERSON_NURSE = 'nurse';
+    const PERSON_SURGEON = 'surgeon';
 
     //metodos de pago
     const METHOD_CASH = 'cash'; //efectivo
