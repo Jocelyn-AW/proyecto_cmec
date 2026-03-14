@@ -35,7 +35,7 @@ class ConferencesController extends Controller
 
     public function edit(int $id)
     {
-        $conference = Conference::findOrFail($id);
+        $conference = Conference::withTrashed()->findOrFail($id);
         $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
                         ->get();
 
@@ -49,6 +49,7 @@ class ConferencesController extends Controller
     {
         $search = $request->input('search', null);
         $perPage = $request->input('per_page', 10);
+        $status = $request->input('status', '');
 
         $conferences = Conference::orderBy('created_at', 'desc');
 
@@ -61,7 +62,10 @@ class ConferencesController extends Controller
 
         $conferences->with('sessions');
 
-        return $conferences->paginate($perPage)->withQueryString();
+        return $conferences
+            ->withTrashFilter($status)    
+            ->paginate($perPage)
+            ->withQueryString();
 
     }
 
@@ -130,12 +134,6 @@ class ConferencesController extends Controller
     {
         try {
             $conference = Conference::findOrFail($id);
-            $this->deleteConferenceMedia($conference);
-            
-            if (!empty($conference->sessions)) {
-                $conference->sessions()->delete();
-            }
-
             $conference->delete();
 
             return redirect()
@@ -145,6 +143,22 @@ class ConferencesController extends Controller
             return redirect()
                 ->route('conferences.index')
                 ->with('success', 'Ocurrió un error al eliminar el congreso');
+        }
+    }
+
+    public function restore(int $id)
+    {
+        try {
+            $conference = Conference::withTrashed()->findOrFail($id);
+            $conference->restore();
+
+            return redirect()
+                ->route('conferences.index')
+                ->with('success', 'Congreso restaurado exitosamente');
+        } catch (Exception $e) {
+            return redirect()
+                ->route('conferences.index')
+                ->with('success', 'Ocurrió un error al restaurara el congreso');
         }
     }
 

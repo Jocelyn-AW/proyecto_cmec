@@ -16,7 +16,7 @@ defineOptions({
     layout: AuthenticatedLayout
 })
 
-const { alertState, success, errorA, warning, hideAlert } = useAlert()
+const { alertState, success, errorA, warning, hideAlert, info } = useAlert()
 const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
@@ -26,6 +26,7 @@ const paymentDetails = ref(null);
 
 const event_id = ref(route().params.event_id ?? '')
 const did_attend = ref(route().params.did_attend ?? '')
+const status = ref(route().params.status ?? '')
 
 const props = defineProps({
     attendees: {
@@ -93,13 +94,25 @@ const handleOnEdit = (attendee) => {
 }
 
 const handleOnDelete = (attendeeId) => {
-    warning('¿Confirma que desea eliminar a este asistente? Esta acción no se puede deshacer.', {
+    warning('¿Confirma que desea eliminar a este asistente?.', {
         title: 'Eliminar registro',
         buttonText: 'Sí, eliminar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
             router.delete(route('attendees.delete', attendeeId));
+        }
+    })
+}
+
+const handleOnRestore = (attendeeId) => {
+    info('¿Confirma que desea restaurar a este asistente?.', {
+        title: 'Restaurar registro',
+        buttonText: 'Sí, restaurar',
+        cancelText: 'Cancelar',
+        onConfirm: () => {
+            hideAlert();
+            router.put(route('attendees.restore', attendeeId));
         }
     })
 }
@@ -140,16 +153,18 @@ const onChangeAttend = (attendee) => {
 
 const filters = {
     event_id: event_id, 
-    did_attend: did_attend 
+    did_attend: did_attend,
+    status: status
 }
 
 const hasActiveFilters = () =>
-    event_id.value || did_attend.value
+    event_id.value || did_attend.value || status.value
 
 
 const clearFilters = () => {
     event_id.value = ''
     did_attend.value = ''
+    status.value = ''
 }
 
 </script>
@@ -183,6 +198,7 @@ const clearFilters = () => {
                 @create="handleOnCreate"
                 @edit="handleOnEdit"
                 @delete="handleOnDelete"
+                @restore="handleOnRestore"
                 :only="['attendees']"
                 >
 
@@ -212,6 +228,17 @@ const clearFilters = () => {
                                 <option value="">Todos</option>
                                 <option :value="0">No</option>
                                 <option :value="1">Si</option> 
+                            </select>
+                            <!-- Estatus -->
+                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
+                                Estatus
+                            </label>
+                            <select id="status" v-model="status" 
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                                >
+                                <option value="all">Todos</option>
+                                <option value="">Activos</option>
+                                <option value="trashed">Inactivos</option> 
                             </select>
                             <!-- Limpiar filtros -->
                             <button v-if="hasActiveFilters()" @click="clearFilters"
@@ -261,11 +288,12 @@ const clearFilters = () => {
                 </template>
 
                 <template #cell-did_attend="{ item }">
-                    <span role="button" @click="onChangeAttend(item)"
+                    <span role="button" @click="onChangeAttend(item)" 
                         class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
                         :class="item.did_attend 
                             ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
-                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
+                            : 'bg-orange-200 text-orange-700 hover:bg-orange-300',
+                            item.deleted_at ? 'disabled border border-gray-600' : ''"
                     >
                         {{ item.did_attend ? 'Sí' : 'No' }}
                     </span>
@@ -283,7 +311,7 @@ const clearFilters = () => {
                             item.diploma_url == null || item.diploma_url == '' 
                             ? 'bg-amber-30 text-amber-500 hover:bg-amber-600 hover:text-white transition-colors border border-amber-100 hover:border-amber-600' 
                             : 'bg-amber-500 text-white hover:bg-amber-600 hover:text-white transition-colors border border-amber-500 hover:border-amber-100',
-                            item.did_attend ? '' : 'disabled text-white'"
+                            (!item.did_attend || item.deleted_at) && (item.diploma_url == null) ? 'disabled' : ''"
                         >
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
                             class="text-8xl w-4 h-4">
@@ -312,7 +340,7 @@ const clearFilters = () => {
                 :show="showEditDrawer"
                 :event-name="props.eventName"
                 :data="selectedItem"
-                :events="props.activeEvents"
+                :events="selectedItem?.deleted_at ? props.allEvents : props.activeEvents"
                 :errors="props.errors"
                 @close="showEditDrawer = false"
                 @success="onEditSuccess"

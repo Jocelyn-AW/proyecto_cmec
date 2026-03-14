@@ -59,15 +59,45 @@ class Conference extends Model implements HasMedia
         'surgeon_price' => 'decimal:2',
     ];
 
+    protected static function booted()
+    {
+        static::deleted(function ($model) {
+            if ($model->isForceDeleting()) {
+                $model->sessions()->forceDelete();
+                $model->attendees()->forceDelete();
+            } else {
+                $model->sessions()->delete();
+                $model->attendees()->delete();
+                $model->updateQuietly(['is_active' => false]);
+            }
+
+        });
+
+        static::restored(function ($model) {
+            $model->sessions()->withTrashed()->restore();
+            $model->attendees()->withTrashed()->restore();
+            $model->updateQuietly(['is_active' => true]);
+        });
+    }
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all' => $query->withTrashed(),      // Todos
+            'trashed' => $query->onlyTrashed(),  // Solo Inactivos
+            default => $query,                   // Solo Activos
+        };
+    }
+
     //Morph Relations
-    // public function speakers()
-    // {
-    //     return $this->morphMany(EventSpeaker::class, 'event');
-    // }
-    
     public function sessions()
     {
         return $this->morphMany(EventSession::class, 'sessionable');
+    }
+
+    public function attendees()
+    {
+        return $this->morphMany(Attendee::class, 'event');
     }
 
     //Media

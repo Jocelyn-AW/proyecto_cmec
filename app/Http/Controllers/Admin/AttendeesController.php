@@ -49,23 +49,27 @@ class AttendeesController extends Controller
             $event_id = $request->input('event_id', null);
             $did_attend = $request->input('did_attend', null);
             $perPage = $request->input('per_page', 10);
+            $status = $request->input('status', '');
 
             $is_conference = $event_type == Constants::EVENT_CONFERENCE;
             $title = $is_conference ? 'name' : 'topic';
 
             $attendees = Attendee::where('event_type', $event_type);
+            $attendees->withTrashFilter($status);
 
             $attendees->with([
                 'event' => function (MorphTo $morphTo) use ($event_type, $title) {
-                    $morphTo->morphWith([
+                    $morphTo->withTrashed()->morphWith([
                         $event_type => function ($query) use ($title) {
                             $query->select('id', $title);
                         }
                     ]);
+                },
+                'payments' => function ($query) {
+                    $query->withTrashed();
                 }
             ]);
 
-            $attendees->with('payments');
 
             if (!empty($search)) {
                 $attendees->where(function ($query) use ($search, $event_type, $title) {
@@ -73,7 +77,9 @@ class AttendeesController extends Controller
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('state', 'like', "%{$search}%")
                         ->orWhere('city', 'like', "%{$search}%")
-                        ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
+                        ->orWhereHasMorph('event', [$event_type], function ($query) use ($search, $title) {
+                            $query->withTrashed()->where($title, 'like', "%{$search}%");
+                        });
                 });
             }
 
@@ -113,18 +119,18 @@ class AttendeesController extends Controller
                 $events = collect();
         }
 
-        $allEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'is_active');
+        $activeEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'deleted_at');
         if ($event_type == Constants::EVENT_CONFERENCE) {
-            $allEvents->addSelect('surgeon_price', 'nurse_price');
+            $activeEvents->addSelect('surgeon_price', 'nurse_price');
         }
-        $allEvents->orderBy('created_at', 'desc');
+        $activeEvents->orderBy('created_at', 'desc');
 
-        $active = (clone $allEvents)->where('is_active', '1');
+        $allEvents = (clone $activeEvents)->withTrashed();
 
         return [
             'eventName' => $eventName,
             'allEvents' => $allEvents->get(),
-            'activeEvents' => $active->get()
+            'activeEvents' => $activeEvents->get()
         ];
     }
 
@@ -185,16 +191,21 @@ class AttendeesController extends Controller
     public function delete(Request $request, $id)
     {
         $attendee = Attendee::findOrFail($id);
-
-        if ($attendee->payments()->count() > 0) {
-            $attendee->payments()->delete();
-        }
-        $attendee->clearMediaCollection('diplomas');
         $attendee->delete();
 
         return redirect()
             ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
             ->with('success', 'Asistente eliminado exitosamente');
+    }
+
+    public function restore(Request $request, $id)
+    {
+        $attendee = Attendee::withTrashed()->findOrFail($id);
+        $attendee->restore();
+
+        return redirect()
+            ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
+            ->with('success', 'Asistente restaurado exitosamente');
     }
 
     public function uploadDiploma(Request $request, $id)

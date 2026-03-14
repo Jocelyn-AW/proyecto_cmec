@@ -281,7 +281,7 @@ watch(selectedState, (value, old) => {
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ props.eventName }}</label>
                 <select name="event_id" id="event_id" v-model="selectedEvent" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">Seleccionar congreso</option>
-                    <option v-for="event in events" :key="event.id" :value="event">{{ event.name || event.topic }}</option>
+                    <option v-for="event in events" :key="event.id" :value="event">{{ event.name || event.topic }} {{ event.deleted_at ? '(inactivo)' : '' }}</option>
                 </select>
                 <span v-if="errors?.event_id" class="text-red-500 text-xs flex justify-end">{{ errors?.event_id }}</span>
             </div>
@@ -468,7 +468,7 @@ watch(selectedState, (value, old) => {
                     type="button"
                     class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     @click="submitCreate"
-                >
+                    :class="data.deleted_at ? 'disabled border border-gray-600' : ''" >
                     Guardar
                 </button>
             </div>

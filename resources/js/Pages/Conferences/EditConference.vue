@@ -679,6 +679,7 @@ watch(() => props.conference, (newConference) => {
                         </button>
                         <button 
                             @click="handleSubmit"
+                            :class="props.conference.deleted_at ? 'disabled border border-gray-600' : ''" 
                             class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 ">
                             Guardar Congreso
                         </button>

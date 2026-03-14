@@ -7,6 +7,7 @@ use App\Models\BankDetail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Course;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -16,21 +17,33 @@ class CoursesController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 10);
-        $search = $request->get('search', null);
-
-        $courses = Course::orderBy('created_at', 'desc')
-            ->when($search, function ($query, $search) {
-                $query->where('topic', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
-            })
-            ->with('sessions')
-            ->paginate($perPage)
-            ->withqueryString();
+        $courses = $this->addFilters($request);
 
         return Inertia::render('Courses/Index', [
             'courses' => $courses,
         ]);
+    }
+
+    private function addFilters(Request $request)
+    {
+        $perPage = $request->get('per_page', 10);
+        $search = $request->get('search', null);
+        $status = $request->input('status', '');
+
+        $course = Course::orderBy('created_at', 'desc');
+
+        if (!empty($search)) {
+            $course->where('topic', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%")
+                ->orWhere('organized_by', 'like', "%{$search}%");
+        }
+
+        $course->with('sessions');
+
+        return $course
+            ->withTrashFilter($status)    
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function new()
@@ -76,7 +89,7 @@ class CoursesController extends Controller
 
     public function edit($id)
     {
-        $course = Course::findOrFail($id);
+        $course = Course::withTrashed()->findOrFail($id);
         $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
                         ->get();
 
@@ -127,10 +140,6 @@ class CoursesController extends Controller
     {
         try {
             $course = Course::findOrFail($id);
-            $this->deleteCourseMedia($course);
-            if (!empty($course->sessions)) {
-                $course->sessions()->delete();
-            }
             $course->delete();
 
             return redirect()
@@ -142,6 +151,24 @@ class CoursesController extends Controller
             return redirect()
                 ->route('courses.index')
                 ->with('error', 'Hubo un error al eliminar el curso. Intenta de nuevo más tarde.');
+        }
+    }
+
+    public function restore(int $id)
+    {
+        try {
+            $course = Course::withTrashed()->findOrFail($id);
+            $course->restore();
+
+            return redirect()
+                ->route('courses.index')
+                ->with('success', 'Curso restaurado exitosamente');
+
+        } catch (Exception $e) {
+
+            return redirect()
+                ->route('courses.index')
+                ->with('error', 'Hubo un error al restaurar el curso. Intenta de nuevo más tarde.');
         }
     }
 

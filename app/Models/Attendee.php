@@ -53,6 +53,31 @@ class Attendee extends Model implements HasMedia
         'diploma_url',
     ];
 
+    protected static function booted()
+    {
+        static::deleted(function ($model) {
+            if ($model->isForceDeleting()) {
+                $model->payments()->forceDelete();
+            } else {
+                $model->payments()->delete();
+            }
+
+        });
+
+        static::restored(function ($model) {
+            $model->payments()->withTrashed()->restore();
+        });
+    }
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all' => $query->withTrashed(),      // Todos
+            'trashed' => $query->onlyTrashed(),  // Solo Inactivos
+            default => $query,                   // Solo Activos
+        };
+    }
+
     public function event() : MorphTo
     {
         return $this->morphTo(null, 'event_type', 'event_id');

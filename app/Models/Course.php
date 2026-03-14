@@ -64,6 +64,37 @@ class Course extends Model implements HasMedia
         'is_active' => 'boolean'
     ];
 
+    
+    protected static function booted()
+    {
+        static::deleted(function ($model) {
+            if ($model->isForceDeleting()) {
+                $model->sessions()->forceDelete();
+                $model->attendees()->forceDelete();
+            } else {
+                $model->sessions()->delete();
+                $model->attendees()->delete();
+                $model->updateQuietly(['is_active' => false]);
+            }
+
+        });
+
+        static::restored(function ($model) {
+            $model->sessions()->withTrashed()->restore();
+            $model->attendees()->withTrashed()->restore();
+            $model->updateQuietly(['is_active' => true]);
+        });
+    }
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all' => $query->withTrashed(),      // Todos
+            'trashed' => $query->onlyTrashed(),  // Solo Inactivos
+            default => $query,                   // Solo Activos
+        };
+    }
+
     //Relations
     public function attendees()
     {
