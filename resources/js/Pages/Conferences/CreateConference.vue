@@ -513,7 +513,7 @@ const handleCancel = () => {
                         </div>
                         <div class="mb-3">
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400" >
-                                Para no miembros (invitados)
+                                Para Invitados (no socios)
                             </label>
                             <div class="relative">
                                 <span class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">

@@ -324,7 +324,7 @@ watch(selectedCity, (value) => {
                     <option value="">Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
                     <option value="resident">Residente</option>
-                    <option value="guest">No miembro (invitado)</option>
+                    <option value="guest">Invitado (no socio)</option>
                 </select>
                 <span v-if="isPayed" class="text-xs text-amber-500 mt-1 flex items-center gap-1">
                     🔒 No editable cuando el pago está confirmado

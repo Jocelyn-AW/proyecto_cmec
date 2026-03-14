@@ -287,7 +287,7 @@ watch(selectedCity, (value) => {
                     <option value="" selected>Seleccionar tipo</option>
                     <option value="member">Miembro CMEC</option>
                     <option value="resident">Residente</option>
-                    <option value="guest">No miembro (invitado)</option>
+                    <option value="guest">Invitado (no socio)</option>
                 </select>
                 <span v-if="errors?.person_type" class="text-red-500 text-xs flex justify-end">{{ errors?.person_type }}</span>
             </div>
