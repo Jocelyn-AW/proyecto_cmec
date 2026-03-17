@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Http\Helpers\Constants;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Model;
+use App\Http\Helpers\Constants;
 
 class Membership extends Model
 {
@@ -14,20 +14,37 @@ class Membership extends Model
     protected $table = Constants::TABLE_MEMBERSHIPS;
 
     protected $fillable = [
-        'id',
         'name',
         'description',
         'benefits',
     ];
 
-    protected $dates = [
-        'created_at',
-        'updated_at',
-        'deleted_at',
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
 
-    public function prices() :HasMany
+    // ---------------------------------------------
+    // Relations
+    // ---------------------------------------------
+
+    public function prices(): HasMany
     {
-        return $this->hasMany(MembershipPrice::class, 'membership_id', 'id');
+        return $this->hasMany(MembershipPrice::class, 'membership_id')
+            ->orderBy('start_date', 'asc');
+    }
+
+    // ---------------------------------------------
+    // Scopes
+    // ---------------------------------------------
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all'     => $query->withTrashed(),
+            'trashed' => $query->onlyTrashed(),
+            default   => $query,
+        };
     }
 }

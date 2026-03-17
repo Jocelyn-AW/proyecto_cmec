@@ -38,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->group(base_path('routes/academicsessions_routes.php'));
                 Route::prefix('albums')->name('albums.')
                     ->group(base_path('routes/albums_routes.php'));
+                Route::prefix('memberships')->name('memberships.')
+                    ->group(base_path('routes/memberships_routes.php'));
             });
         }
     )
