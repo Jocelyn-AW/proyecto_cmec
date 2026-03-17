@@ -94,6 +94,10 @@ class AcademicSessionsController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            $academicSession = AcademicSession::findOrFail($request->id);
+            $this->ensureNotTrashed($academicSession);
+
             $this->mergeNullableFields($request);
 
             $data = $request->validate(
@@ -171,6 +175,8 @@ class AcademicSessionsController extends Controller
     {
         try {
             $academicSession = AcademicSession::findOrFail($id);
+            $this->ensureNotTrashed($academicSession);
+            
             $academicSession->is_active = !$academicSession->is_active;
             $academicSession->save();
 
@@ -316,5 +322,16 @@ class AcademicSessionsController extends Controller
     {
         $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
+    }
+
+    // ---------------------------------------------
+    // PRIVATE: Guards
+    // ---------------------------------------------
+
+    private function ensureNotTrashed(AcademicSession $academicSession): void
+    {
+        if ($academicSession->trashed()) {
+            abort(403, 'No puedes modificar una sesión academica eliminada.');
+        }
     }
 }

@@ -94,6 +94,10 @@ class WebinarsController extends Controller
     {
         try {
             DB::beginTransaction();
+
+            $webinar = Webinar::findOrFail($request->id);
+            $this->ensureNotTrashed($webinar);
+
             $this->mergeNullableFields($request);
 
             $data = $request->validate(
@@ -171,6 +175,8 @@ class WebinarsController extends Controller
     {
         try {
             $webinar = Webinar::findOrFail($id);
+            $this->ensureNotTrashed($webinar);
+            
             $webinar->is_active = !$webinar->is_active;
             $webinar->save();
 
@@ -316,5 +322,16 @@ class WebinarsController extends Controller
     {
         $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
+    }
+
+    // ---------------------------------------------
+    // PRIVATE: Guards
+    // ---------------------------------------------
+
+    private function ensureNotTrashed(Webinar $webinar): void
+    {
+        if ($webinar->trashed()) {
+            abort(403, 'No puedes modificar un webinar eliminado.');
+        }
     }
 }
