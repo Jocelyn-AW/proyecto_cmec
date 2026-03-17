@@ -1,32 +1,19 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import DataTable from '@/Components/DataTable.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref, reactive, watch } from 'vue';
+import DataTable from '@/Components/DataTable.vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Alerta from '@/Components/Alerta.vue';
-import Drawer from '@/Components/Drawer.vue';
-import { ref, reactive } from 'vue';
+
+import UploadDiploma from './UploadDiploma.vue';
+import PaymentDetailsModal from './PaymentDetailsModal.vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
-import UploadDiploma from '../Attendees/UploadDiploma.vue';
-import PaymentDetailsModal from '../Attendees/PaymentDetailsModal.vue';
 
 defineOptions({
     layout: AuthenticatedLayout
 })
-
-const { alertState, success, errorA, warning, hideAlert, info } = useAlert()
-const showCreateDrawer = ref(false);
-const showEditDrawer = ref(false);
-const showUploadDiploma = ref(false);
-const showPaymentDetails = ref(false);
-const selectedItem = ref(null);
-const paymentDetails = ref(null);
-
-const event_id = ref(route().params.event_id ?? '')
-const did_attend = ref(route().params.did_attend ?? '')
-const status = ref(route().params.status ?? '')
 
 const props = defineProps({
     attendees: {
@@ -59,30 +46,118 @@ const props = defineProps({
     }
 })
 
-const page = usePage();
+const { alertState, success, errorA, warning, hideAlert, info } = useAlert()
+
+watch(() => props.flash, (value) => {
+    if (!value) return
+
+    if (value.success) success(value.success)
+    if (value.warning) warning(value.warning)
+    if (value.error) errorA(value.error)
+}, {immediate: true, deep: true})
+
+const showCreateDrawer = ref(false);
+const showEditDrawer = ref(false);
+const showUploadDiploma = ref(false);
+const showPaymentDetails = ref(false);
+const selectedItem = ref(null);
+const paymentDetails = ref(null);
 
 
-onMounted(() => {
-    if (page.props.success || props.flash.success) {
-        success(page.props.success || props.flash.success)
-    }
-    if (page.props.error || props.flash.error) {
-        errorA(page.props.error || props.flash.error)
-    }
+const event_id = ref(route().params.event_id ?? '')
+const did_attend = ref(route().params.did_attend ?? '')
+const status = ref(route().params.status ?? '')
 
-    if (page.props.warning || props.flash.warning) {
-        warning(page.props.warning || props.flash.warning)
+//String Formatters
+const truncate = (text, max = 50) => {
+    if (!text) return '';
+    return text.length > max ? text.substring(0, max) + '...' : text;
+}
+
+const formatAmount =  (amount) => {
+    let options = { style: 'currency', currency: 'USD' }
+    return new Intl.NumberFormat('en-US', options).format(amount);
+}
+
+const formattedDate = (originalDate) => {
+    if (originalDate) {
+        let fullDate = originalDate.slice(0,10) + 'T00:00:00';
+        const date = new Date(fullDate);
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        return new Intl.DateTimeFormat('es-MX', options).format(date);
     }
+}
+
+//Computed props
+const pluralName = computed(() => {
+    if (props.eventName?.toLowerCase() == 'sesion academica'){
+        return 'sesiones académicas'
+    }
+    return props.eventName?.toLowerCase() + 's'
 })
 
-const generateRandomString = (length = 5) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
+const isConference = computed(() => {
+    const conferenceEvents = ['Congreso', 'Precongreso', 'Transcongreso'];
+    return conferenceEvents.includes(props.eventName);
+})
+
+const tableColumns = computed(() => {
+    const base = [
+        { label: props.eventName, key: 'event_name' },
+        { label: 'Asistente', key: 'name' },
+        { label: 'Tipo de Usuario', key: 'person_type' },
+        { label: 'Telefono', key: 'phone' },
+        { label: 'Ciudad/Estado', key: 'origin' },
+
+        ...(isConference.value ? [
+            { label: 'Fecha Nacimiento', key: 'birth_date' },
+            { label: 'Atención especial', key: 'special_needs' },
+        ] : []),
+
+        { label: 'Estatus de Pago', key: 'status' },
+        { label: 'Asistencia', key: 'did_attend' },
+    ]
+
+    return base
+})
+
+//Table Filters
+const filters = {
+    event_id: event_id, 
+    did_attend: did_attend,
+    status: status
+}
+
+const hasActiveFilters = () =>
+    event_id.value || did_attend.value || status.value
+
+
+const clearFilters = () => {
+    event_id.value = ''
+    did_attend.value = ''
+    status.value = ''
+}
+
+//Table Events
+const openDiploma = (attendee) => {
+    console.log(attendee);
+    
+    if (attendee.diploma_url) {
+        window.open(attendee.diploma_url, '_blank');
+    } else {
+        selectedItem.value = attendee;
+        showUploadDiploma.value = true;
     }
-    return result;
-};
+}
+
+const openPaymentDetails = (attendee) => {
+    paymentDetails.value = attendee.payments?.[0] ?? null;    
+    showPaymentDetails.value = true;
+}
+
+const onChangeAttend = (attendee) => {    
+    router.get(route('attendees.change-attend', attendee.id))
+}
 
 const handleOnCreate = () => {
     showCreateDrawer.value = true;
@@ -117,80 +192,22 @@ const handleOnRestore = (attendeeId) => {
     })
 }
 
-const openDiploma = (attendee) => {
-    if (attendee.diploma_url) {
-        window.open(attendee.diploma_url, '_blank');
-    } else {
-        selectedItem.value = attendee;
-        showUploadDiploma.value = true;
-    }
-}
-
-const openPaymentDetails = (attendee) => {
-    paymentDetails.value = attendee.payments?.[0] ?? null;    
-    showPaymentDetails.value = true;
-}
-
-const onCreateSuccess = () => {
-    success('Asistente registrado exitosamente');
-    showCreateDrawer.value = false;
-}
-
-const onEditSuccess = () => {
-    success('Asistente actualizado exitosamente');
-    showEditDrawer.value = false;
-    selectedItem.value = null;
-}
-
-const truncate = (text, max = 50) => {
-    if (!text) return '';
-    return text.length > max ? text.substring(0, max) + '...' : text;
-}
-
-const onChangeAttend = (attendee) => {    
-    router.get(route('attendees.change-attend', attendee.id))
-}
-
-const filters = {
-    event_id: event_id, 
-    did_attend: did_attend,
-    status: status
-}
-
-const hasActiveFilters = () =>
-    event_id.value || did_attend.value || status.value
-
-
-const clearFilters = () => {
-    event_id.value = ''
-    did_attend.value = ''
-    status.value = ''
-}
-
 </script>
 <template>
-    <Head title="Asistentes a cursos" />
+    <Head :title="`Asistentes a  ${ pluralName }`" />
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Asistentes a cursos</h3>
-                <p class="text-sm text-gray-500">Administra los asistentes registrados a cursos desde esta sección</p>
+                <h3 class="text-lg font-semibold text-sky-800 dark:text-white/90">Asistentes a <span class="capitalize">{{ pluralName }}</span></h3>
+                <p class="text-sm text-gray-500">Administra los asistentes registrados a {{ pluralName }} desde esta sección</p>
             </div>
             <DataTable
-                :columns="[
-                    { label: 'Curso', key: 'event_name' },
-                    { label: 'Asistente', key: 'name' },
-                    { label: 'Telefono', key: 'phone' },
-                    { label: 'Ciudad/Estado', key: 'origin' },
-                    { label: 'Tipo de Usuario', key: 'person_type' },
-                    { label: 'Estatus de Pago', key: 'status' },
-                    { label: 'Asistencia', key: 'did_attend' },
-                ]"
+                :columns="tableColumns"
                 :filter-values="filters"
                 :paginator="props.attendees"
                 :searchable="true"
-                :per-page-options="[10, 25, 50, 100]"
+                :per-page-options="[5, 10, 25, 50, 100]"
                 :allow-create="true"
                 :allow-actions="true"
                 :allow-edit="true"
@@ -206,16 +223,16 @@ const clearFilters = () => {
                     class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex flex-wrap items-center gap-3">
-                            <!-- Curso -->
-                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
-                                Cursos
+                            <!-- Evento -->
+                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize" >
+                                {{ pluralName }}
                             </label>
                             <select id="event_id" v-model="event_id"
                                 class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
                                 >
                                 <option value="">Todos</option>
                                 <option v-for="option in allEvents" :key="option.id" :value="option.id" >
-                                    {{ truncate(option.topic, 25) }}
+                                    {{ truncate(option.name, 25) }}
                                 </option>
                             </select>
                             <!-- Asistencia -->
@@ -253,15 +270,38 @@ const clearFilters = () => {
                     </div>
                 </template>
 
-                <template #cell-date="{ item }">
-                    {{ new Date(item.date).toLocaleDateString('en-GB') }}
+                <!-- Nombre del Evento -->
+                <template #cell-event_name="{ item }">
+                    {{ (truncate(item.event.topic, 30) || truncate(item.event.name, 30)) ?? 'N/A' }}
                 </template>
 
+                <!-- Fecha de nacimiento  -->
+                <template v-if="isConference" #cell-birth_date="{ item }">
+                    {{ formattedDate(item.birth_date) }}
+                </template>
+
+                <!-- Ciudad -->
                 <template #cell-origin="{ item }">
                     {{ item.city ? item.city + ', ' : '' }}{{ item.state || '' }}.
                 </template>
+                
+                <!-- Tipo de asistentes -->
+                <template v-if="isConference"  #cell-person_type="{ item }">
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium "
+                        :class="item.person_type == 'member' ? 'bg-indigo-200 text-indigo-700':
+                        (item.person_type == 'resident') ? 'bg-sky-200 text-sky-700': 
+                        (item.person_type == 'surgeon') ? 'bg-teal-200 text-teal-700': 
+                        (item.person_type == 'nurse') ? 'bg-slate-200 text-slate-700' :'bg-gray-200 text-gray-700'"
+                        >
+                        {{ item.person_type === 'member' ? 'Miembro CMEC' : '' }}
+                        {{ item.person_type === 'guest' ? 'No miembro / Invitado' : '' }}
+                        {{ item.person_type === 'resident' ? 'Residente / Medico General' : '' }}
+                        {{ item.person_type === 'surgeon' ? 'Residente de cirugía' : '' }}
+                        {{ item.person_type === 'nurse' ? 'Enfermero / Estudiante' : '' }}
+                    </span>
+                </template>
 
-                <template #cell-person_type="{ item }">
+                <template v-else #cell-person_type="{ item }">
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
                         :class="item.person_type == 'member' ? 'bg-emerald-200 text-emerald-700' :
                         (item.person_type == 'resident') ? 'bg-sky-200 text-sky-700': 'bg-gray-200 text-gray-700'"
@@ -271,7 +311,9 @@ const clearFilters = () => {
                         {{ item.person_type === 'resident' ? 'Residente' : '' }}
                     </span>
                 </template>
+                <!--  -->
 
+                <!-- Detalles de Pago -->
                 <template #cell-status="{ item }">
                     <span
                         role="button" @click="openPaymentDetails(item)"
@@ -287,6 +329,7 @@ const clearFilters = () => {
                     </span>
                 </template>
 
+                <!-- Cambiar asistencia -->
                 <template #cell-did_attend="{ item }">
                     <span role="button" @click="onChangeAttend(item)" 
                         class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -299,18 +342,14 @@ const clearFilters = () => {
                     </span>
                 </template>
 
-                <template #cell-event_name="{ item }">
-                    {{ (truncate(item.event.topic, 30) || truncate(item.event.name, 30)) ?? 'N/A' }}
-                </template>
-
                 <template #actionButtons="{ item }">
                     <button title="Ver diploma" @click="openDiploma(item)"
                         class="p-2 rounded-lg "
                         :disabled="!item.did_attend"
                         :class="
                             item.diploma_url == null || item.diploma_url == '' 
-                            ? 'bg-amber-30 text-amber-500 hover:bg-amber-600 hover:text-white transition-colors border border-amber-100 hover:border-amber-600' 
-                            : 'bg-amber-500 text-white hover:bg-amber-600 hover:text-white transition-colors border border-amber-500 hover:border-amber-100',
+                            ? 'bg-indigo-30 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600' 
+                            : 'bg-indigo-500 text-white hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-500 hover:border-indigo-100',
                             (!item.did_attend || item.deleted_at) && (item.diploma_url == null) ? 'disabled' : ''"
                         >
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
@@ -328,14 +367,15 @@ const clearFilters = () => {
                 </template>
 
             </DataTable>
+
             <CreateAttendee 
                 :show="showCreateDrawer"
                 :event-name="props.eventName"
                 :events="props.activeEvents"
                 :errors="props.errors"
                 @close="showCreateDrawer = false"
-                @success="onCreateSuccess"
             />
+
             <EditAttendee 
                 :show="showEditDrawer"
                 :event-name="props.eventName"
@@ -343,8 +383,7 @@ const clearFilters = () => {
                 :events="selectedItem?.deleted_at ? props.allEvents : props.activeEvents"
                 :errors="props.errors"
                 @close="showEditDrawer = false"
-                @success="onEditSuccess"
-                />
+            />
             
             <UploadDiploma
                 :show="showUploadDiploma"
@@ -357,7 +396,8 @@ const clearFilters = () => {
                 :show="showPaymentDetails"
                 :max-width="'lg'"
                 @close="showPaymentDetails = false"
-                :payment-details="paymentDetails"/>
+                :payment-details="paymentDetails"
+            />
         </div>
     </div>
     <Alerta
@@ -372,4 +412,5 @@ const clearFilters = () => {
         @close="hideAlert()"
     />
     
+
 </template>

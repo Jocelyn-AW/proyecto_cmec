@@ -25,16 +25,8 @@ class AttendeesController extends Controller
         $attendees = $this->addFilters($request, $event_type);
         $events = $this->getEvents($event_type);
 
-        $view = 'CoursesAttendees/Index';
-        if ($event_type === Constants::EVENT_WEBINAR) {
-            $view = 'WebinarsAttendees/Index';
-        } else if ($event_type === Constants::EVENT_ACADEMIC_SESSION) {
-            $view = 'AcademicSessionsAttendees/Index';
-        } else if ($event_type === Constants::EVENT_CONFERENCE) {
-            $view = 'ConferencesAttendees/Index';
-        }
 
-        return Inertia::render($view, [
+        return Inertia::render('Attendees/Index', [
             'attendees' => $attendees,
             'eventName' => $events['eventName'],
             'allEvents' => $events['allEvents'],
