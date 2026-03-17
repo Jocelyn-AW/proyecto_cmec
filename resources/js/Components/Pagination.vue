@@ -99,7 +99,7 @@ const cleanLabel = (label) => {
                 class="inline-flex items-center justify-center min-w-[36px] h-9 px-3 text-sm font-medium rounded-lg transition-colors"
                 :class="[
                     link.active
-                        ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900'
+                        ? 'bg-sky-900 text-white dark:bg-white dark:text-sky-900'
                         : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
                     !link.url
                         ? 'opacity-40 cursor-not-allowed'
