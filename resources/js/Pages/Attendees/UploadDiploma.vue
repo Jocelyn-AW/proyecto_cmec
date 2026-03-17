@@ -116,8 +116,8 @@ const maxWidthClass = computed(() => {
                         <div class="px-6 pt-6 pb-4 border-b border-slate-100">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-blue-50">
-                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
+                                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50">
+                                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -183,7 +183,7 @@ const maxWidthClass = computed(() => {
 
                                 <!-- Dropzone (siempre visible para poder subir/reemplazar) -->
                                 <div v-if="!diploma.file.value"
-                                    class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-1 transition-colors hover:border-blue-300 hover:bg-blue-50/30">
+                                    class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-1 transition-colors hover:border-indigo-300 hover:bg-indigo-50/30">
                                     <Dropzone :preview="diploma.preview.value" :is-dragging="diploma.isDragging.value"
                                         accept="application/pdf" :label="hasExistingDiploma
                                             ? 'Arrastra el nuevo PDF aquí o haz clic para reemplazar'
@@ -200,29 +200,29 @@ const maxWidthClass = computed(() => {
                                     leave-from-class="opacity-100 translate-y-0"
                                     leave-to-class="opacity-0 -translate-y-2">
                                     <div v-if="diploma.file.value"
-                                        class="flex items-center gap-3 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                                        class="flex items-center gap-3 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
                                         <div
-                                            class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 shrink-0">
-                                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor"
+                                            class="flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-100 shrink-0">
+                                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
                                         </div>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-medium text-blue-900 truncate">
+                                            <p class="text-sm font-medium text-indigo-900 truncate">
                                                 {{ diploma.file.value.name }}
                                             </p>
-                                            <p class="text-xs text-blue-600">
+                                            <p class="text-xs text-indigo-600">
                                                 {{ (diploma.file.value.size / 1024 / 1024).toFixed(2) }} MB
-                                                <span v-if="isReplacing" class="ml-1 text-amber-600 font-medium">
+                                                <span v-if="isReplacing" class="ml-1 text-indigo-600 font-medium">
                                                     · Reemplazará el diploma actual
                                                 </span>
                                             </p>
                                         </div>
                                         <!-- Botón para cambiar el PDF seleccionado -->
                                         <button @click="diploma.reset"
-                                            class="p-1.5 rounded-lg text-blue-400 hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                                            class="p-1.5 rounded-lg text-indigo-400 hover:text-indigo-600 hover:bg-indigo-100 transition-colors"
                                             title="Cambiar archivo">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -243,7 +243,7 @@ const maxWidthClass = computed(() => {
                                     Cancelar
                                 </button>
                                 <button @click="submit" :disabled="!diploma.file.value || isSubmitting"
-                                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                     <svg v-if="isSubmitting" class="w-4 h-4 animate-spin" fill="none"
                                         viewBox="0 0 24 24">
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
