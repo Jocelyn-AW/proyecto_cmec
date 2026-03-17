@@ -232,7 +232,9 @@ const handleOnRestore = (attendeeId) => {
                                 >
                                 <option value="">Todos</option>
                                 <option v-for="option in allEvents" :key="option.id" :value="option.id" >
-                                    {{ truncate(option.name, 25) }}
+                                    <span v-if="isConference">{{ truncate(option.name, 25) }}</span>
+                                    <span v-else>{{ truncate(option.topic, 25) }}</span>
+                                    
                                 </option>
                             </select>
                             <!-- Asistencia -->
