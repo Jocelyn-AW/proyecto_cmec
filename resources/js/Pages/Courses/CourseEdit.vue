@@ -277,9 +277,9 @@ watch(() => props.course, (newCourse) => {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
             >
-                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                <div class="grid lg:grid-cols-4 gap-4 p-8">
                     <div class="">
-                        <span class="text-sm text-gray-700">
+                        <span class="text-base font-semibold text-slate-700">
                             Datos Generales</span>
                     </div>
                     <div class="lg:col-span-3 space-y-6">
@@ -379,9 +379,9 @@ watch(() => props.course, (newCourse) => {
                 </div>
             </div>
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
-                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                <div class="grid lg:grid-cols-4 gap-4 p-8">
                     <div>
-                        <span class="text-sm text-gray-700">
+                        <span class="text-base font-semibold text-slate-700">
                             Patrocinadores</span>
                     </div>
                     <div class="col-span-3 space-y-6">
@@ -395,6 +395,7 @@ watch(() => props.course, (newCourse) => {
                                 :is-dragging="currentPlatinum.isDragging.value"
                                 :max-files="20"
                                 :columns="'6'"
+                                :object-fit="'contain'"
                                 @change="currentPlatinum.handleChange"
                                 @drop="currentPlatinum.handleDrop"
                                 @drag-enter="currentPlatinum.handleDragEnter"
@@ -415,6 +416,7 @@ watch(() => props.course, (newCourse) => {
                                 :is-dragging="currentGolden.isDragging.value"
                                 :max-files="20"
                                 :columns="'6'"
+                                :object-fit="'contain'"
                                 @change="currentGolden.handleChange"
                                 @drop="currentGolden.handleDrop"
                                 @drag-enter="currentGolden.handleDragEnter"
@@ -435,6 +437,7 @@ watch(() => props.course, (newCourse) => {
                                 :is-dragging="currentSilver.isDragging.value"
                                 :max-files="20"
                                 :columns="'6'"
+                                :object-fit="'contain'"
                                 @change="currentSilver.handleChange"
                                 @drop="currentSilver.handleDrop"
                                 @drag-enter="currentSilver.handleDragEnter"
@@ -452,9 +455,9 @@ watch(() => props.course, (newCourse) => {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
                 >
-                <div class="grid grid-cols-4 gap-4 p-6">
+                <div class="grid grid-cols-4 gap-4 p-8">
                     <div class="">
-                        <span class="text-sm text-gray-700">
+                        <span class="text-base font-semibold text-slate-700">
                             Detalles Adicionales</span
                         >
                     </div>
@@ -612,9 +615,9 @@ watch(() => props.course, (newCourse) => {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
                 >
-                <div class="grid grid-cols-4 gap-4 p-6">
+                <div class="grid grid-cols-4 gap-4 p-8">
                     <div class="">
-                        <span class="text-sm text-gray-700">Costos</span>
+                        <span class="text-base font-semibold text-slate-700">Costos</span>
                     </div>
                     <div>
                         <label
@@ -683,7 +686,7 @@ watch(() => props.course, (newCourse) => {
                         </div>
                     </div>
                     <div class="">
-                        <span class="text-sm text-gray-700">Detalles de pago</span>
+                        <span class="text-base font-semibold text-slate-700">Detalles de pago</span>
                     </div>
                     <div class="col-span-3">
                         <label
@@ -715,14 +718,9 @@ watch(() => props.course, (newCourse) => {
                 </div>
             </div>
             
-            <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-            >
-                <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="col-span-2">
-                        <span class="text-sm text-gray-700"></span>
-                    </div>
-                    <div class="col-span-2 flex justify-end items-center">
+            <div class="overflow-hidden rounded-2xl dark:border-gray-800 dark:bg-white/[0.03]" >
+                <div class="grid grid-cols-4 gap-4 p-1">
+                    <div class="col-span-2 col-start-3 flex justify-end items-center">
                         <button @click="handleCancel"
                             class="rounded-lg border border-gray-300 bg-transparent px-4 mx-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 ">
                             Cancelar

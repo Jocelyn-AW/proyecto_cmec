@@ -64,7 +64,7 @@ defineExpose({ getData })
                     </label>
                     <Dropzone multiple :all-previews="platinum.allPreviews.value"
                         :total-count="platinum.totalCount.value" :is-dragging="platinum.isDragging.value"
-                        :max-files="20" :columns="'6'" @change="platinum.handleChange" @drop="platinum.handleDrop"
+                        :max-files="20" :columns="'6'" :object-fit="'contain'" @change="platinum.handleChange" @drop="platinum.handleDrop"
                         @drag-enter="platinum.handleDragEnter" @drag-leave="platinum.handleDragLeave"
                         @remove-item="platinum.removeItem" @remove="platinum.reset" />
                     <span v-if="errors['platinum_sponsors']" class="text-red-500 text-xs mt-1 block">
@@ -78,7 +78,7 @@ defineExpose({ getData })
                         Oro
                     </label>
                     <Dropzone multiple :all-previews="golden.allPreviews.value" :total-count="golden.totalCount.value"
-                        :is-dragging="golden.isDragging.value" :max-files="20" :columns="'6'"
+                        :is-dragging="golden.isDragging.value" :max-files="20" :columns="'6'" :object-fit="'contain'"
                         @change="golden.handleChange" @drop="golden.handleDrop" @drag-enter="golden.handleDragEnter"
                         @drag-leave="golden.handleDragLeave" @remove-item="golden.removeItem" @remove="golden.reset" />
                     <span v-if="errors['golden_sponsors']" class="text-red-500 text-xs mt-1 block">
@@ -92,7 +92,7 @@ defineExpose({ getData })
                         Plata
                     </label>
                     <Dropzone multiple :all-previews="silver.allPreviews.value" :total-count="silver.totalCount.value"
-                        :is-dragging="silver.isDragging.value" :max-files="20" :columns="'6'"
+                        :is-dragging="silver.isDragging.value" :max-files="20" :columns="'6'" :object-fit="'contain'"
                         @change="silver.handleChange" @drop="silver.handleDrop" @drag-enter="silver.handleDragEnter"
                         @drag-leave="silver.handleDragLeave" @remove-item="silver.removeItem" @remove="silver.reset" />
                     <span v-if="errors['silver_sponsors']" class="text-red-500 text-xs mt-1 block">
