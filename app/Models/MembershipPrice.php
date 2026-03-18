@@ -9,8 +9,6 @@ use App\Http\Helpers\Constants;
 
 class MembershipPrice extends Model
 {
-    use SoftDeletes;
-
     protected $table = Constants::TABLE_MEMBERSHIP_PRICES;
 
     protected $fillable = [

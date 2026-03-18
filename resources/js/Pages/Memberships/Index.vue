@@ -13,22 +13,10 @@ defineOptions({ layout: AuthenticatedLayout })
 const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
 const props = defineProps({
-    membership: {
-        type: Object,
-        default: () => null,
-    },
-    flash: {
-        type: Object,
-        default: () => ({})
-    },
-    errors: {
-        type: Object,
-        default: () => ({})
-    },
-    auth: {
-        type: Object,
-        default: () => ({})
-    },
+    membership: { type: Object, default: () => null },
+    flash: { type: Object, default: () => ({}) },
+    errors: { type: Object, default: () => ({}) },
+    auth: { type: Object, default: () => ({}) },
 })
 
 const page = usePage();
@@ -37,7 +25,19 @@ onMounted(() => {
     if (page.props.success || props.flash.success) success(page.props.success || props.flash.success)
     if (page.props.error || props.flash.error) errorA(page.props.error || props.flash.error)
     if (page.props.warning || props.flash.warning) warning(page.props.warning || props.flash.warning)
+
+    // Al cargar
+    if (Object.keys(props.errors).length > 0) {
+        errorA('Hubo un error en los datos subidos.')
+    }
 })
+
+// Al equvocarse
+watch(() => props.errors, (val) => {
+    if (Object.keys(val).length > 0) {
+        errorA('Hubo un error en los datos subidos.')
+    }
+}, { deep: true })
 
 // ---------------------------------
 // Estado
@@ -132,20 +132,60 @@ const flatpickrConfig = {
 
 <template>
 
-    <Head title="Membresías" />
+    <Head title="Membresía" />
 
-    <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
-        <div class="space-y-6">
+    <div class="min-h-screen">
 
-            <!-- Encabezado -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Membresía</h3>
-                <p class="text-sm text-gray-500">
-                    {{ isNew ? 'Configura la membresía de tu aplicación' : 'Actualiza los datos de la membresía' }}
-                </p>
+        <!-- ENCABEZADO -->
+        <div
+            class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
+            <div class="flex flex-col lg:flex-row">
+
+                <div class="flex flex-1 flex-col justify-center p-8 lg:p-10">
+                    <p class="text-sm font-medium text-brand-600">Configuración de la aplicación</p>
+                    <h1 class="mt-1 text-2xl font-bold tracking-tight text-gray-800 dark:text-white/90 sm:text-3xl">
+                        Membresía
+                    </h1>
+                    <p class="mt-3 max-w-md text-sm leading-relaxed text-gray-500">
+                        {{ isNew
+                            ? 'Configura la membresía de tu aplicación. Define el nombre, descripción, beneficios y los períodos de precio disponibles.'
+                        : 'Gestiona la membresía activa. Puedes actualizar su información y ajustar los períodos de precio en cualquier momento.'
+                        }}
+                    </p>
+                    <div class="mt-5">
+                        <span v-if="!isNew"
+                            class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                            Membresía activa
+                        </span>
+                        <span v-else
+                            class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+                            Sin configurar
+                        </span>
+                    </div>
+                </div>
+
+                <!-- DECORACION -->
+                <div class="relative h-40 w-full lg:h-auto lg:w-64 xl:w-72 overflow-hidden">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-500 to-brand-400 opacity-10 dark:opacity-5" />
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="0.6" stroke-linecap="round" stroke-linejoin="round"
+                            class="h-36 w-36 text-brand-200 dark:text-brand-800">
+                            <rect width="20" height="14" x="2" y="5" rx="2" />
+                            <path d="M2 10h20" />
+                        </svg>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <!-- DATOS DE LA MEMBRESIA -->
+        <!-- FORMULARIO: DOS COLUMNAS -->
+        <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+
+            <!-- IZQUIERDA: DATOS -->
             <div
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
@@ -165,24 +205,21 @@ const flatpickrConfig = {
                     </div>
                 </div>
 
-                <div class="p-8 max-w-xl space-y-6">
+                <div class="p-8 space-y-6">
 
-                    <!-- Nombre -->
+                    <!-- NOMBRE -->
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Nombre
-                        </label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nombre</label>
                         <input type="text" v-model="formData.name" placeholder="Ej. Membresía Anual"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         <span v-if="errors.name" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.name
                             }}</span>
                     </div>
 
-                    <!-- Descripcion -->
+                    <!-- DESCRIPCION -->
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Descripción
-                        </label>
+                        <label
+                            class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Descripción</label>
                         <input type="text" v-model="formData.description"
                             placeholder="Ej. Membresía para socios activos del año"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
@@ -190,16 +227,16 @@ const flatpickrConfig = {
                             errors.description }}</span>
                     </div>
 
-                    <!-- Beneficios -->
+                    <!-- BENEFICIOS -->
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                             Beneficios
                             <span
-                                class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400 ml-1">opcional</span>
+                                class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400 ml-1">opcional</span>
                         </label>
-                        <textarea v-model="formData.benefits" rows="4"
+                        <textarea v-model="formData.benefits" rows="5"
                             placeholder="Describe los beneficios de esta membresía..."
-                            class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                            class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 resize-none" />
                         <span v-if="errors.benefits" class="text-red-500 text-xs flex justify-end mt-1">{{
                             errors.benefits }}</span>
                     </div>
@@ -207,7 +244,7 @@ const flatpickrConfig = {
                 </div>
             </div>
 
-            <!-- PERIODOS DE PRECIO -->
+            <!-- DERECHA: FECHAS -->
             <div
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
@@ -221,9 +258,8 @@ const flatpickrConfig = {
                     </div>
                     <div>
                         <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Períodos de precio</h2>
-                        <p class="text-xs text-gray-500">
-                            {{ formData.prices.length }} de {{ MAX_PRICES }} períodos configurados
-                        </p>
+                        <p class="text-xs text-gray-500">{{ formData.prices.length }} de {{ MAX_PRICES }} períodos
+                            configurados</p>
                     </div>
                 </div>
 
@@ -231,73 +267,73 @@ const flatpickrConfig = {
 
                     <span v-if="errors.prices" class="text-red-500 text-xs block mb-4">{{ errors.prices }}</span>
 
-                    <!-- Filas de precio -->
-                    <div v-for="(price, index) in formData.prices" :key="index"
-                        class="relative grid grid-cols-3 gap-4 my-3">
+                    <!-- Cabecera -->
+                    <div class="grid grid-cols-[1fr_1fr_100px_20px] gap-3 mb-2 px-1">
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha inicio</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha fin</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Monto</span>
+                        <span></span>
+                    </div>
 
-                        <!-- Fecha inicio -->
-                        <div>
-                            <label v-if="index === 0"
-                                class="mb-1.5 block text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Fecha de inicio
-                            </label>
-                            <flat-pickr v-model="price.start_date" :config="flatpickrConfig"
-                                placeholder="Fecha de inicio"
-                                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors[`prices.${index}.start_date`]" class="text-red-500 text-xs mt-0.5 block">
-                                {{ errors[`prices.${index}.start_date`] }}
-                            </span>
-                        </div>
+                    <!-- Todas las filas -->
+                    <div class="space-y-3">
+                        <div v-for="(price, index) in formData.prices" :key="index"
+                            class="grid grid-cols-[1fr_1fr_100px_20px] gap-3 items-start">
 
-                        <!-- Fecha fin -->
-                        <div>
-                            <label v-if="index === 0"
-                                class="mb-1.5 block text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Fecha de fin
-                            </label>
-                            <flat-pickr v-model="price.end_date" :config="flatpickrConfig" placeholder="Fecha de fin"
-                                class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors[`prices.${index}.end_date`]" class="text-red-500 text-xs mt-0.5 block">
-                                {{ errors[`prices.${index}.end_date`] }}
-                            </span>
-                        </div>
-
-                        <!-- Monto -->
-                        <div>
-                            <label v-if="index === 0"
-                                class="mb-1.5 block text-xs font-medium text-gray-500 dark:text-gray-400">
-                                Monto
-                            </label>
-                            <div class="relative">
-                                <span
-                                    class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                                    $
+                            <!-- Fecha inicio -->
+                            <div>
+                                <flat-pickr v-model="price.start_date" :config="flatpickrConfig" placeholder="Inicio"
+                                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors[`prices.${index}.start_date`]"
+                                    class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.start_date`] }}
                                 </span>
-                                <input v-model="price.amount" type="number" min="0" placeholder="0.00"
-                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[52px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             </div>
-                            <span v-if="errors[`prices.${index}.amount`]" class="text-red-500 text-xs mt-0.5 block">
-                                {{ errors[`prices.${index}.amount`] }}
-                            </span>
-                        </div>
 
-                        <!-- Eliminar fila -->
-                        <button v-if="formData.prices.length > 1" @click="removePrice(index)" type="button"
-                            class="absolute -right-6 text-red-400 hover:text-red-600 transition-colors"
-                            :class="index === 0 ? 'top-8' : 'top-3'">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
-                                fill="currentColor">
-                                <path fill-rule="evenodd"
-                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
+                            <!-- Fecha fin -->
+                            <div>
+                                <flat-pickr v-model="price.end_date" :config="flatpickrConfig" placeholder="Fin"
+                                    class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors[`prices.${index}.end_date`]"
+                                    class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.end_date`] }}
+                                </span>
+                            </div>
+
+                            <!-- Monto -->
+                            <div>
+                                <div class="relative">
+                                    <span
+                                        class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3 py-1 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                                        $
+                                    </span>
+                                    <input v-model="price.amount" type="number" min="0" placeholder="0.00"
+                                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-9 pr-3 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                </div>
+                                <span v-if="errors[`prices.${index}.amount`]" class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.amount`] }}
+                                </span>
+                            </div>
+
+                            <!-- Eliminar -->
+                            <div class="flex items-center h-11">
+                                <button v-if="formData.prices.length > 1" @click="removePrice(index)" type="button"
+                                    class="text-gray-300 hover:text-red-500 transition-colors dark:text-gray-600 dark:hover:text-red-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                        </div>
                     </div>
 
                     <button @click="addPrice" type="button" :disabled="!canAddPrice"
-                        class="mt-2 text-sm flex items-center gap-1 transition-colors" :class="canAddPrice
-                            ? 'text-brand-500 hover:text-brand-600'
-                            : 'text-gray-300 cursor-not-allowed'">
+                        class="mt-4 text-sm flex items-center gap-1 transition-colors"
+                        :class="canAddPrice ? 'text-brand-500 hover:text-brand-600' : 'text-gray-300 cursor-not-allowed dark:text-gray-600'">
                         + Agregar período
                         <span v-if="!canAddPrice" class="text-xs text-gray-400">(máximo {{ MAX_PRICES }})</span>
                     </button>
@@ -305,19 +341,30 @@ const flatpickrConfig = {
                 </div>
             </div>
 
-            <!-- ACCIONES -->
-            <div
-                class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
-                <div class="flex items-center justify-end gap-3 p-6">
-                    <button @click="handleSubmit" :disabled="isSubmitting"
-                        class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                        <span v-if="isSubmitting">Guardando...</span>
-                        <span v-else>{{ isNew ? 'Crear Membresía' : 'Guardar Cambios' }}</span>
-                    </button>
-                </div>
-            </div>
-
         </div>
+
+        <!-- ACCIONES -->
+        <div
+            class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
+            <div class="flex items-center justify-between gap-3 px-8 py-5">
+                <p class="text-xs text-gray-400 dark:text-gray-500">
+                    {{ isNew
+                        ? 'Los cambios se guardarán como la membresía activa de la aplicación.'
+                        : `Última actualización: ${membership?.updated_at ? new
+                            Date(membership.updated_at).toLocaleDateString('es-MX', {
+                                day: 'numeric', month: 'long', year:
+                                    'numeric'
+                            }) : '—'}`
+                    }}
+                </p>
+                <button @click="handleSubmit" :disabled="isSubmitting"
+                    class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <span v-if="isSubmitting">Guardando...</span>
+                    <span v-else>{{ isNew ? 'Crear Membresía' : 'Guardar Cambios' }}</span>
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"

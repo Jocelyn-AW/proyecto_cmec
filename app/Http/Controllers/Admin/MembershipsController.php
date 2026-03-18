@@ -16,12 +16,12 @@ class MembershipsController extends Controller
     // CRUD
     // ---------------------------------------------
 
-    public function index(Request $request)
+    public function index()
     {
-        $memberships = $this->addFilters($request);
+        $membership = Membership::with('prices')->first();
 
         return Inertia::render('Memberships/Index', [
-            'memberships' => $memberships,
+            'membership' => $membership,
         ]);
     }
 
@@ -63,17 +63,6 @@ class MembershipsController extends Controller
                 ->with('error', 'Hubo un error al crear la membresía. Por favor intenta de nuevo.')
                 ->withInput();
         }
-    }
-
-    public function edit($id)
-    {
-        $membership = Membership::withTrashed()
-            ->with('prices')
-            ->findOrFail($id);
-
-        return Inertia::render('Memberships/MembershipEdit', [
-            'membership' => $membership,
-        ]);
     }
 
     public function update(Request $request)
@@ -154,33 +143,6 @@ class MembershipsController extends Controller
     }
 
     // ---------------------------------------------
-    // PRIVATE: Filters / Queries
-    // ---------------------------------------------
-
-    private function addFilters(Request $request)
-    {
-        $perPage = $request->get('per_page', 10);
-        $search  = $request->get('search', null);
-        $status  = $request->input('status', '');
-
-        $query = Membership::orderBy('created_at', 'desc');
-
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        $query->with('prices');
-
-        return $query
-            ->withTrashFilter($status)
-            ->paginate($perPage)
-            ->withQueryString();
-    }
-
-    // ---------------------------------------------
     // PRIVATE: Validation
     // ---------------------------------------------
 
@@ -201,20 +163,20 @@ class MembershipsController extends Controller
     private function getValidationMessages(): array
     {
         return [
-            'name.required'                => 'El nombre es obligatorio.',
-            'name.max'                     => 'El nombre no debe exceder 191 caracteres.',
-            'description.required'         => 'La descripción es obligatoria.',
-            'description.max'              => 'La descripción no debe exceder 191 caracteres.',
-            'prices.required'              => 'Debes agregar al menos un período de precio.',
-            'prices.max'                   => 'No puedes agregar más de 12 períodos de precio.',
-            'prices.*.start_date.required' => 'La fecha de inicio es obligatoria.',
-            'prices.*.start_date.date'     => 'La fecha de inicio no es válida.',
-            'prices.*.end_date.required'   => 'La fecha de fin es obligatoria.',
-            'prices.*.end_date.date'       => 'La fecha de fin no es válida.',
+            'name.required'                    => 'El nombre es obligatorio.',
+            'name.max'                         => 'El nombre no debe exceder 191 caracteres.',
+            'description.required'             => 'La descripción es obligatoria.',
+            'description.max'                  => 'La descripción no debe exceder 191 caracteres.',
+            'prices.required'                  => 'Debes agregar al menos un período de precio.',
+            'prices.max'                       => 'No puedes agregar más de 12 períodos de precio.',
+            'prices.*.start_date.required'     => 'La fecha de inicio es obligatoria.',
+            'prices.*.start_date.date'         => 'La fecha de inicio no es válida.',
+            'prices.*.end_date.required'       => 'La fecha de fin es obligatoria.',
+            'prices.*.end_date.date'           => 'La fecha de fin no es válida.',
             'prices.*.end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
-            'prices.*.amount.required'     => 'El monto es obligatorio.',
-            'prices.*.amount.numeric'      => 'El monto debe ser un número.',
-            'prices.*.amount.min'          => 'El monto no puede ser negativo.',
+            'prices.*.amount.required'         => 'El monto es obligatorio.',
+            'prices.*.amount.numeric'          => 'El monto debe ser un número.',
+            'prices.*.amount.min'              => 'El monto no puede ser negativo.',
         ];
     }
 
