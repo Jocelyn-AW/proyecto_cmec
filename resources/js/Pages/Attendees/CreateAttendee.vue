@@ -9,6 +9,7 @@ import Drawer from '@/Components/Drawer.vue';
 import Alerta from '@/Components/Alerta.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import states from '@/composables/useStatesAndCities';
+import UseCFDI from '@/Components/UseCFDI.vue';
 
 defineOptions({
     layout: AuthenticatedLayout
@@ -56,6 +57,7 @@ const emit = defineEmits(['close', 'success', 'error'])
 const page = usePage();
 const selectedEvent = ref(null)
 const isFree = ref(false)
+const showInvoiceForm = ref(false)
 const selectedState = ref('')
 const selectedCity = ref('')
 const paymentMethods =  {
@@ -140,6 +142,15 @@ const createForm = reactive({
     specialty: '',
     birth_date: '',
     special_needs: '',
+
+    //campos fiscales
+    rfc: '',
+    tax_name: '',
+    postal_code: '',
+    tax_person_type: '',
+    tax_regime: '',
+    cfdi_use: '',
+    address: '',
 })
 
 const cleanForm = () => {
@@ -161,6 +172,14 @@ const cleanForm = () => {
     createForm.birth_date = '';
     createForm.special_needs = '';
 
+    createForm.rfc =  '';
+    createForm.tax_name =  '';
+    createForm.postal_code =  '';
+    createForm.tax_person_type =  '';
+    createForm.tax_regime =  '';
+    createForm.cfdi_use =  '';
+    createForm.address =  '';
+
     selectedEvent.value = '';
     selectedState.value = '';
     selectedCity.value = '';
@@ -169,6 +188,7 @@ const cleanForm = () => {
 
 const submitCreate = () => {
     createForm.event_id = selectedEvent?.value?.id;
+    createForm.has_invoice = showInvoiceForm?.value;
 
     switch (props.eventName.toLowerCase()) {
         case 'curso':
@@ -426,16 +446,34 @@ watch(selectedCity, (value) => {
                     />
                 </div>
                 <span v-if="errors?.reference" class="grow text-red-500 text-xs flex justify-end">{{ errors?.reference }}</span>
-            </div>
+                
 
-            <hr v-if="!isConference" class="my-2">
-            <div v-if="!isConference">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Folio de Acceso</label>
-                <input
-                    v-model="createForm.folio"
-                    type="text" disabled
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-100 cursor-not-allowed"
-                />
+                <!-- Switch mostrar facturacion -->
+                <div class="flex mt-3 py-2 gap-4">
+                    <button type="button" @click="showInvoiceForm = !showInvoiceForm"
+                        class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                        :class="showInvoiceForm ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-600'">
+                        <span
+                            class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                            :class="showInvoiceForm ? 'translate-x-5' : 'translate-x-0'" />
+                    </button>
+                    <label class=" text-sm font-medium text-gray-700 mb-1">Requiere Factura</label>
+                </div>
+
+                <hr class="my-2">
+                
+                <!-- Datos Fiscales -->
+                <UseCFDI v-if="showInvoiceForm" v-model="createForm" :errors="props.errors"/>
+
+                <!-- Folio Acceso -->
+                <div v-if="!isConference">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Folio de Acceso</label>
+                    <input
+                        v-model="createForm.folio"
+                        type="text" disabled
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-100 cursor-not-allowed"
+                    />
+                </div>  
             </div>
         </div>
 

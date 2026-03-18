@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceData extends Model
@@ -14,6 +15,8 @@ class InvoiceData extends Model
 
     protected $fillable = [
         'id',
+        'billable_id',
+        'billable_type',
         'rfc',
         'name',
         'email',
@@ -37,5 +40,10 @@ class InvoiceData extends Model
             'trashed' => $query->onlyTrashed(),
             default => $query,
         };
+    }
+
+    public function billable() : MorphTo
+    {
+        return $this->morphTo();
     }
 }

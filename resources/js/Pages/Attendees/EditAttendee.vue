@@ -8,6 +8,7 @@ import "flatpickr/dist/flatpickr.css";
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Drawer from '@/Components/Drawer.vue';
 import states from '@/composables/useStatesAndCities';
+import UseCFDI from '@/Components/UseCFDI.vue';
 
 defineOptions({
     layout: AuthenticatedLayout
@@ -59,6 +60,7 @@ const emit = defineEmits(['close', 'success', 'error'])
 const page = usePage();
 const isPayed = ref(false)
 const isFree = ref(false)
+const showInvoiceForm = ref(false)
 const selectedEvent = ref(null)
 const selectedState = ref('')
 const selectedCity = ref('')
@@ -154,6 +156,15 @@ const createForm = reactive({
     did_attend: false,
     birth_date: '',
     special_needs: '',
+
+    //campos fiscales
+    rfc: '',
+    tax_name: '',
+    postal_code: '',
+    person_type: '',
+    tax_regime: '',
+    cfdi_use: '',
+    address: '',
 })
 
 const cleanForm = () => {
@@ -177,9 +188,18 @@ const cleanForm = () => {
     createForm.birth_date = '';
     createForm.special_needs = '';
 
+    createForm.rfc =  '';
+    createForm.tax_name =  '';
+    createForm.postal_code =  '';
+    createForm.tax_person_type =  '';
+    createForm.tax_regime =  '';
+    createForm.cfdi_use =  '';
+    createForm.address =  '';
+
     selectedEvent.value = '';
     selectedCity.value = '';
     selectedState.value = '';
+    showInvoiceForm.value = false;
 }
 
 const setDataToForm = () => {
@@ -211,10 +231,23 @@ const setDataToForm = () => {
     
     isPayed.value = props.data.payments?.[0]?.status == 'paid';
     isFree.value = parseInt(props.data.payments?.[0]?.amount) == 0;
+
+    if (props.data.invoice_data) {
+        createForm.rfc =  props.data.invoice_data?.rfc || '';
+        createForm.tax_name =  props.data.invoice_data?.name || '';
+        createForm.postal_code =  props.data.invoice_data?.postal_code || '';
+        createForm.tax_person_type =  props.data.invoice_data?.person_type || '';
+        createForm.tax_regime =  props.data.invoice_data?.tax_regime || '';
+        createForm.cfdi_use =  props.data.invoice_data?.cfdi_use || '';
+        createForm.address =  props.data.invoice_data?.address || '';
+        
+        showInvoiceForm.value = true;
+    }
 }
 
 const submitCreate = () => {
     createForm.event_id = selectedEvent?.value?.id;
+    createForm.has_invoice = showInvoiceForm?.value;
 
     switch (props.eventName.toLowerCase()) {
         case 'curso':
@@ -486,19 +519,35 @@ watch(selectedState, (value, old) => {
                     />
                 </div>
                 <span v-if="errors?.reference" class="grow text-red-500 text-xs flex justify-end">{{ errors?.reference }}</span>
-            </div>
+                
 
-            <hr v-if="!isConference" class="my-2">
+                <!-- Switch mostrar facturacion -->
+                <div class="flex mt-3 py-2 gap-4">
+                    <button type="button" @click="showInvoiceForm = !showInvoiceForm"
+                        class="relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                        :class="showInvoiceForm ? 'bg-indigo-500' : 'bg-gray-300 dark:bg-gray-600'">
+                        <span
+                            class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                            :class="showInvoiceForm ? 'translate-x-5' : 'translate-x-0'" />
+                    </button>
+                    <label class=" text-sm font-medium text-gray-700 mb-1">Requiere Factura</label>
+                </div>
 
-            <div v-if="!isConference">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Folio de Acceso</label>
-                <input
-                    v-model="createForm.folio"
-                    type="text" disabled
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-100 cursor-not-allowed"
-                />
+                <hr class="my-2">
+                
+                <!-- Datos Fiscales -->
+                <UseCFDI v-if="showInvoiceForm" v-model="createForm" :errors="props.errors"/>
+
+                <!-- Folio Acceso -->
+                <div v-if="!isConference">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Folio de Acceso</label>
+                    <input
+                        v-model="createForm.folio"
+                        type="text" disabled
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-100 cursor-not-allowed"
+                    />
+                </div> 
             </div>
-            
         </div>
 
         <template #footer>

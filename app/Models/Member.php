@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -84,9 +85,14 @@ class Member extends Model implements HasMedia
         return $this->hasOne(User::class);
     }
 
-    public function invoiceData() : HasOne
+    // public function invoiceData() : HasOne
+    // {
+    //     return $this->hasOne(InvoiceData::class, 'id', 'invoice_data_id');
+    // }
+
+    public function invoiceData() : MorphOne
     {
-        return $this->hasOne(InvoiceData::class, 'id', 'invoice_data_id');
+        return $this->morphOne(InvoiceData::class, 'billable');
     }
 
     public function payments() : MorphMany

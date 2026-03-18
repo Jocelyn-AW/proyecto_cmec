@@ -76,7 +76,7 @@ const maxWidthClass = computed(() => {
                     leave-from-class="opacity-100 scale-100 translate-y-0"
                     leave-to-class="opacity-0 scale-95 translate-y-4">
                     <div v-if="show"
-                        :class="[maxWidthClass, 'relative w-full bg-white rounded-2xl shadow-2xl overflow-hidden']">
+                        :class="[maxWidthClass, 'relative max-h-[80vh] mt-[5%] w-full bg-white rounded-2xl shadow-2xl overflow-auto']">
                         <!-- Header -->
                         <div class="px-6 pt-6 pb-4 border-b border-slate-100">
                             <div class="flex items-center justify-between">

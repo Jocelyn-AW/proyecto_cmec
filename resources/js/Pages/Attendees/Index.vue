@@ -8,6 +8,7 @@ import Alerta from '@/Components/Alerta.vue';
 
 import UploadDiploma from './UploadDiploma.vue';
 import PaymentDetailsModal from './PaymentDetailsModal.vue';
+import InvoiceDetailsModal from './InvoiceDetailsModal.vue';
 import CreateAttendee from './CreateAttendee.vue';
 import EditAttendee from './EditAttendee.vue';
 
@@ -60,8 +61,10 @@ const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
 const showUploadDiploma = ref(false);
 const showPaymentDetails = ref(false);
+const showInvoiceDetails = ref(false);
 const selectedItem = ref(null);
 const paymentDetails = ref(null);
+const invoiceDetails = ref(null);
 
 
 const event_id = ref(route().params.event_id ?? '')
@@ -115,6 +118,7 @@ const tableColumns = computed(() => {
         ] : []),
 
         { label: 'Estatus de Pago', key: 'status' },
+        { label: 'Datos fiscales', key: 'invoice_data' },
         { label: 'Asistencia', key: 'did_attend' },
     ]
 
@@ -153,6 +157,11 @@ const openDiploma = (attendee) => {
 const openPaymentDetails = (attendee) => {
     paymentDetails.value = attendee.payments?.[0] ?? null;    
     showPaymentDetails.value = true;
+}
+
+const openInvoiceDetails = (attendee) => {
+    invoiceDetails.value = attendee.invoice_data ?? null;    
+    showInvoiceDetails.value = true;
 }
 
 const onChangeAttend = (attendee) => {    
@@ -331,6 +340,20 @@ const handleOnRestore = (attendeeId) => {
                     </span>
                 </template>
 
+                <!-- Datos Fiscales -->
+                <template #cell-invoice_data="{ item }">
+                    <span
+                        role="button" @click="openInvoiceDetails(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
+                        :class="
+                        (item.invoice_data) 
+                        ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                        : 'bg-sky-200 text-sky-700 hover:bg-sky-300'"
+                        >
+                        {{ item.invoice_data ? 'Ver Datos' : 'Sin datos' }}
+                    </span>
+                </template>
+
                 <!-- Cambiar asistencia -->
                 <template #cell-did_attend="{ item }">
                     <span role="button" @click="onChangeAttend(item)" 
@@ -400,6 +423,13 @@ const handleOnRestore = (attendeeId) => {
                 @close="showPaymentDetails = false"
                 :payment-details="paymentDetails"
             />
+
+            <InvoiceDetailsModal
+                :show="showInvoiceDetails"
+                :max-width="'xl'"
+                @close="showInvoiceDetails = false"
+                :billing-details="invoiceDetails"
+                />
         </div>
     </div>
     <Alerta

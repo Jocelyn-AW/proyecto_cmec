@@ -8,6 +8,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -58,14 +59,17 @@ class Attendee extends Model implements HasMedia
         static::deleted(function ($model) {
             if ($model->isForceDeleting()) {
                 $model->payments()->forceDelete();
+                $model->invoiceData()->forceDelete();
             } else {
                 $model->payments()->delete();
+                $model->invoiceData()->delete();
             }
 
         });
 
         static::restored(function ($model) {
             $model->payments()->withTrashed()->restore();
+            $model->invoiceData()->withTrashed()->restore();
         });
     }
 
@@ -91,6 +95,11 @@ class Attendee extends Model implements HasMedia
     public function payments() : MorphMany
     {
         return $this->morphMany(Payment::class, 'user');
+    }
+
+    public function invoiceData() : MorphOne
+    {
+        return $this->morphOne(InvoiceData::class, 'billable');
     }
 
     public function registermediaCollections(): void

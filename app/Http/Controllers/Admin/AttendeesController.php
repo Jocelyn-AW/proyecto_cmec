@@ -10,6 +10,7 @@ use App\Models\AcademicSession;
 use Inertia\Inertia;
 use App\Models\Course;
 use App\Models\Conference;
+use App\Models\InvoiceData;
 use App\Models\Webinar;
 use App\Models\Member;
 use App\Models\Payment;
@@ -24,7 +25,6 @@ class AttendeesController extends Controller
     {
         $attendees = $this->addFilters($request, $event_type);
         $events = $this->getEvents($event_type);
-
 
         return Inertia::render('Attendees/Index', [
             'attendees' => $attendees,
@@ -58,6 +58,9 @@ class AttendeesController extends Controller
                     ]);
                 },
                 'payments' => function ($query) {
+                    $query->withTrashed();
+                },
+                'invoiceData' => function ($query) {
                     $query->withTrashed();
                 }
             ]);
@@ -137,14 +140,16 @@ class AttendeesController extends Controller
             $data['person_id'] = $this->getMemberByCmecId($request);
 
             $attendee = Attendee::create($data);
+
             $this->registerPayment($attendee, $data);
+            $this->saveInvoiceData($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
                 ->with('success', 'Asistente creado exitosamente');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->with('error', 'Ocurrió un error al crear el asistente. Por favor, inténtalo de nuevo.')
@@ -163,7 +168,9 @@ class AttendeesController extends Controller
 
             $attendee = Attendee::findOrFail($id);
             $attendee->update($data);
+
             $this->registerPayment($attendee, $data);
+            $this->saveInvoiceData($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', $this->getActiveFilters($request, $data['event_type']))
@@ -171,7 +178,7 @@ class AttendeesController extends Controller
         } catch (ValidationException $e) {
             Log::error($e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error($e->getMessage());
             return redirect()
                 ->back()
@@ -256,18 +263,36 @@ class AttendeesController extends Controller
 
             'payment_method' => 'required|string|in:debit_card,credit_card,cash,transfer,stripe,free',
             'reference' => 'nullable|string',
-            'specialty' => 'nullable|string|max:200'
+            'specialty' => 'nullable|string|max:200',
+
+            //Datos de Facturacion
+            'has_invoice' => 'required|boolean',
+            'rfc' => 'required_if:has_invoice,true|nullable|string|uppercase|min:12|max:13',
+            'tax_name' => 'required_if:has_invoice,true|nullable|string|min:3|max:190',
+            'address' => 'required_if:has_invoice,true|nullable|string|min:3|max:190',
+            'postal_code' => 'required_if:has_invoice,true|nullable|string|digits:5',
+            'tax_regime' => 'required_if:has_invoice,true|nullable|string|digits:3',
+            'cfdi_use' => 'required_if:has_invoice,true|nullable|string|between:3,4',
+            'tax_person_type' => 'required_if:has_invoice,true|nullable|in:fisica,moral',
         ];
 
         if ($request->input('person_type') === Constants::PERSON_MEMBER) {
             $rules['cmec_member_id'] = 'required|string|max:50';
         }
 
-        if (
-            $request->input('status', 'pending') != Constants::STATUS_PENDING &&
-            $request->input('payment_method', 'cash') != Constants::METHOD_CASH &&
-            $request->input('payment_method', 'cash') != Constants::METHOD_FREE
-        ) {
+        $methodsWithReference = [
+            Constants::METHOD_DEBIT_CARD,
+            Constants::METHOD_CREDIT_CARD,
+            Constants::METHOD_TRANSFER,
+            Constants::METHOD_STRIPE,
+        ];
+        $statusWithReference = [
+            Constants::STATUS_CANCELLED,
+            Constants::STATUS_PAID,
+        ];
+
+        if (in_array($request->payment_method, $methodsWithReference) && 
+            in_array($request->status, $statusWithReference)) {
             $rules['reference'] = 'required|string|max:100';
         }
 
@@ -281,7 +306,7 @@ class AttendeesController extends Controller
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe ser una dirección válida.',
             'status.required' => 'El estado de pago es obligatorio.',
-            'status.in' => 'El estado de pago debe ser "paid", "pending" o "cancelled".',
+            'status.in' => 'El estado de pago debe ser "pagado", "pendiente" o "cancelado".',
             'price.numeric' => 'El precio debe ser un número.',
             'price.min' => 'El precio no puede ser negativo.',
             'folio.required' => 'El folio es obligatorio.',
@@ -294,6 +319,7 @@ class AttendeesController extends Controller
             'phone.min' => 'El teléfono debe tener minimo :min digitos',
             'phone.max' => 'El teléfono debe tener maximo :max digitos',
             '*.required' => 'Este campo es obligatorio',
+            '*.required_if' => 'Este campo es obligatorio',
         ];
     }
 
@@ -370,6 +396,36 @@ class AttendeesController extends Controller
 
             return true;
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return false;
+        }
+    }
+
+    private function saveInvoiceData(Attendee $attendee, array $data) {
+        try {
+            $isMember = $attendee->person_type == Constants::PERSON_MEMBER && !empty($attendee->person_id);
+
+            $attributes = [
+                'billable_type' => $isMember ? Constants::PERSON_MEMBER : 'attendee',
+                'billable_id' => $isMember ? $attendee->person_id : $attendee->id,
+            ];
+
+            $values = [
+                
+                'rfc' => $data['rfc'] ?? null,
+                'name' => $data['tax_name'] ?? null,
+                'email' => $attendee->email,
+                'postal_code' => $data['postal_code'] ?? null,
+                'person_type' => $data['tax_person_type'] ?? null,
+                'tax_regime' => $data['tax_regime'] ?? null,
+                'cfdi_use' => $data['cfdi_use'] ?? null,
+                'address' => $data['address'] ?? null,
+            ];
+
+            InvoiceData::updateOrCreate($attributes, $values);
+
+            return true;
+        } catch (Exception $e) {
             Log::error($e->getMessage());
             return false;
         }

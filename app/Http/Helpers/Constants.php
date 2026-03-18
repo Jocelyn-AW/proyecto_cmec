@@ -33,8 +33,8 @@ class Constants {
     const EVENT_CONFERENCE = 'conference'; //congreso
     const EVENT_COURSE = 'course';
     const EVENT_WEBINAR = 'webinar';
-    const EVENT_PRE_CONFERENCE = 'pre_conference'; //pre-congreso
-    const EVENT_TRANS_CONFERENCE = 'trans_conference'; //pre-congreso
+    const EVENT_PRECONFERENCE = 'pre_conference'; //pre-congreso
+    const EVENT_TRANSCONFERENCE = 'trans_conference'; //trans-congreso
     const EVENT_ACADEMIC_SESSION = 'academic_session'; //sesion academica
 
     //tipos de aistentes
