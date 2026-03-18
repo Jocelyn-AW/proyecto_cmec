@@ -157,7 +157,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-    <Head title="Cursos" />
+    <Head title="Crear Congresos" />
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
@@ -415,6 +415,7 @@ const handleCancel = () => {
                                 :is-dragging="platinum.isDragging.value" 
                                 :max-files="20"
                                 :columns="'7'"
+                                :object-fit="'contain'"
                                 @change="platinum.handleChange" 
                                 @drop="platinum.handleDrop" 
                                 @drag-enter="platinum.handleDragEnter"
@@ -435,6 +436,7 @@ const handleCancel = () => {
                                 :is-dragging="golden.isDragging.value" 
                                 :max-files="20"
                                 :columns="'7'"
+                                :object-fit="'contain'"
                                 @change="golden.handleChange" 
                                 @drop="golden.handleDrop" 
                                 @drag-enter="golden.handleDragEnter"
@@ -455,6 +457,7 @@ const handleCancel = () => {
                                 :is-dragging="silver.isDragging.value" 
                                 :max-files="20"
                                 :columns="'7'"
+                                :object-fit="'contain'"
                                 @change="silver.handleChange" 
                                 @drop="silver.handleDrop" 
                                 @drag-enter="silver.handleDragEnter"

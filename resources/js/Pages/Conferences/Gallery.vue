@@ -95,7 +95,7 @@ const onKeydown = (e) => {
 </script>
 
 <template>
-    <Head title="Galería del curso" />
+    <Head title="Galería del congreso" />
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
