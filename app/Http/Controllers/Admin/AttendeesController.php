@@ -37,14 +37,14 @@ class AttendeesController extends Controller
     private function addFilters(Request $request, $event_type)
     {
         try {
-            $search = $request->input('search', null);
-            $event_id = $request->input('event_id', null);
+            $search     = $request->input('search', null);
+            $event_id   = $request->input('event_id', null);
             $did_attend = $request->input('did_attend', null);
-            $perPage = $request->input('per_page', 10);
-            $status = $request->input('status', '');
+            $perPage    = $request->input('per_page', 10);
+            $status     = $request->input('status', '');
 
             $is_conference = $event_type == Constants::EVENT_CONFERENCE;
-            $title = $is_conference ? 'name' : 'topic';
+            $title         = $is_conference ? 'name' : 'topic';
 
             $attendees = Attendee::where('event_type', $event_type);
             $attendees->withTrashFilter($status);
@@ -62,7 +62,6 @@ class AttendeesController extends Controller
                 }
             ]);
 
-
             if (!empty($search)) {
                 $attendees->where(function ($query) use ($search, $event_type, $title) {
                     $query->where('name', 'like', "%{$search}%")
@@ -75,13 +74,65 @@ class AttendeesController extends Controller
                 });
             }
 
-            if (!empty($event_id)) {
-                $attendees->where('event_id', $event_id);
-            }
-
+            if (!empty($event_id))  $attendees->where('event_id', $event_id);
             if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
 
-            return $attendees->latest()->paginate($perPage)->withQueryString();
+            $paginated = $attendees->latest()->paginate($perPage)->withQueryString();
+
+            $memberIds = $paginated->getCollection()
+                ->where('person_type', 'member')
+                ->whereNotNull('person_id')
+                ->pluck('person_id');
+
+            if ($memberIds->isNotEmpty()) {
+                $members = Member::select('id', 'cmec_member_id')
+                    ->whereIn('id', $memberIds)
+                    ->get()
+                    ->keyBy('id');
+
+                $paginated->getCollection()->transform(function ($attendee) use ($members) {
+                    if ($attendee->person_type === 'member' && $attendee->person_id) {
+                        $member = $members->get($attendee->person_id);
+                        if ($member) {
+                            $attendee->person = $member;
+                        }
+                    }
+                    return $attendee;
+                });
+            }
+
+            // inyección de pagos de miembros POR EVENTO
+            $memberPersonIds = $memberIds;
+
+            if ($memberPersonIds->isNotEmpty()) {
+                $memberPayments = Payment::where('user_type', 'member')
+                    ->whereIn('user_id', $memberPersonIds)
+                    ->withTrashed()
+                    ->get()
+                    ->groupBy('user_id');
+
+                $paginated->getCollection()->transform(function ($attendee) use ($memberPayments) {
+                    if (
+                        $attendee->person_type === 'member' &&
+                        $attendee->person_id &&
+                        $attendee->payments->isEmpty()
+                    ) {
+                        $payments = $memberPayments->get($attendee->person_id, collect())
+                            ->filter(
+                                fn($p) =>
+                                $p->event_payed_type === $attendee->event_type &&
+                                    $p->event_payed_id   === $attendee->event_id
+                            )
+                            ->values();
+
+                        $attendee->setRelation('payments', $payments);
+                    }
+                    return $attendee;
+                });
+            }
+            //
+
+            return $paginated;
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }
@@ -135,6 +186,24 @@ class AttendeesController extends Controller
             $rules = $this->getValidationRules($request);
             $data = $request->validate($rules, $this->getValidationMessages());
             $data['person_id'] = $this->getMemberByCmecId($request);
+
+
+            $exists = Attendee::where('event_id', $request->event_id)
+                ->where('event_type', $request->event_type)
+                ->where('person_type', $request->person_type)
+                ->when($request->person_type === Constants::PERSON_MEMBER, function ($query) use ($data) {
+                    $query->where('person_id', $data['person_id']);
+                }, function ($query) use ($request) {
+                    $query->where('email', $request->email);
+                })
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if ($exists) {
+                throw ValidationException::withMessages([
+                    'event_id' => 'Este usuario ya está registrado en este evento.'
+                ]);
+            }
 
             $attendee = Attendee::create($data);
             $this->registerPayment($attendee, $data);
