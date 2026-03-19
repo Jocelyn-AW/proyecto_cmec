@@ -38,7 +38,11 @@ class MembersController extends Controller
 
     public function new()
     {
-        return Inertia::render('Members/MemberCreate');
+        $membership = Membership::with('prices')->first();
+
+        return Inertia::render('Members/MemberCreate', [
+            'membership' => $membership,
+        ]);
     }
 
     public function store(Request $request)
@@ -51,27 +55,33 @@ class MembersController extends Controller
 
             DB::beginTransaction();
 
-            // Crear usuario vinculado
-            $password = Str::random(12);
-            $user = User::create([
-                'name'     => $data['name'] . ' ' . $data['last_name'],
-                'email'    => $data['email'],
-                'password' => Hash::make($password),
-            ]);
+            $userId = null;
 
-            $this->mailService->sendCustomEmail(
-                to: $user->email,
-                subject: 'Bienvenido al sistema',
-                viewName: 'emails.welcome_user',
-                viewData: [
-                    'subject' => 'Bienvenido',
-                    'headerTitle' => 'Bienvenido al sistema',
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'password' => $password,
-                    'loginUrl' => url('/login'),
-                ]
-            );
+            if ($request->boolean('create_user', true)) {
+                // Crear usuario vinculado
+                $password = Str::random(12);
+                $user = User::create([
+                    'name'     => $data['name'] . ' ' . $data['last_name'],
+                    'email'    => $data['email'],
+                    'password' => Hash::make($password),
+                ]);
+
+                $this->mailService->sendCustomEmail(
+                    to: $user->email,
+                    subject: 'Bienvenido al sistema',
+                    viewName: 'emails.welcome_user',
+                    viewData: [
+                        'subject' => 'Bienvenido',
+                        'headerTitle' => 'Bienvenido al sistema',
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'password' => $password,
+                        'loginUrl' => url('/login'),
+                    ]
+                );
+
+                $userId = $user->id;
+            }
 
             $member = Member::create([
                 'cmec_member_id'   => $data['cmec_member_id']   ?? null,
@@ -84,7 +94,7 @@ class MembersController extends Controller
                 'hospital'         => $data['hospital']          ?? null,
                 'inscription_date' => $data['inscription_date'],
                 'expiration_date'  => $data['expiration_date'],
-                'user_id'          => $user->id,
+                'user_id'          => $userId,
             ]);
 
             if (!empty($data['amount'])) {
@@ -99,6 +109,7 @@ class MembersController extends Controller
                     'payment_method'   => $data['payment_method'],
                     'amount'           => $data['amount'],
                     'payment_date'     => $data['payment_date'],
+                    'reference'        => $data['reference'] ?? null,
                     'status'           => 'paid',
                 ]);
             }
@@ -132,9 +143,12 @@ class MembersController extends Controller
         $member = Member::withTrashed()
             ->with('payments')
             ->findOrFail($id);
+        $membership = Membership::with('prices')
+            ->first();
 
         return Inertia::render('Members/MemberEdit', [
-            'member' => $member,
+            'member'     => $member,
+            'membership' => $membership,
         ]);
     }
 
@@ -170,7 +184,7 @@ class MembersController extends Controller
                     'name'  => $data['name'] . ' ' . $data['last_name'],
                     'email' => $data['email'],
                 ]);
-            } else {
+            } elseif ($request->boolean('create_user', false)) {
                 // si no tiene usuario, lo creamos
                 $password = Str::random(12);
                 $user = User::create([
@@ -205,6 +219,7 @@ class MembersController extends Controller
                     'payment_method' => $data['payment_method'],
                     'amount'         => $data['amount'],
                     'payment_date'   => $data['payment_date'],
+                    'reference'      => $data['reference'],
                     'status'         => 'paid',
                 ];
 
@@ -353,6 +368,7 @@ class MembersController extends Controller
             'amount'               => 'nullable|numeric|min:0',
             'payment_method'       => 'required_with:amount|nullable|string',
             'payment_date'         => 'required_with:amount|nullable|date',
+            'reference'            => 'nullable|string|max:191',
             // Documentos
             'diploma_especialidad' => $pdfRule,
             'titulo_medico'        => $pdfRule,

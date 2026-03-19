@@ -14,15 +14,113 @@ defineOptions({ layout: AuthenticatedLayout })
 const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
 const props = defineProps({
+    membership: { type: Object, default: () => null },
     errors: { type: Object, default: () => ({}) },
     flash: { type: Object, default: () => ({}) },
 })
 
 const isSubmitting = ref(false)
+const createUser = ref(true)
+
+// ----------------------------------
+// estados / ciudades
+// ----------------------------------
+
 const selectedState = ref('')
 const selectedCity = ref('')
-
 const cities = computed(() => selectedState.value ? states[selectedState.value] : [])
+
+watch(selectedState, (val) => { selectedCity.value = ''; form.value.state = val })
+watch(selectedCity, (val) => { form.value.city = val })
+
+// ----------------------------------
+// fechas
+// ----------------------------------
+
+const todayStr = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const addOneYear = (dateStr) => {
+    if (!dateStr) return ''
+    const parts = dateStr.split('-')
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+    d.setFullYear(d.getFullYear() + 1)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const expirationDisplay = computed(() => {
+    if (!form.value.expiration_date) return '—'
+    const parts = form.value.expiration_date.split('-')
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+        .toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+})
+
+// ----------------------------------
+// precio de membresia
+// ----------------------------------
+
+const findMembershipPrice = (dateStr) => {
+    if (!dateStr || !props.membership?.prices?.length) return ''
+    const parts = dateStr.split('-')
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]))
+
+    const matched = props.membership.prices.find(p => {
+        const sp = p.start_date.split(/[T ]/)[0].split('-')
+        const ep = p.end_date.split(/[T ]/)[0].split('-')
+        const start = new Date(parseInt(sp[0]), parseInt(sp[1]) - 1, parseInt(sp[2]))
+        const end = new Date(parseInt(ep[0]), parseInt(ep[1]) - 1, parseInt(ep[2]))
+        return d >= start && d <= end
+    })
+
+    return matched ? matched.amount : ''
+}
+
+// ----------------------------------
+// form
+// ----------------------------------
+
+const form = ref({
+    cmec_member_id: '',
+    name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    city: '',
+    state: '',
+    hospital: '',
+    inscription_date: todayStr(),
+    expiration_date: addOneYear(todayStr()),
+    amount: findMembershipPrice(todayStr()),
+    payment_method: '',
+    payment_date: '',
+    reference: '',
+})
+
+watch(() => form.value.inscription_date, (val) => {
+    form.value.expiration_date = addOneYear(val)
+    const price = findMembershipPrice(val)
+    if (price !== '') form.value.amount = price
+})
+
+// ----------------------------------
+// referencia
+// ----------------------------------
+
+const showReference = computed(() =>
+    ['debit_card', 'credit_card', 'transfer', 'stripe'].includes(form.value.payment_method)
+)
+
+watch(() => form.value.payment_method, (val) => {
+    if (!['debit_card', 'credit_card', 'transfer', 'stripe'].includes(val)) {
+        form.value.reference = ''
+    }
+})
+
+// ----------------------------------
+// flash / errores
+// ----------------------------------
 
 const page = usePage()
 
@@ -45,31 +143,11 @@ watch(() => props.flash, (val) => {
 }, { deep: true })
 
 // ----------------------------------
-// Form
-// ----------------------------------
-
-const form = ref({
-    cmec_member_id: '',
-    name: '',
-    last_name: '',
-    phone: '',
-    email: '',
-    city: '',
-    state: '',
-    hospital: '',
-    inscription_date: '',
-    expiration_date: '',
-    amount: '',
-    payment_method: '',
-    payment_date: '',
-})
-
-// ----------------------------------
 // PDFs
 // ----------------------------------
 
-const MAX_TOTAL_PDF_MB = 70 // 7 PDFs x 10MB
-const MAX_TOTAL_BYTES = MAX_TOTAL_PDF_MB * 1024 * 1024
+const MAX_FILE_MB = 10
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024
 
 const docFields = [
     { key: 'diploma_especialidad', label: 'Diploma de especialidad en coloproctología' },
@@ -87,8 +165,8 @@ const dragging = ref({})
 const onPdfChange = (key, event) => {
     const file = event.target.files?.[0]
     if (!file) return
-    if (file.size > 10 * 1024 * 1024) {
-        warning('El PDF no puede pesar más de 10MB')
+    if (file.size > MAX_FILE_BYTES) {
+        warning(`El PDF no puede pesar más de ${MAX_FILE_MB}MB`)
         event.target.value = ''
         return
     }
@@ -96,7 +174,6 @@ const onPdfChange = (key, event) => {
 }
 
 const removePdf = (key) => { delete pdfFiles.value[key] }
-
 const onDragOver = (key, e) => { e.preventDefault(); dragging.value[key] = true }
 const onDragLeave = (key, e) => { e.preventDefault(); dragging.value[key] = false }
 const onDrop = (key, e) => {
@@ -107,15 +184,13 @@ const onDrop = (key, e) => {
 }
 
 // ----------------------------------
-// Flatpickr
+// flatpickr
 // ----------------------------------
 
-const flatpickrConfig = {
-    locale: Spanish, dateFormat: 'Y-m-d', altInput: true, altFormat: 'F j, Y',
-}
+const flatpickrConfig = { locale: Spanish, dateFormat: 'Y-m-d', altInput: true, altFormat: 'F j, Y' }
 
 // ----------------------------------
-// Métodos de pago
+// metodos de pago
 // ----------------------------------
 
 const paymentMethods = [
@@ -127,7 +202,7 @@ const paymentMethods = [
 ]
 
 // ----------------------------------
-// Submit
+// submit
 // ----------------------------------
 
 const canSubmit = computed(() =>
@@ -143,28 +218,22 @@ const canSubmit = computed(() =>
 const submit = () => {
     if (!canSubmit.value || isSubmitting.value) return
 
-    // Validar tamaño total de PDFs antes de enviar
-    const totalPdfSize = Object.values(pdfFiles.value)
-        .reduce((sum, file) => sum + file.size, 0)
-
-    if (totalPdfSize > MAX_TOTAL_BYTES) {
-        errorA(`El tamaño total de los documentos excede ${MAX_TOTAL_PDF_MB}MB. Por favor reduce el tamaño de los archivos.`)
+    const totalPdfSize = Object.values(pdfFiles.value).reduce((s, f) => s + f.size, 0)
+    if (totalPdfSize > 10 * 1024 * 1024) {
+        errorA('El tamaño total de los documentos supera 10MB. Reduce el tamaño de los archivos.')
         return
     }
 
     isSubmitting.value = true
 
     const formData = new FormData()
+    formData.append('create_user', createUser.value ? '1' : '0')
 
     Object.entries(form.value).forEach(([key, val]) => {
-        if (val !== null && val !== undefined && val !== '') {
-            formData.append(key, val)
-        }
+        if (val !== null && val !== undefined && val !== '') formData.append(key, val)
     })
 
-    Object.entries(pdfFiles.value).forEach(([key, file]) => {
-        formData.append(key, file)
-    })
+    Object.entries(pdfFiles.value).forEach(([key, file]) => formData.append(key, file))
 
     router.post(route('members.store'), formData, {
         forceFormData: true,
@@ -177,18 +246,8 @@ const submit = () => {
 }
 
 const cancel = () => router.get(route('members.index'))
-
 const handleConfirm = () => { alertState.value.onConfirm?.(); alertState.value.show = false }
 const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.show = false }
-
-watch(selectedState, (val) => {
-    selectedCity.value = ''
-    form.value.state = val
-})
-
-watch(selectedCity, (val) => {
-    form.value.city = val
-})
 </script>
 
 <template>
@@ -283,7 +342,7 @@ watch(selectedCity, (val) => {
                                     </p>
                                 </div>
 
-                                <!-- Teléfono -->
+                                <!-- Telefono -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Teléfono <span class="text-red-500">*</span>
@@ -382,10 +441,12 @@ watch(selectedCity, (val) => {
                                 <div>
                                     <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Vigencia de
                                         membresía</h2>
-                                    <p class="text-xs text-gray-500">Fechas de inscripción y vencimiento</p>
+                                    <p class="text-xs text-gray-500">La membresía tiene una vigencia de 1 año</p>
                                 </div>
                             </div>
                             <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+                                <!-- Fecha de inscripcion -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Fecha de inscripción <span class="text-red-500">*</span>
@@ -396,16 +457,21 @@ watch(selectedCity, (val) => {
                                     <p v-if="errors.inscription_date" class="mt-1 text-xs text-red-500">{{
                                         errors.inscription_date }}</p>
                                 </div>
+
+                                <!-- Fecha de vencimiento: solo lectura -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                        Fecha de vencimiento <span class="text-red-500">*</span>
+                                        Fecha de vencimiento
+                                        <span class="ml-1 text-xs font-normal text-gray-400">(automático)</span>
                                     </label>
-                                    <flat-pickr v-model="form.expiration_date" :config="flatpickrConfig"
-                                        placeholder="Seleccionar fecha"
-                                        class="h-11 w-full appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
-                                    <p v-if="errors.expiration_date" class="mt-1 text-xs text-red-500">{{
-                                        errors.expiration_date }}</p>
+                                    <div
+                                        class="h-11 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 flex items-center text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed">
+                                        {{ expirationDisplay }}
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400">Se calcula 1 año desde la fecha de inscripción
+                                    </p>
                                 </div>
+
                             </div>
                         </div>
 
@@ -425,10 +491,15 @@ watch(selectedCity, (val) => {
                                 <div>
                                     <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Información de
                                         pago</h2>
-                                    <p class="text-xs text-gray-500">Cantidad, método y fecha de pago</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ props.membership
+                                            ? 'El monto se llena automáticamente según el período vigente'
+                                            : 'Cantidad, método y fecha de pago' }}
+                                    </p>
                                 </div>
                             </div>
                             <div class="p-6 grid grid-cols-1 sm:grid-cols-3 gap-5">
+
                                 <!-- Cantidad -->
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -444,7 +515,7 @@ watch(selectedCity, (val) => {
                                     <p v-if="errors.amount" class="mt-1 text-xs text-red-500">{{ errors.amount }}</p>
                                 </div>
 
-                                <!-- Método -->
+                                <!-- Metodo -->
                                 <div>
                                     <label
                                         class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Método
@@ -480,10 +551,62 @@ watch(selectedCity, (val) => {
                                     <p v-if="errors.payment_date" class="mt-1 text-xs text-red-500">{{
                                         errors.payment_date }}</p>
                                 </div>
+
+                                <!-- Referencia (condicional) -->
+                                <div v-if="showReference" class="sm:col-span-3">
+                                    <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                        Referencia / Número de transacción
+                                    </label>
+                                    <input type="text" v-model="form.reference"
+                                        placeholder="Ej. REF-12345678 o número de operación"
+                                        class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
+                                    <p v-if="errors.reference" class="mt-1 text-xs text-red-500">{{ errors.reference }}
+                                    </p>
+                                </div>
+
                             </div>
                         </div>
 
-                        <!-- Botones móvil -->
+                        <!-- Acceso al sistema -->
+                        <div
+                            class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-white/[0.03] overflow-hidden">
+                            <div
+                                class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
+                                <div
+                                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Acceso al sistema
+                                    </h2>
+                                    <p class="text-xs text-gray-500">Credenciales de acceso para el miembro</p>
+                                </div>
+                            </div>
+                            <div class="p-6 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Crear usuario</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">
+                                        {{ createUser
+                                            ? 'Se enviará un correo con las credenciales de acceso'
+                                            : 'El miembro no tendrá acceso al sistema' }}
+                                    </p>
+                                </div>
+                                <button type="button" @click="createUser = !createUser"
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                    :class="createUser ? 'bg-brand-500' : 'bg-gray-300 dark:bg-gray-600'">
+                                    <span
+                                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition duration-200 ease-in-out"
+                                        :class="createUser ? 'translate-x-5' : 'translate-x-0'" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Botones movil -->
                         <div class="flex flex-col gap-2 lg:hidden">
                             <button @click="submit" :disabled="isSubmitting || !canSubmit"
                                 class="inline-flex h-10 w-full justify-center items-center rounded-lg bg-brand-500 text-sm font-medium text-white hover:bg-brand-600 transition-colors disabled:opacity-50">
@@ -514,33 +637,42 @@ watch(selectedCity, (val) => {
                                 </div>
                                 <div>
                                     <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Documentos</h2>
-                                    <p class="text-xs text-gray-500">PDFs requeridos · Máx. 10MB c/u</p>
+                                    <p class="text-xs text-gray-500">PDFs · Máx. {{ MAX_FILE_MB }}MB c/u</p>
                                 </div>
                             </div>
-                            <div class="p-4 space-y-3">
+
+                            <div class="p-4 space-y-4">
                                 <div v-for="doc in docFields" :key="doc.key">
-                                    <p class="mb-1 text-xs font-medium text-gray-600 dark:text-gray-400 truncate"
+
+                                    <p class="mb-1.5 text-xs font-medium text-gray-600 dark:text-gray-400"
                                         :title="doc.label">
                                         {{ doc.label }}
                                     </p>
 
                                     <!-- Archivo seleccionado -->
                                     <div v-if="pdfFiles[doc.key]"
-                                        class="flex items-center gap-2 p-2.5 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 shrink-0"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path
-                                                d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                        class="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor"
+                                            class="w-8 h-8 text-red-500 shrink-0">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                         </svg>
-                                        <span class="flex-1 text-xs text-red-700 dark:text-red-400 truncate">{{
-                                            pdfFiles[doc.key].name }}</span>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-medium text-red-700 dark:text-red-400 truncate">
+                                                {{ pdfFiles[doc.key].name }}
+                                            </p>
+                                            <p class="text-xs text-red-400 mt-0.5">
+                                                {{ (pdfFiles[doc.key].size / 1024 / 1024).toFixed(2) }} MB
+                                            </p>
+                                        </div>
                                         <button @click="removePdf(doc.key)"
-                                            class="text-red-400 hover:text-red-600 transition-colors shrink-0">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M18 6 6 18M6 6l12 12" />
+                                            class="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-500/20 text-red-400 hover:text-red-600 transition-colors shrink-0"
+                                            title="Quitar PDF">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                         </button>
                                     </div>
@@ -549,25 +681,29 @@ watch(selectedCity, (val) => {
                                     <div v-else @dragover="onDragOver(doc.key, $event)"
                                         @dragleave="onDragLeave(doc.key, $event)" @drop="onDrop(doc.key, $event)"
                                         @click="$refs[doc.key][0].click()" :class="[
-                                            'flex items-center justify-center gap-2 h-10 rounded-lg border-2 border-dashed cursor-pointer transition-all text-xs',
+                                            'w-full h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all',
                                             dragging[doc.key]
-                                                ? 'border-red-400 bg-red-50 dark:bg-red-500/10 text-red-500'
-                                                : 'border-gray-200 dark:border-gray-700 text-gray-400 hover:border-gray-300 hover:text-gray-500'
+                                                ? 'border-red-400 bg-red-50 dark:bg-red-500/10'
+                                                : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900'
                                         ]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 shrink-0"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                            <polyline points="17 8 12 3 7 8" />
-                                            <line x1="12" y1="3" x2="12" y2="15" />
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke-width="1.5" stroke="currentColor"
+                                            :class="['w-5 h-5 transition-colors', dragging[doc.key] ? 'text-red-400' : 'text-gray-300']">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                         </svg>
-                                        {{ dragging[doc.key] ? 'Suelta aquí' : 'Subir PDF' }}
+                                        <p class="text-xs font-medium transition-colors"
+                                            :class="dragging[doc.key] ? 'text-red-500' : 'text-red-400'">
+                                            {{ dragging[doc.key] ? 'Suelta el PDF aquí' : 'Haz clic o arrastra un PDF'
+                                            }}
+                                        </p>
+                                        <p class="text-xs text-gray-400">Solo PDF · Máx. {{ MAX_FILE_MB }}MB</p>
                                     </div>
 
                                     <input :ref="doc.key" type="file" accept="application/pdf"
                                         @change="onPdfChange(doc.key, $event)" class="hidden" />
 
-                                    <p v-if="errors[doc.key]" class="mt-0.5 text-xs text-red-500">{{ errors[doc.key] }}
+                                    <p v-if="errors[doc.key]" class="mt-1 text-xs text-red-500">{{ errors[doc.key] }}
                                     </p>
                                 </div>
                             </div>
