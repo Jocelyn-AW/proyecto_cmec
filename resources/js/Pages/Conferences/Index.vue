@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { onMounted, watch, ref } from 'vue';
+import { watch, ref, computed } from 'vue';
 import { useAlert } from '@/composables/useAlert';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Alerta from '@/Components/Alerta.vue';
@@ -14,6 +14,14 @@ const props = defineProps({
     conferences: {
         type: Object,
         default: () => ({})
+    },
+    eventName: {
+        type: String,
+        default: 'Congreso' //Congreso, Pre-congreso, Trans-congreso
+    },
+    prefix: {
+        type: String,
+        default: 'main' // main, pre, trans
     },
     flash: {
         type: Object,
@@ -40,13 +48,13 @@ watch(() => props.flash, (value) => {
     if (value.error) errorA(value.error)
 }, {immediate: true, deep: true})
 
-
+//Table handlers
 const handleOnCreate =  () => {
-    router.get(route('conferences.new'));
+    router.get(route('conferences.new', props.prefix));
 }
 
 const handleOnEdit = (conference) => {
-    router.get(route('conferences.edit', conference.id), {}, {
+    router.get(route('conferences.edit', [props.prefix, conference.id]), {}, {
         preserveState: false
     });
 }
@@ -75,6 +83,7 @@ const handleOnRestore = (conferenceId) => {
     })
 }
 
+//String formatters
 const truncate = (text, max = 50) => {
     if (!text) return '';
     return text.length > max ? text.substring(0, max) + '...' : text;
@@ -94,6 +103,15 @@ const formattedDate = (item) => {
     }
 }
 
+const pluralName = computed(() => {
+    return props.eventName + 's' ?? ''
+})
+
+const lower = (value) => {
+    return value?.toLowerCase();
+}
+
+//Table actions
 const openPdf = (conference) => {
     if (conference.program_url) {
         window.open(conference.program_url, '_blank');
@@ -107,7 +125,7 @@ const openPdf = (conference) => {
 
 const openGallery = (conference) => {
     router.get(route('albums.index', {
-        event_type: conference.sessions?.[0]?.sessionable_type ?? 'conference',
+        event_type: conference.subtype ?? 'conference',
         event_id: conference.id,
     }))
 }
@@ -130,6 +148,7 @@ const onChangeStatus = (conference) => {
     })
 }
 
+//Table filters
 const status = ref(route().params.status ?? '')
 
 const filters = {
@@ -145,14 +164,14 @@ const clearFilters = () => {
 }
 
 </script>
-<template>
-    <Head title="Congresos" />
+<template :key="props.prefix">
+    <Head :title="pluralName" />
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Congresos</h3>
-                <p class="text-sm text-gray-500">Administra los congresos de tu aplicación desde esta sección</p>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">{{ pluralName }}</h3>
+                <p class="text-sm text-gray-500">Administra los {{ lower(pluralName) }} de tu aplicación desde esta sección</p>
             </div>
             <DataTable
                 :columns="[

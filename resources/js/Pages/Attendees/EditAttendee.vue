@@ -115,7 +115,7 @@ const shouldHaveReference = computed(() => {
 })
 
 const isConference = computed(() => {
-    const conferenceEvents = ['Congreso', 'Precongreso', 'Transcongreso'];
+    const conferenceEvents = ['Congreso', 'Pre-congreso', 'Trans-congreso'];
     return conferenceEvents.includes(props.eventName);
 })
 
@@ -266,6 +266,12 @@ const submitCreate = () => {
             break;
         case 'sesion academica':
             createForm.event_type = 'academic_session';
+            break;
+        case 'pre-congreso':
+            createForm.event_type = 'pre_conference';
+            break;
+        case 'trans-congreso':
+            createForm.event_type = 'trans_conference';
             break;
         default:
             createForm.event_type = 'course'; // Valor por defecto

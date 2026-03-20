@@ -47,6 +47,7 @@ class AttendeesController extends Controller
             $title         = $is_conference ? 'name' : 'topic';
 
             $attendees = Attendee::where('event_type', $event_type);
+
             $attendees->withTrashFilter($status);
 
             $attendees->with([
@@ -150,7 +151,18 @@ class AttendeesController extends Controller
                 break;
             case Constants::EVENT_CONFERENCE:
                 $eventName = 'Congreso';
-                $events = Conference::select('id', 'name');
+                $events = Conference::select('id', 'name')
+                            ->where('subtype', Constants::EVENT_CONFERENCE);
+                break;
+            case Constants::EVENT_PRECONFERENCE:
+                $eventName = 'Pre-congreso';
+                $events = Conference::select('id', 'name')
+                            ->where('subtype', Constants::EVENT_PRECONFERENCE);
+                break;
+            case Constants::EVENT_TRANSCONFERENCE:
+                $eventName = 'Trans-congreso';
+                $events = Conference::select('id', 'name')
+                            ->where('subtype', Constants::EVENT_TRANSCONFERENCE);
                 break;
             case Constants::EVENT_WEBINAR:
                 $eventName = 'Webinar';
@@ -166,11 +178,12 @@ class AttendeesController extends Controller
         }
 
         $activeEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'deleted_at');
-        if ($event_type == Constants::EVENT_CONFERENCE) {
+
+        if ($this->isConferenceRelated($event_type)) {
             $activeEvents->addSelect('surgeon_price', 'nurse_price');
         }
-        $activeEvents->orderBy('created_at', 'desc');
 
+        $activeEvents->orderBy('created_at', 'desc');
         $allEvents = (clone $activeEvents)->withTrashed();
 
         return [
@@ -326,7 +339,7 @@ class AttendeesController extends Controller
             'special_needs' => 'nullable|string|max:250',
 
             'event_id' => 'required|integer',
-            'event_type' => 'required|string|in:course,conference,webinar,academic_session',
+            'event_type' => 'required|string|in:course,conference,webinar,academic_session,pre_conference,trans_conference',
             'person_id' => 'nullable|integer',
             'person_type' => 'required|string|in:member,resident,guest,surgeon,nurse',
 
@@ -512,5 +525,16 @@ class AttendeesController extends Controller
             'did_attend' => $request->get('_filters_did_attend'),
             // 'search'  => $request->get('_filters_search'),   // ejemplo
         ], fn($v) => $v !== null && $v !== '');
+    }
+
+    private function isConferenceRelated (string $event_type)
+    {
+        $events = [
+            Constants::EVENT_CONFERENCE,
+            Constants::EVENT_PRECONFERENCE,
+            Constants::EVENT_TRANSCONFERENCE,
+        ];
+
+        return in_array($event_type, $events);
     }
 }

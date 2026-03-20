@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Helpers\Constants;
 use App\Models\BankDetail;
 use App\Models\Conference;
 use Exception;
@@ -15,49 +16,63 @@ use Inertia\Inertia;
 
 class ConferencesController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, string $subtype)
     {
-        $conferences = $this->addFilters($request);
+        $conferences = $this->addFilters($request, $subtype);
 
         return Inertia::render('Conferences/Index', [
-            'conferences' => $conferences
+            'conferences' => $conferences,
+            'eventName' => $this->getEventName($subtype),
+            'prefix' => $subtype
         ]);
     }
 
-    public function new()
+    public function new(string $prefix)
     {
-        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
-                        ->get();
+        $conferences = $prefix != 'main' ? Conference::all() : [];
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')->get();
+    
         return Inertia::render('Conferences/CreateConference', [
-            'bank_details' => $bankDetails
+            'bank_details' => $bankDetails,
+            'events' => $conferences,
+            'eventName' => $this->getEventName($prefix),
+            'prefix' => $prefix
         ]);
     }
 
-    public function edit(int $id)
+    public function edit(string $prefix, int $id)
     {
+        $conferences = $prefix != 'main' ? Conference::all() : [];
         $conference = Conference::withTrashed()->findOrFail($id);
-        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
-                        ->get();
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')->get();
 
         return Inertia::render('Conferences/EditConference', [
             'conference' => $conference->load('sessions'),
-            'bank_details' => $bankDetails
+            'bank_details' => $bankDetails,
+            'events' => $conferences,
+            'eventName' => $this->getEventName($prefix),
+            'prefix' => $prefix
         ]);
     }
 
-    private function addFilters(Request $request) : LengthAwarePaginator
+    private function addFilters(Request $request, string $prefix) : LengthAwarePaginator
     {
+        $subtype = $this->getDbSubtype($prefix);
+
         $search = $request->input('search', null);
         $perPage = $request->input('per_page', 10);
         $status = $request->input('status', '');
 
         $conferences = Conference::orderBy('created_at', 'desc');
+        $conferences->where('subtype', $subtype);
 
         if (!empty($search)) {
-            $conferences->where('name', 'like', "%{$search}%")
-                ->orWhere('main_topic', 'like', "%{$search}%")
-                ->orWhere('organized_by', 'like', "%{$search}%")
-                ->orWhere('address', 'like', "%{$search}%");
+            $conferences->where(function ($query) use ($search){
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('main_topic', 'like', "%{$search}%")
+                    ->orWhere('organized_by', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%");
+            });   
         }
 
         $conferences->with('sessions');
@@ -67,6 +82,28 @@ class ConferencesController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
+    }
+
+    private function getEventName(string $prefix)
+    {
+        $eventNames =  [
+            'main' => 'Congreso',
+            'pre' => 'Pre-congreso',
+            'trans' => 'Trans-congreso'
+        ];
+
+        return $eventNames[$prefix];
+    }
+    
+    private function getDbSubtype(string $prefix)
+    {
+        $dbSubtypes = [
+            'main' => Constants::EVENT_CONFERENCE,
+            'pre' => Constants::EVENT_PRECONFERENCE,
+            'trans' => Constants::EVENT_TRANSCONFERENCE
+        ];
+
+        return $dbSubtypes[$prefix];
     }
 
     public function store(Request $request)
@@ -83,7 +120,7 @@ class ConferencesController extends Controller
             $this->updateConferenceMedia($conference, $request);
             
             return redirect()
-                    ->route('conferences.index')
+                    ->route('conferences.index', ['subtype' => $data['prefix']])
                     ->with('success', 'Congreso creado exitosamente');
         } catch (ValidationException $e) {
             Log::error($e->getMessage());
@@ -116,7 +153,7 @@ class ConferencesController extends Controller
             $this->updateConferenceMedia($conference, $request);
 
             return redirect()
-                ->route('conferences.index')
+                ->route('conferences.index', ['subtype' => $data['prefix']])
                 ->with('success', 'Congreso actualizado exitosamente');
         } catch (ValidationException $e) {
             Log::error($e->getMessage());
@@ -137,11 +174,11 @@ class ConferencesController extends Controller
             $conference->delete();
 
             return redirect()
-                ->route('conferences.index')
+                ->back()
                 ->with('success', 'Congreso eliminado exitosamente');
         } catch (Exception $e) {
             return redirect()
-                ->route('conferences.index')
+                ->back()
                 ->with('success', 'Ocurrió un error al eliminar el congreso');
         }
     }
@@ -153,11 +190,11 @@ class ConferencesController extends Controller
             $conference->restore();
 
             return redirect()
-                ->route('conferences.index')
+                ->back()
                 ->with('success', 'Congreso restaurado exitosamente');
         } catch (Exception $e) {
             return redirect()
-                ->route('conferences.index')
+                ->back()
                 ->with('success', 'Ocurrió un error al restaurara el congreso');
         }
     }
@@ -209,6 +246,9 @@ class ConferencesController extends Controller
             'is_active' => 'required|boolean',
             'additional_comments' => 'nullable|string',
             'bank_detail_id' => 'required|numeric|exists:bank_details,id',
+            'prefix' => 'required|in:main,pre,trans',
+            'subtype' => 'required|in:conference,pre_conference,trans_conference',
+            'parent_id' => 'required_if:subtype,pre_conference,trans_conference|nullable|exists:conferences,id',
             //Horarios
             'sessions'         => 'required|array|min:1',
             'sessions.*.date'  => 'required|date',

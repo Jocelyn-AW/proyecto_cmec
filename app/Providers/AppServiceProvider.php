@@ -53,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
             'candidate' => Candidate::class,
             'clinic' => Clinic::class,
             'conference' => Conference::class,
+            'pre_conference' => Conference::class,
+            'trans_conference' => Conference::class,
             'course' => Course::class,
             'directory_data' => DirectoryData::class,
             'invoice_data' => InvoiceData::class,

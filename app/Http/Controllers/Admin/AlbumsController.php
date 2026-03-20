@@ -20,6 +20,7 @@ class AlbumsController extends Controller
         Constants::EVENT_ACADEMIC_SESSION => 'Sesión académica',
         Constants::EVENT_CONFERENCE       => 'Congreso',
         Constants::EVENT_PRECONFERENCE    => 'Pre-congreso',
+        Constants::EVENT_TRANSCONFERENCE  => 'Trans-congreso',
     ];
 
     /**
@@ -30,7 +31,8 @@ class AlbumsController extends Controller
         Constants::EVENT_COURSE           => 'courses.index',
         Constants::EVENT_ACADEMIC_SESSION => 'academicsessions.index',
         Constants::EVENT_CONFERENCE       => 'conferences.index',
-        Constants::EVENT_PRECONFERENCE    => 'conferences.index',
+        Constants::EVENT_PRECONFERENCE    => 'conferences.pre.index',
+        Constants::EVENT_TRANSCONFERENCE  => 'conferences.trans.index', 
     ];
 
 

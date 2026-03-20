@@ -100,7 +100,7 @@ const pluralName = computed(() => {
 })
 
 const isConference = computed(() => {
-    const conferenceEvents = ['Congreso', 'Precongreso', 'Transcongreso'];
+    const conferenceEvents = ['Congreso', 'Pre-congreso', 'Trans-congreso'];
     return conferenceEvents.includes(props.eventName);
 })
 
@@ -144,8 +144,6 @@ const clearFilters = () => {
 
 //Table Events
 const openDiploma = (attendee) => {
-    console.log(attendee);
-    
     if (attendee.diploma_url) {
         window.open(attendee.diploma_url, '_blank');
     } else {

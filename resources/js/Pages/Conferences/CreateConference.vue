@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { reactive, watch } from 'vue';
+import { reactive, ref, watch } from 'vue';
 import flatPickr from "vue-flatpickr-component";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
@@ -15,6 +15,14 @@ defineOptions({
 });
 
 defineProps({
+    eventName: {
+        type: String,
+        default: 'Congreso'
+    },
+    prefix: {
+        type: String,
+        default: 'main'
+    },
     errors: {
         type: Object,
         default: () => ({}),
@@ -30,14 +38,21 @@ defineProps({
     bank_details: {
         type: Object,
         default: () => ({}),
+    },
+    events: {
+        type: Object,
+        default: () => ({}),
     }
 })
+
+const page = usePage();
+const selectedEvent = ref(null)
 
 const formData = reactive({
     name: "",
     main_topic: "",
     description: "",
-    format: "",
+    format: "in_person",
     held_by: "",
     address: "",
     google_coords: "",
@@ -55,9 +70,12 @@ const formData = reactive({
     ],
     
     additional_comments: "",
+    prefix: page.props.prefix,
+    subtype: "conference",
+    parent_id: ""
 });
 
-const page = usePage();
+//Alertas
 const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
 watch(() => page.props.flash, (value) => {
@@ -135,7 +153,7 @@ const flatpickrTimeConfig = {
 
 const handleSubmit = () => {
     if (!cover.file.value) {
-        warning("Por favor selecciona una imagen de portada para el congreso");
+        warning("Por favor selecciona una imagen de portada");
         return;
     }
     formData.cover_image = cover.file.value;
@@ -144,29 +162,45 @@ const handleSubmit = () => {
         formData.program_pdf = pdf.file.value;
     }
 
+    if (page.props.prefix != "main")
+    {
+        formData.subtype = page.props.prefix + '_conference'
+        formData.parent_id = selectedEvent?.value?.id ?? ''
+    }
+
     formData.platinum_sponsors = platinum.files.value;
     formData.golden_sponsors = golden.files.value;
     formData.silver_sponsors = silver.files.value;
-
-    router.post("/conferences/new", formData);
+    
+    router.post(route('conferences.store'), formData);
 };
 
 const handleCancel = () => {
-    router.get('/conferences');
+    router.get(route('conferences.index', page.props.prefix));
 };
+
+const lower = (value) => {
+    return value?.toLowerCase();
+}
+
+watch(() => selectedEvent.value, (event) => {
+    formData.held_by = event.held_by
+    formData.address = event.address
+    formData.google_coords = event.google_coords
+})
 </script>
 
-<template>
-    <Head title="Crear Congresos" />
+<template :key="page.props.prefix">
+    <Head :title="'Nuevo  ' + eventName" />
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90" >
-                    Nuevo Congreso
+                    Nuevo {{ eventName }}
                 </h3>
                 <p class="text-sm text-gray-500">
-                    Crea un nuevo congreso desde esta sección
+                    Crea un nuevo {{ lower(eventName) }} desde esta sección
                 </p>
             </div>
             
@@ -176,9 +210,20 @@ const handleCancel = () => {
                         <h4 class="text-base font-semibold text-[var(--primary-navy)] dark:text-white/90">Datos Generales</h4>
                     </div>
                     <div class="p-6 space-y-6">
+                        <div v-if="page.props.prefix != 'main'">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                                Congreso
+                            </label>
+                            <select name="parent_id" id="parent_id" v-model="selectedEvent" 
+                                class="w-full py-2.5 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+                                <option :value="null">Seleccionar congreso</option>
+                                <option v-for="event in events" :value="event">{{ event.name }}</option>
+                            </select>
+                            <span v-if="errors.parent_id" class="text-red-500 text-xs flex justify-end">{{ errors.parent_id }}</span>
+                        </div>
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Nombre del Congreso
+                                Nombre del {{ eventName }}
                             </label>
                             <input
                                 type="text"
@@ -323,7 +368,7 @@ const handleCancel = () => {
                 <div class="p-6 space-y-6">
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Organigrama del congreso
+                            Organigrama del {{ eventName }}
                             <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
                         </label>
                         <Dropzone
@@ -614,7 +659,7 @@ const handleCancel = () => {
                         <button 
                             @click="handleSubmit"
                             class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 ">
-                            Guardar Congreso
+                            Guardar {{ eventName }}
                         </button>
                     </div>
                 </div>

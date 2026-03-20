@@ -219,8 +219,26 @@ const menuGroups = computed(() => [
                     icon: PresentationIcon,
                     name: "Congresos",
                     subItems: [
-                        { name: "Listado", path: "/conferences", pro: false },
+                        { name: "Listado", path: "/conferences/main", pro: false },
                         { name: "Asistentes Registrados", path: "/attendees/conference", pro: false },
+                        
+                    ],
+                },
+                {
+                    icon: PresentationIcon,
+                    name: "Pre-congresos",
+                    subItems: [
+                        { name: "Listado", path: "/conferences/pre", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/pre_conference", pro: false },
+                        
+                    ],
+                },
+                {
+                    icon: PresentationIcon,
+                    name: "Trans-congresos",
+                    subItems: [
+                        { name: "Listado", path: "/conferences/trans", pro: false },
+                        { name: "Asistentes Registrados", path: "/attendees/trans_conference", pro: false },
                         
                     ],
                 },
