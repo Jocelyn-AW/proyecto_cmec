@@ -57,7 +57,8 @@ const typeLabels = {
     webinar: 'Webinars',
     course: 'Cursos',
     conference: "Congreso",
-    preconference: "Pre-Congreso",
+    pre_conference: "Pre-Congreso",
+    trans_conference: "Trans-Congreso",
 }
 
 const labelFor = (type) => typeLabels[type] ?? type

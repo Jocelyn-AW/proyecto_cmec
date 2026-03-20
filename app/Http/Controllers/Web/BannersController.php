@@ -99,7 +99,8 @@ class BannersController extends Controller
             Constants::EVENT_ACADEMIC_SESSION,
             Constants::EVENT_COURSE,
             Constants::EVENT_CONFERENCE,
-            Constants::EVENT_PRE_CONFERENCE,
+            Constants::EVENT_PRECONFERENCE,
+            Constants::EVENT_TRANSCONFERENCE,
         ])->values();
 
         return Inertia::render('Banners/Index', [
