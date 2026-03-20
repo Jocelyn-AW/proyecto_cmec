@@ -26,6 +26,7 @@ use App\Models\Conference;
 use App\Models\News;
 use App\Models\AcademicSession;
 use App\Models\Album;
+use App\Models\MembershipPrice;
 use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
@@ -58,6 +59,7 @@ class AppServiceProvider extends ServiceProvider
             // 'media' => Media::class,
             'member' => Member::class,
             'membership' => Membership::class,
+            'membership_price' => MembershipPrice::class,
             'payment_method' => PaymentMethod::class,
             'payment' => Payment::class,
             'post' => Post::class,

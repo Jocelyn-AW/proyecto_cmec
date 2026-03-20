@@ -31,165 +31,142 @@ const props = defineProps({
         default: () => [],
     },
 });
+
+// ---------------------------------
+// Estado
+// ---------------------------------
+
 const isSubmitting = ref(false);
-const sponsorsRef = ref(null)
-/* const updateBanner = ref(false) */
+const sponsorsRef = ref(null);
+const isTrashed = computed(() => !!props.webinar?.deleted_at);
+
 const formData = reactive({
-    _method: 'put',
     id: null,
-    topic: "",
-    description: "",
-    duration: "",
-    objectives: "",
-    organized_by: "",
-    link: "",
-    member_price: "",
-    resident_price: "",
-    guest_price: "",
-    format: "",
-    address: "",
-    additional_info: "",
-    bank_detail_id: "",
-    sessions: [
-        { date: '', time: '' }
-    ],
+    topic: '',
+    description: '',
+    duration: '',
+    objectives: '',
+    organized_by: '',
+    link: '',
+    member_price: '',
+    resident_price: '',
+    guest_price: '',
+    format: '',
+    address: '',
+    additional_info: '',
+    bank_detail_id: '',
+    sessions: [{ date: '', time: '' }],
 });
 
-const addSession = () => {
-    formData.sessions.push({ date: '', time: '' })
-}
-
-const removeSession = (index) => {
-    formData.sessions.splice(index, 1)
-}
+// ---------------------------------
+// Media
+// ---------------------------------
 
 const cover = useImageUpload({
     maxSizeMB: 1,
-    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
-    onError: (message) => {
-        alert(message);
-    },
+    acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+    onError: (msg) => alert(msg),
 });
 
 const previewCover = useImageUpload({
     maxSizeMB: 1,
-    dimensions: {
-        minWidth: 400,
-        minHeight: 400,
-        maxWidth: 800,
-        maxHeight: 800,
-    },
-    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
-    onError: (message) => {
-        warning(message);
-    },
+    dimensions: { minWidth: 400, minHeight: 400, maxWidth: 800, maxHeight: 800 },
+    acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+    onError: (msg) => alert(msg),
 });
 
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
-    onError: (msg) => alert(msg)
+    onError: (msg) => alert(msg),
 });
 
-const currentCover = computed(() => {
-    if (cover.file.value) {
-        return cover.preview.value;
-    } else if (props.webinar?.cover_url) {
-        return props.webinar?.cover_url;
-    } else {
-        return null;
-    }
-});
+// ---------------------------------
+// Computeds de media
+// ---------------------------------
 
-const currentPreview = computed(() => {
-    if (previewCover.file.value) {
-        return previewCover.preview.value;
-    } else if (props.webinar?.cover_preview_url) {
-        return props.webinar?.cover_preview_url;
-    } else {
-        return null;
-    }
-});
+const currentCover = computed(() =>
+    cover.file.value ? cover.preview.value : (props.webinar?.cover_url ?? null)
+);
+
+const currentPreview = computed(() =>
+    previewCover.file.value ? previewCover.preview.value : (props.webinar?.cover_preview_url ?? null)
+);
 
 const currentPdf = computed(() => {
-    if (pdf.file.value) {
-        return pdf.preview.value;
-    } else if (props.webinar?.program_url) {
+    if (pdf.file.value) return pdf.preview.value;
+    if (props.webinar?.program_url) {
         return {
             type: 'application/pdf',
             isFile: true,
             size: null,
-            name: props.webinar?.program_url.split('/').pop(),
+            name: props.webinar.program_url.split('/').pop(),
         };
-    } else {
-        return null;
     }
+    return null;
 });
 
-const getTimeFromDateTime = (dateTime) => {
-    if (!dateTime) return "";
-    const dateObj = new Date(dateTime);
-    const hours = dateObj.getHours().toString().padStart(2, '0');
-    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
-};
-
-const getDateFromDateTime = (dateTime) => {
-    if (!dateTime) return "";
-    return dateTime.split('T')[0].split(' ')[0];
-};
+// ---------------------------------
+// Fill form
+// ---------------------------------
 
 const fillForm = (webinar) => {
-    formData.id = webinar.id || null;
-    formData.topic = webinar.topic || "";
-    formData.description = webinar.description || "";
-    formData.objectives = webinar.objectives || "";
-    formData.duration = webinar.duration || "";
-    formData.organized_by = webinar.organized_by || "";
-    formData.format = webinar.format || "";
-    formData.link = webinar.link || "";
-    formData.address = webinar.address || "";
-    formData.additional_info = webinar.additional_info || "";
-    formData.member_price = webinar.member_price || "";
-    formData.resident_price = webinar.resident_price || "";
-    formData.guest_price = webinar.guest_price || "";
-    formData.bank_detail_id = webinar.bank_detail_id || "";
+    formData.id = webinar.id ?? null;
+    formData.topic = webinar.topic ?? '';
+    formData.description = webinar.description ?? '';
+    formData.objectives = webinar.objectives ?? '';
+    formData.duration = webinar.duration ?? '';
+    formData.organized_by = webinar.organized_by ?? '';
+    formData.format = webinar.format ?? '';
+    formData.link = webinar.link ?? '';
+    formData.address = webinar.address ?? '';
+    formData.additional_info = webinar.additional_info ?? '';
+    formData.member_price = webinar.member_price ?? '';
+    formData.resident_price = webinar.resident_price ?? '';
+    formData.guest_price = webinar.guest_price ?? '';
+    formData.bank_detail_id = webinar.bank_detail_id ?? '';
 
-    if (webinar.sessions && webinar.sessions.length > 0) {
-        formData.sessions = webinar.sessions.map(session => ({
-            date: getDateFromDateTime(session.date),
-            time: session.time ? session.time.substring(0, 5) : '',
-        }));
-    } else {
-        formData.sessions = [{ date: '', time: '' }];
-    }
+    formData.sessions = webinar.sessions?.length
+        ? webinar.sessions.map(s => ({
+            date: s.date?.split(/[T ]/)[0] ?? '',
+            time: s.time?.substring(0, 5) ?? '',
+        }))
+        : [{ date: '', time: '' }];
 };
 
-watch(() => props.webinar, (newWebinar) => {
-    if (newWebinar && newWebinar.id) {
-        fillForm(newWebinar);
-    }
+watch(() => props.webinar, (val) => {
+    if (val?.id) fillForm(val);
 }, { immediate: true });
 
+// ---------------------------------
+// Sesiones
+// ---------------------------------
+
+const addSession = () => formData.sessions.push({ date: '', time: '' });
+const removeSession = (index) => formData.sessions.splice(index, 1);
+
+// ---------------------------------
+// Submit
+// ---------------------------------
+
 const handleSubmit = () => {
-
-    const sponsorsData = sponsorsRef.value.getData()
-
-    if (isSubmitting.value) return;
+    if (isTrashed.value || isSubmitting.value) return;
 
     if (!cover.file.value && !props.webinar?.cover_url) {
-        alert("Por favor selecciona una imagen de portada para el webinar");
+        alert('Por favor selecciona una imagen de portada para el webinar');
         return;
     }
 
     if (!previewCover.file.value && !props.webinar?.cover_preview_url) {
-        alert("Por favor selecciona una imagen de preview para el webinar");
+        alert('Por favor selecciona una imagen de preview para el webinar');
         return;
     }
 
     isSubmitting.value = true;
 
+    const sponsorsData = sponsorsRef.value.getData();
     const data = new FormData();
+
     data.append('_method', 'PUT');
     data.append('id', formData.id);
     data.append('topic', formData.topic);
@@ -206,70 +183,46 @@ const handleSubmit = () => {
     data.append('additional_info', formData.additional_info ?? '');
     data.append('bank_detail_id', formData.bank_detail_id ?? '');
 
-    // sesiones indexadas para que laravel reciba array
-    formData.sessions.forEach((session, index) => {
-        data.append(`sessions[${index}][date]`, session.date);
-        data.append(`sessions[${index}][time]`, session.time);
+    formData.sessions.forEach((s, i) => {
+        data.append(`sessions[${i}][date]`, s.date);
+        data.append(`sessions[${i}][time]`, s.time);
     });
 
-    if (cover.file.value) {
-        data.append('cover_image', cover.file.value);
-    }
+    if (cover.file.value) data.append('cover_image', cover.file.value);
+    if (previewCover.file.value) data.append('cover_preview_image', previewCover.file.value);
+    if (pdf.file.value) data.append('program_pdf', pdf.file.value);
 
-    if (previewCover.file.value) {
-        data.append('cover_preview_image', previewCover.file.value);
-    }
-
-    if (pdf.file.value) {
-        data.append('program_pdf', pdf.file.value);
-    }
-
-    // archivos nuevos
-    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
-    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
-    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
-
-    // ids a eliminar
-    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
-    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
-    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))
-
-    /* if (updateBanner.value) {
-        data.append('update_banner', '1');
-        data.append('banner_title', formData.topic);
-        if (cover.file.value) {
-            data.append('banner_image', cover.file.value);
-        }
-        if (formData.link && formData.link.trim() !== '') {
-            data.append('banner_link', formData.link);
-        }
-    } */
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f));
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f));
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f));
+    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id));
+    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id));
+    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id));
 
     router.post(route('webinars.update', formData.id), data, {
         forceFormData: true,
-        onFinish: () => {
-            isSubmitting.value = false;
-        }
+        onFinish: () => { isSubmitting.value = false; },
     });
 };
 
+const handleCancel = () => router.get('/webinars');
 
-const handleCancel = () => {
-    router.get('/webinars');
-};
+// ---------------------------------
+// Flatpickr configs
+// ---------------------------------
 
 const flatpickrConfig = {
     locale: Spanish,
-    dateFormat: "Y-m-d",
+    dateFormat: 'Y-m-d',
     altInput: true,
-    altFormat: "F j, Y",
+    altFormat: 'F j, Y',
     wrap: false,
 };
 
 const flatpickrTimeConfig = {
     enableTime: true,
     noCalendar: true,
-    dateFormat: "H:i",
+    dateFormat: 'H:i',
     time_24hr: false,
     minuteIncrement: 1,
     wrap: false,
@@ -282,19 +235,34 @@ const flatpickrTimeConfig = {
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
-            <div class="">
+
+            <!-- Encabezado -->
+            <div>
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Editar Webinar</h3>
                 <p class="text-sm text-gray-500">Edita los detalles de un webinar desde esta sección</p>
+            </div>
+
+            <!-- Aviso webinar eliminado -->
+            <div v-if="isTrashed"
+                class="flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                Este webinar ha sido eliminado. No es posible modificarlo hasta que sea restaurado.
             </div>
 
             <!-- DATOS GENERALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="">
+                    <div>
                         <span class="text-sm text-gray-700">Datos Generales</span>
                     </div>
                     <div class="lg:col-span-3 space-y-6">
+
+                        <!-- Imagenes -->
                         <div class="grid lg:grid-cols-3 gap-3">
                             <div class="lg:col-span-2">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -304,23 +272,25 @@ const flatpickrTimeConfig = {
                                     hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
                                     @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
                                     @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
-                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
-                                    errors.cover_image }}</span>
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">
+                                    {{ errors.cover_image }}
+                                </span>
                             </div>
                             <div>
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Previsualización
                                 </label>
                                 <Dropzone :preview="currentPreview" :is-dragging="previewCover.isDragging.value"
-                                    hint="Min. 400 x 400 (max. 1MB) " @change="previewCover.handleChange"
+                                    hint="Min. 400 x 400 (max. 1MB)" @change="previewCover.handleChange"
                                     @drop="previewCover.handleDrop" @drag-enter="previewCover.handleDragEnter"
                                     @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
-
-                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
-                                    errors.cover_image }}</span>
+                                <span v-if="errors.cover_preview_image" class="text-red-500 text-xs flex justify-end">
+                                    {{ errors.cover_preview_image }}
+                                </span>
                             </div>
                         </div>
 
+                        <!-- Tema -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Tema del Webinar
@@ -328,23 +298,24 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-xs flex justify-end">{{ errors.topic
-                            }}</span>
+                                }}</span>
                         </div>
 
+                        <!-- Descripcion -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Descripcion
+                                Descripción
                             </label>
-                            <textarea v-model="formData.description" rows="2" maxlength="5000"
+                            <textarea v-model="formData.description" rows="3" maxlength="5000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <span v-if="errors.description" class="text-red-500 text-sm font-medium">
-                                    {{ errors.description }}
-                                </span>
+                                <span v-if="errors.description" class="text-red-500 text-sm font-medium">{{
+                                    errors.description }}</span>
                                 <p class="text-xs text-gray-400 ml-auto">{{ formData.description.length }}/5000</p>
                             </div>
                         </div>
 
+                        <!-- Objetivos -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Objetivos
@@ -352,13 +323,13 @@ const flatpickrTimeConfig = {
                             <textarea v-model="formData.objectives" rows="3" maxlength="2000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">
-                                    {{ errors.objectives }}
-                                </span>
+                                <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">{{
+                                    errors.objectives }}</span>
                                 <p class="text-xs text-gray-400 ml-auto">{{ formData.objectives.length }}/2000</p>
                             </div>
                         </div>
 
+                        <!-- Organizado por -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Organizado por
@@ -369,40 +340,25 @@ const flatpickrTimeConfig = {
                                 errors.organized_by }}</span>
                         </div>
 
-                        <!-- Switch: Actualizar Banner -->
-                        <!-- <div
-                            class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
-                            <div>
-                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">¿Actualizar el banner de
-                                    este webinar?</p>
-                                <p class="text-xs text-gray-400 mt-0.5">Se actualizará el banner existente con los
-                                    nuevos datos de portada, título y link.</p>
-                            </div>
-                            <button type="button" @click="updateBanner = !updateBanner"
-                                :class="updateBanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
-                                <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
-                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
-                            </button>
-                        </div> -->
                     </div>
                 </div>
             </div>
 
+            <!-- SPONSORS -->
             <SponsorsSection ref="sponsorsRef" :initial-platinum="webinar.platinum_sponsors_urls"
                 :initial-golden="webinar.golden_sponsors_urls" :initial-silver="webinar.silver_sponsors_urls"
-                :errors="errors" @error="warning" />
+                :errors="errors" />
 
             <!-- DETALLES ADICIONALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="">
+                    <div>
                         <span class="text-sm text-gray-700">Detalles Adicionales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
 
-                        <!-- MODALIDAD -->
+                        <!-- Modalidad -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Modalidad
@@ -414,25 +370,22 @@ const flatpickrTimeConfig = {
                                 <option value="hybrid">Híbrida</option>
                                 <option value="online">En línea</option>
                             </select>
-                            <span v-if="errors.format" class="text-red-500 text-xs flex">{{ errors.format
-                                }}</span>
+                            <span v-if="errors.format" class="text-red-500 text-xs flex">{{ errors.format }}</span>
                         </div>
 
-                        <!-- CAMPOS MODALIDAD -->
                         <template v-if="formData.format !== ''">
-
-                            <!-- DIRECCION (presencial e híbrida) -->
+                            <!-- Direccion -->
                             <div v-if="formData.format !== 'online'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Dirección
                                 </label>
                                 <input type="text" v-model="formData.address"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="errors.address" class="text-red-500 text-xs flex">{{
-                                    errors.address }}</span>
+                                <span v-if="errors.address" class="text-red-500 text-xs flex">{{ errors.address
+                                    }}</span>
                             </div>
 
-                            <!-- INFORMACION ADICIONAL (presencial e hibrida) -->
+                            <!-- Informacion adicional -->
                             <div v-if="formData.format !== 'online'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Información adicional
@@ -446,7 +399,7 @@ const flatpickrTimeConfig = {
                                     errors.additional_info }}</span>
                             </div>
 
-                            <!-- LINK (online e hibrida) -->
+                            <!-- Link -->
                             <div v-if="formData.format !== 'in_person'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Link de conexión
@@ -455,10 +408,8 @@ const flatpickrTimeConfig = {
                                 </label>
                                 <input type="text" v-model="formData.link"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="errors.link" class="text-red-500 text-xs flex">{{ errors.link
-                                    }}</span>
+                                <span v-if="errors.link" class="text-red-500 text-xs flex">{{ errors.link }}</span>
                             </div>
-
                         </template>
 
                         <!-- PDF -->
@@ -469,15 +420,15 @@ const flatpickrTimeConfig = {
                                     class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
                             </label>
                             <Dropzone :preview="currentPdf" :is-dragging="pdf.isDragging.value"
-                                :accept="'application/pdf'" label="Arrastra tu PDF aqui o haz clic para seleccionar"
+                                :accept="'application/pdf'" label="Arrastra tu PDF aquí o haz clic para seleccionar"
                                 hint="PDF (max. 5MB)" @change="pdf.handleChange" @drop="pdf.handleDrop"
                                 @drag-enter="pdf.handleDragEnter" @drag-leave="pdf.handleDragLeave"
                                 @remove="pdf.reset" />
-                            <span v-if="errors.pdf_file" class="text-red-500 text-xs flex">{{
-                                errors.pdf_file }}</span>
+                            <span v-if="errors.program_pdf" class="text-red-500 text-xs flex">{{ errors.program_pdf
+                                }}</span>
                         </div>
 
-                        <!-- SESIONES -->
+                        <!-- Sesiones -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Horarios
@@ -486,24 +437,15 @@ const flatpickrTimeConfig = {
                                 class="relative grid grid-cols-2 gap-4 my-3">
                                 <div>
                                     <flat-pickr v-model="session.time" :config="flatpickrTimeConfig"
-                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una hora" />
-                                    <span
-                                        class="absolute text-gray-500 -translate-y-1/2 right-3 top-1/2 dark:text-gray-400">
-                                        <svg width="20" height="20" viewBox="0 0 20 20"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            class="text-stone-800 dark:text-stone-200">
-                                            <path fill="currentColor"
-                                                d="M5.673 0a.7.7 0 0 1 .7.7v1.309h7.517v-1.3a.7.7 0 0 1 1.4 0v1.3H18a2 2 0 0 1 2 1.999v13.993A2 2 0 0 1 18 20H2a2 2 0 0 1-2-1.999V4.008a2 2 0 0 1 2-1.999h2.973V.699a.7.7 0 0 1 .7-.699ZM1.4 7.742v10.259a.6.6 0 0 0 .6.6h16a.6.6 0 0 0 .6-.6V7.756zm5.267 6.877v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zm-8.333-3.977v1.666H5v-1.666zm4.166 0v1.666H9.167v-1.666zm4.167 0v1.666h-1.667v-1.666zM4.973 3.408H2a.6.6 0 0 0-.6.6v2.335l17.2.014V4.008a.6.6 0 0 0-.6-.6h-2.71v.929a.7.7 0 0 1-1.4 0v-.929H6.373v.92a.7.7 0 0 1-1.4 0z" />
-                                        </svg>
-                                    </span>
                                     <span v-if="errors[`sessions.${index}.time`]" class="text-red-500 text-xs">
                                         {{ errors[`sessions.${index}.time`] }}
                                     </span>
                                 </div>
                                 <div>
                                     <flat-pickr v-model="session.date" :config="flatpickrConfig"
-                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pl-4 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                        class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                         placeholder="Selecciona una fecha" />
                                     <span v-if="errors[`sessions.${index}.date`]" class="text-red-500 text-xs">
                                         {{ errors[`sessions.${index}.date`] }}
@@ -525,7 +467,7 @@ const flatpickrTimeConfig = {
                             </button>
                         </div>
 
-                        <!-- DURACION -->
+                        <!-- Duracion -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Duración total (en horas)
@@ -544,57 +486,54 @@ const flatpickrTimeConfig = {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="">
+                    <div>
                         <span class="text-sm text-gray-700">Costos</span>
                     </div>
+
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para miembros
-                        </label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Para
+                            miembros</label>
                         <div class="relative">
                             <span
-                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                                $
-                            </span>
+                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
                             <input v-model="formData.member_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
                         <span v-if="errors.member_price" class="text-red-500 text-xs flex justify-end">{{
-                            errors.member_price }}</span>
+                            errors.member_price
+                            }}</span>
                     </div>
+
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para residentes
-                        </label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Para
+                            residentes</label>
                         <div class="relative">
                             <span
-                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                                $
-                            </span>
+                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
                             <input v-model="formData.resident_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
                         <span v-if="errors.resident_price" class="text-red-500 text-xs flex justify-end">{{
-                            errors.resident_price }}</span>
+                            errors.resident_price
+                            }}</span>
                     </div>
+
                     <div class="mb-3">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para Invitados (no socios)
-                        </label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Para Invitados
+                            (no
+                            socios)</label>
                         <div class="relative">
                             <span
-                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                                $
-                            </span>
+                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
                             <input v-model="formData.guest_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
                         <span v-if="errors.guest_price" class="text-red-500 text-xs flex justify-end">{{
-                            errors.guest_price }}</span>
+                            errors.guest_price
+                            }}</span>
                     </div>
 
-                    <!-- Detalles de pago dentro de la misma card -->
-                    <div class="">
+                    <div>
                         <span class="text-sm text-gray-700">Detalles de pago</span>
                     </div>
                     <div class="col-span-3">
@@ -618,9 +557,9 @@ const flatpickrTimeConfig = {
                                 </option>
                             </select>
                         </div>
-                        <span v-if="errors.bank_detail_id" class="text-red-500 text-xs flex justify-end">
-                            {{ errors.bank_detail_id }}
-                        </span>
+                        <span v-if="errors.bank_detail_id" class="text-red-500 text-xs flex justify-end">{{
+                            errors.bank_detail_id
+                            }}</span>
                     </div>
                 </div>
             </div>
@@ -629,22 +568,24 @@ const flatpickrTimeConfig = {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="col-span-2">
-                        <span class="text-sm text-gray-700"></span>
-                    </div>
-                    <div class="col-span-2 flex justify-end items-center">
+                    <div class="col-span-2" />
+                    <div class="col-span-2 flex justify-end items-center gap-3">
                         <button @click="handleCancel"
-                            class="rounded-lg border border-gray-300 bg-transparent px-4 mx-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                            class="rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Cancelar
                         </button>
-                        <button @click="handleSubmit" :disabled="isSubmitting"
-                            class="rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button @click="handleSubmit" :disabled="isTrashed || isSubmitting"
+                            :title="isTrashed ? 'Restaura el webinar para poder editarlo' : ''"
+                            class="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" :class="isTrashed
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                : 'bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed'">
                             <span v-if="isSubmitting">Guardando...</span>
                             <span v-else>Actualizar Webinar</span>
                         </button>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </template>

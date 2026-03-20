@@ -157,10 +157,6 @@ const submit = () => {
                     </svg>
                     <span class="text-lg font-semibold">CMEC</span>
                 </Link>
-                <Link :href="route('register')"
-                    class="text-sm font-medium text-slate-500 transition-colors hover:text-slate-800">
-                    Crear cuenta
-                </Link>
             </div>
 
             <!-- Form centered -->
@@ -222,14 +218,6 @@ const submit = () => {
                             class="h-11 w-full rounded-lg bg-indigo-600 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed">
                             {{ form.processing ? 'Iniciando sesion...' : 'Iniciar sesion' }}
                         </button>
-
-                        <p class="text-center text-sm text-slate-500">
-                            ¿No tienes una cuenta?
-                            <Link :href="route('register')"
-                                class="font-medium text-indigo-600 transition-colors hover:text-indigo-700">
-                                Registrate aqui
-                            </Link>
-                        </p>
                     </form>
                 </div>
             </div>

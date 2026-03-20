@@ -9,4 +9,5 @@ Route::post('/new', [WebinarsController::class, 'store'])->name('store');
 Route::get('/{id}', [WebinarsController::class, 'edit'])->name('edit');
 Route::put('/{id}', [WebinarsController::class, 'update'])->name('update');
 Route::delete('/{id}', [WebinarsController::class, 'delete'])->name('delete');
-Route::patch('/{id}/status', [WebinarsController::class, 'statusChange'])->name('statusChange');
+Route::put('/restore/{id}', [WebinarsController::class, 'restore'])->name('restore');
+Route::get('/changeStaus/{id}', [WebinarsController::class, 'changeStatus'])->name('change-status');
