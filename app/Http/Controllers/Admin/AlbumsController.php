@@ -30,7 +30,7 @@ class AlbumsController extends Controller
         Constants::EVENT_WEBINAR          => 'webinars.index',
         Constants::EVENT_COURSE           => 'courses.index',
         Constants::EVENT_ACADEMIC_SESSION => 'academicsessions.index',
-        Constants::EVENT_CONFERENCE       => 'conferences.index',
+        Constants::EVENT_CONFERENCE       => 'conferences.main.index',
         Constants::EVENT_PRECONFERENCE    => 'conferences.pre.index',
         Constants::EVENT_TRANSCONFERENCE  => 'conferences.trans.index', 
     ];

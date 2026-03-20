@@ -15,6 +15,6 @@ Route::put('restore/{id}', [ConferencesController::class, 'restore'])->name('res
 Route::get('/changeStaus/{id}', [ConferencesController::class, 'changeStatus'])->name('change-status');
 
 //rutas especificas para albumes
-Route::get('/main', [ConferencesController::class, 'index'])->name('index');
+Route::get('/main', [ConferencesController::class, 'index'])->name('main.index');
 Route::get('/pre', [ConferencesController::class, 'index'])->name('pre.index');
 Route::get('/trans', [ConferencesController::class, 'index'])->name('trans.index');
