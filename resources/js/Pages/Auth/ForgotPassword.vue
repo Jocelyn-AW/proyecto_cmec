@@ -53,9 +53,9 @@ const submit = () => {
                     </svg>
                     <span class="text-lg font-semibold">CMEC</span>
                 </Link>
-                <Link :href="route('register')"
+                <Link :href="route('login')"
                     class="text-sm font-medium text-slate-500 transition-colors hover:text-slate-800">
-                    Crear cuenta
+                    Iniciar sesión
                 </Link>
             </div>
 
@@ -95,10 +95,10 @@ const submit = () => {
                         </button>
 
                         <p class="text-center text-sm text-slate-500">
-                            ¿No tienes una cuenta?
-                            <Link :href="route('register')"
+                            ¿Ya tienes una cuenta?
+                            <Link :href="route('login')"
                                 class="font-medium text-indigo-600 transition-colors hover:text-indigo-700">
-                                Registrate aqui
+                                Inicia sesión aqui
                             </Link>
                         </p>
                     </form>
