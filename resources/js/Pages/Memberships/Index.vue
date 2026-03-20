@@ -52,7 +52,7 @@ const formData = reactive({
     name: '',
     description: '',
     benefits: '',
-    prices: [{ start_date: '', end_date: '', amount: '' }],
+    prices: [{ start_date: '', end_date: '', amount_general: '', amount_preferential: '' }],
 });
 
 // ---------------------------------
@@ -69,9 +69,10 @@ const fillForm = (membership) => {
         ? membership.prices.map(p => ({
             start_date: p.start_date ?? '',
             end_date: p.end_date ?? '',
-            amount: p.amount ?? '',
+            amount_general: p.amount_general ?? '',
+            amount_preferential: p.amount_preferential ?? '',
         }))
-        : [{ start_date: '', end_date: '', amount: '' }];
+        : [{ start_date: '', end_date: '', amount_general: '', amount_preferential: '' }];
 };
 
 watch(() => props.membership, (val) => {
@@ -83,7 +84,10 @@ watch(() => props.membership, (val) => {
 // ---------------------------------
 
 const canAddPrice = computed(() => formData.prices.length < MAX_PRICES);
-const addPrice = () => { if (canAddPrice.value) formData.prices.push({ start_date: '', end_date: '', amount: '' }) };
+const addPrice = () => {
+    if (canAddPrice.value)
+        formData.prices.push({ start_date: '', end_date: '', amount_general: '', amount_preferential: '' });
+};
 const removePrice = (index) => formData.prices.splice(index, 1);
 
 // ---------------------------------
@@ -127,6 +131,10 @@ const flatpickrConfig = {
     altInput: true,
     altFormat: 'F j, Y',
     wrap: false,
+    parseDate: (dateStr) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    },
 };
 </script>
 
@@ -268,17 +276,18 @@ const flatpickrConfig = {
                     <span v-if="errors.prices" class="text-red-500 text-xs block mb-4">{{ errors.prices }}</span>
 
                     <!-- Cabecera -->
-                    <div class="grid grid-cols-[1fr_1fr_100px_20px] gap-3 mb-2 px-1">
+                    <div class="grid grid-cols-[1fr_1fr_110px_110px_20px] gap-3 mb-2 px-1">
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha inicio</span>
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha fin</span>
-                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Monto</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio General</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio Preferencial</span>
                         <span></span>
                     </div>
 
                     <!-- Todas las filas -->
                     <div class="space-y-3">
                         <div v-for="(price, index) in formData.prices" :key="index"
-                            class="grid grid-cols-[1fr_1fr_100px_20px] gap-3 items-start">
+                            class="grid grid-cols-[1fr_1fr_110px_110px_20px] gap-3 items-start">
 
                             <!-- Fecha inicio -->
                             <div>
@@ -300,18 +309,35 @@ const flatpickrConfig = {
                                 </span>
                             </div>
 
-                            <!-- Monto -->
+                            <!-- Monto General -->
                             <div>
                                 <div class="relative">
                                     <span
                                         class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3 py-1 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
                                         $
                                     </span>
-                                    <input v-model="price.amount" type="number" min="0" placeholder="0.00"
+                                    <input v-model="price.amount_general" type="number" min="0" placeholder="0.00"
                                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-9 pr-3 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                                 </div>
-                                <span v-if="errors[`prices.${index}.amount`]" class="text-red-500 text-xs mt-0.5 block">
-                                    {{ errors[`prices.${index}.amount`] }}
+                                <span v-if="errors[`prices.${index}.amount_general`]"
+                                    class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.amount_general`] }}
+                                </span>
+                            </div>
+
+                            <!-- Monto Preferencial -->
+                            <div>
+                                <div class="relative">
+                                    <span
+                                        class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3 py-1 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                                        $
+                                    </span>
+                                    <input v-model="price.amount_preferential" type="number" min="0" placeholder="0.00"
+                                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-9 pr-3 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                </div>
+                                <span v-if="errors[`prices.${index}.amount_preferential`]"
+                                    class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.amount_preferential`] }}
                                 </span>
                             </div>
 

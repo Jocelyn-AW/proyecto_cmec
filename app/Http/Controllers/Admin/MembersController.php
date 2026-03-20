@@ -84,7 +84,7 @@ class MembersController extends Controller
             }
 
             $member = Member::create([
-                'cmec_member_id'   => $data['cmec_member_id']   ?? null,
+                'cmec_member_id'   => $this->generateCmecMemberId(),
                 'name'             => $data['name'],
                 'last_name'        => $data['last_name'],
                 'phone'            => $data['phone'],
@@ -354,7 +354,6 @@ class MembersController extends Controller
         $pdfRule = 'nullable|mimes:pdf|max:10240';
 
         return [
-            'cmec_member_id'       => 'nullable|string|max:191',
             'name'                 => 'required|string|max:191',
             'last_name'            => 'required|string|max:191',
             'phone'                => 'required|string|max:191',
@@ -410,5 +409,30 @@ class MembersController extends Controller
         if ($member->trashed()) {
             abort(403, 'No puedes modificar un miembro eliminado.');
         }
+    }
+
+    // ---------------------------------------------
+    // PRIVATE: Generate CMEC ID
+    // ---------------------------------------------
+
+    private function generateCmecMemberId(): string
+    {
+        $maxAttempts = 5;
+
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $last = Member::withTrashed()
+                ->whereNotNull('cmec_member_id')
+                ->where('cmec_member_id', 'like', 'CMEC-%')
+                ->orderByRaw("CAST(SUBSTRING(cmec_member_id, 6) AS UNSIGNED) DESC")
+                ->value('cmec_member_id');
+
+            $next = $last ? ((int) substr($last, 5)) + 1 : 1;
+            $candidate = 'CMEC-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+
+            if (!Member::withTrashed()->where('cmec_member_id', $candidate)->exists()) {
+                return $candidate;
+            }
+        }
+        return 'CMEC-' . now()->format('ymdHis');
     }
 }

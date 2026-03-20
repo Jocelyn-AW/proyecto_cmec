@@ -149,14 +149,15 @@ class MembershipsController extends Controller
     private function getValidationArray(): array
     {
         return [
-            'name'                    => 'required|string|max:191',
-            'description'             => 'required|string|max:191',
-            'benefits'                => 'nullable|string',
+            'name'                         => 'required|string|max:191',
+            'description'                  => 'required|string|max:191',
+            'benefits'                     => 'nullable|string',
             // Precios
-            'prices'                  => 'required|array|min:1|max:12',
-            'prices.*.start_date'     => 'required|date',
-            'prices.*.end_date'       => 'required|date|after_or_equal:prices.*.start_date',
-            'prices.*.amount'         => 'required|numeric|min:0',
+            'prices'                       => 'required|array|min:1|max:12',
+            'prices.*.start_date'          => 'required|date',
+            'prices.*.end_date'            => 'required|date|after_or_equal:prices.*.start_date',
+            'prices.*.amount_general'      => 'required|numeric|min:0',
+            'prices.*.amount_preferential' => 'required|numeric|min:0',
         ];
     }
 
@@ -174,9 +175,13 @@ class MembershipsController extends Controller
             'prices.*.end_date.required'       => 'La fecha de fin es obligatoria.',
             'prices.*.end_date.date'           => 'La fecha de fin no es válida.',
             'prices.*.end_date.after_or_equal' => 'La fecha de fin debe ser igual o posterior a la fecha de inicio.',
-            'prices.*.amount.required'         => 'El monto es obligatorio.',
-            'prices.*.amount.numeric'          => 'El monto debe ser un número.',
-            'prices.*.amount.min'              => 'El monto no puede ser negativo.',
+            //TYPES OF PRICES
+            'prices.*.amount_general.required'          => 'El monto general es obligatorio.',
+            'prices.*.amount_general.numeric'           => 'El monto general debe ser un número.',
+            'prices.*.amount_general.min'               => 'El monto general no puede ser negativo.',
+            'prices.*.amount_preferential.required'     => 'El monto preferencial es obligatorio.',
+            'prices.*.amount_preferential.numeric'      => 'El monto preferencial debe ser un número.',
+            'prices.*.amount_preferential.min'          => 'El monto preferencial no puede ser negativo.',
         ];
     }
 
