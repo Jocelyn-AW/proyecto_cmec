@@ -131,8 +131,8 @@ const onKeydown = (e) => {
 
             <!-- subir imagenes -->
             <div v-if="showUploader" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <Dropzone multiple :previews="previews" :is-dragging="isDragging" :max-files="20" @change="handleChange"
-                    @drop="handleDrop" @drag-enter="handleDragEnter" @drag-leave="handleDragLeave" @remove-at="removeAt"
+                <Dropzone multiple :previews="previews" :is-dragging="isDragging" :max-files="20"  :columns="'5'" 
+                    @change="handleChange" @drop="handleDrop" @drag-enter="handleDragEnter" @drag-leave="handleDragLeave" @remove-at="removeAt"
                     @remove="reset" />
                 <div class="mt-3 flex justify-end gap-2">
                     <button @click="showUploader = false; reset()"
