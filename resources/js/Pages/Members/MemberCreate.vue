@@ -157,6 +157,7 @@ const docFields = [
     { key: 'cedula_especialista', label: 'Cédula de especialista en coloproctología' },
     { key: 'constancia_fiscal', label: 'Constancia fiscal' },
     { key: 'factura', label: 'Factura' },
+    { key: 'comprobante_pago', label: 'Comprobante de pago' },
 ]
 
 const pdfFiles = ref({})

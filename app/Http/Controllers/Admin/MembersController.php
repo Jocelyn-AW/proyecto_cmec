@@ -335,6 +335,7 @@ class MembersController extends Controller
             'cedula_especialista'  => 'members_cedula_especialista',
             'constancia_fiscal'    => 'members_constancia_fiscal',
             'factura'              => 'members_factura',
+            'comprobante_pago'     => 'members_comprobante_pago',
         ];
 
         foreach ($collections as $field => $collection) {
@@ -376,6 +377,7 @@ class MembersController extends Controller
             'cedula_especialista'  => $pdfRule,
             'constancia_fiscal'    => $pdfRule,
             'factura'              => $pdfRule,
+            'comprobante_pago'     => $pdfRule,
         ];
     }
 
