@@ -241,7 +241,7 @@ const flatpickrTimeConfig = {
                             <input type="text" v-model="formData.topic"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <span v-if="errors.topic" class="text-red-500 text-sm flex justify-start">{{ errors.topic
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <div>
@@ -326,7 +326,7 @@ const flatpickrTimeConfig = {
                                 <option value="online">En línea</option>
                             </select>
                             <span v-if="errors.format" class="text-red-500 text-sm flex justify-start">{{ errors.format
-                                }}</span>
+                            }}</span>
                         </div>
 
                         <!-- CAMPOS MODALIDAD -->
@@ -367,7 +367,7 @@ const flatpickrTimeConfig = {
                                 <input type="text" v-model="formData.link"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                                 <span v-if="errors.link" class="text-red-500 text-sm flex justify-start">{{ errors.link
-                                    }}</span>
+                                }}</span>
                             </div>
 
                         </template>
@@ -490,7 +490,7 @@ const flatpickrTimeConfig = {
                     </div>
                     <div class="mb-3">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para no miembros (invitados)
+                            Para Invitados (no socios)
                         </label>
                         <div class="relative">
                             <span

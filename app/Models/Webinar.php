@@ -2,24 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
 use App\Http\Helpers\Constants;
 use App\Traits\HasSponsorMedia;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Webinar extends Model implements HasMedia
 {
     use InteractsWithMedia, SoftDeletes, HasSponsorMedia;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = Constants::TABLE_WEBINARS;
 
     protected $fillable = [
@@ -48,24 +43,64 @@ class Webinar extends Model implements HasMedia
     protected $appends = [
         'cover_url',
         'cover_preview_url',
-        'gallery_urls',
         'program_url',
-        'platinum_sponsors_urls', //
-        'golden_sponsors_urls', //  <- sponsor
-        'silver_sponsors_urls', //
+        'platinum_sponsors_urls',
+        'golden_sponsors_urls',
+        'silver_sponsors_urls',
     ];
 
     protected $casts = [
-        'resident_price' => 'decimal:2',
-        'guest_price' => 'decimal:2',
-        'member_price' => 'decimal:2',
-        'is_active' => 'boolean',
-        'format' => 'string',
-        'address' => 'string',
+        'resident_price'  => 'decimal:2',
+        'guest_price'     => 'decimal:2',
+        'member_price'    => 'decimal:2',
+        'is_active'       => 'boolean',
+        'format'          => 'string',
+        'address'         => 'string',
         'additional_info' => 'string',
     ];
 
-    public function attendees()
+    // ---------------------------------------------
+    // Booted
+    // ---------------------------------------------
+
+    protected static function booted()
+    {
+        static::deleted(function ($model) {
+            if ($model->isForceDeleting()) {
+                $model->sessions()->forceDelete();
+                $model->attendees()->forceDelete();
+            } else {
+                $model->sessions()->delete();
+                $model->attendees()->delete();
+                $model->updateQuietly(['is_active' => false]);
+            }
+        });
+
+        static::restored(function ($model) {
+            $model->sessions()->withTrashed()->restore();
+            $model->attendees()->withTrashed()->restore();
+            $model->updateQuietly(['is_active' => true]);
+        });
+    }
+
+    // ---------------------------------------------
+    // Scopes
+    // ---------------------------------------------
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all'     => $query->withTrashed(),
+            'trashed' => $query->onlyTrashed(),
+            default   => $query,
+        };
+    }
+
+    // ---------------------------------------------
+    // Relations
+    // ---------------------------------------------
+
+    public function attendees(): MorphMany
     {
         return $this->morphMany(Attendee::class, 'event');
     }
@@ -79,6 +114,15 @@ class Webinar extends Model implements HasMedia
     {
         return $this->morphMany(Payment::class, 'event_payed');
     }
+
+    public function bankDetails()
+    {
+        return $this->morphOne(BankDetail::class, 'event');
+    }
+
+    // ---------------------------------------------
+    // Media Collections
+    // ---------------------------------------------
 
     public function registerMediaCollections(): void
     {
@@ -94,53 +138,25 @@ class Webinar extends Model implements HasMedia
             ->singleFile()
             ->withResponsiveImages();
 
-        $this->addMediaCollection('webinars_gallery')
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
-
-        $this->addMediaCollection('webinars_sponsors_logos')
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
-
         $this->addMediaCollection('webinars_program')
             ->acceptsMimeTypes(['application/pdf'])
             ->useDisk('public');
 
-        $this->registerSponsorMediaCollections(); // <----- sponsor
+        $this->registerSponsorMediaCollections();
     }
+
+    // ---------------------------------------------
+    // Media Attributes
+    // ---------------------------------------------
 
     protected function coverUrl(): Attribute
     {
-        return Attribute::make(function () {
-            return $this->getFirstMediaUrl('webinars_covers');
-        });
+        return Attribute::make(fn() => $this->getFirstMediaUrl('webinars_covers'));
     }
 
     protected function coverPreviewUrl(): Attribute
     {
-        return Attribute::make(function () {
-            return $this->getFirstMediaUrl('webinars_previews');
-        });
-    }
-
-    protected function galleryUrls(): Attribute
-    {
-        return Attribute::make(function () {
-            return $this->getMedia('webinars_gallery')->map(function ($media) {
-                return $media->getUrl();
-            });
-        });
-    }
-
-    protected function sponsorsLogosUrls(): Attribute
-    {
-        return Attribute::make(function () {
-            return $this->getMedia('webinars_sponsors_logos')->map(function ($media) {
-                return $media->getUrl();
-            });
-        });
+        return Attribute::make(fn() => $this->getFirstMediaUrl('webinars_previews'));
     }
 
     protected function programUrl(): Attribute
@@ -151,12 +167,10 @@ class Webinar extends Model implements HasMedia
         });
     }
 
-    public function bankDetails()
-    {
-        return $this->morphOne(BankDetail::class, 'event');
-    }
+    // ---------------------------------------------
+    // Sponsor
+    // ---------------------------------------------
 
-    // sponsor
     public function sponsorCollectionPrefix(): string
     {
         return 'webinars';

@@ -117,6 +117,10 @@ const props = defineProps({
     showTypeBadge: {
         type: Boolean,
         default: true
+    },
+    objectFit: {
+        type: String,
+        default: 'cover' //cover, contain, fill, none, scale-down
     }
 })
 
@@ -383,7 +387,8 @@ const isItemImage = (item) => {
                         v-if="isItemImage(item)"
                         :src="getPreviewUrl(item)"
                         :alt="`${previewAlt} ${idx + 1}`"
-                        class="h-full w-full object-cover"
+                        :class="'object-' + objectFit"
+                        class="h-full w-full"
                     >
 
                     <!-- Preview archivo no-imagen -->

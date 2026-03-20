@@ -2,56 +2,40 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Web\BannersController;
 use App\Http\Controllers\Controller;
-use function Illuminate\Log\log;
+use App\Traits\HandlesSponsorMedia;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\AcademicSession;
 use Illuminate\Http\Request;
 use App\Models\BankDetail;
-use App\Traits\HandlesSponsorMedia;
 use Inertia\Inertia;
+use Exception;
 
 class AcademicSessionsController extends Controller
 {
     use HandlesSponsorMedia;
 
+    // ---------------------------------------------
+    // CRUD
+    // ---------------------------------------------
+
     public function index(Request $request)
     {
-        $perPage = $request->get('per_page', 9);
-        $academicSessions = AcademicSession::with('sessions')
-            ->orderBy('created_at', 'desc')
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('topic', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->filled('date'), function ($query) use ($request) {
-                $query->whereHas('sessions', function ($q) use ($request) {
-                    $q->whereDate('date', $request->date);
-                });
-            })
-            ->when($request->filled('organized_by'), function ($query) use ($request) {
-                $query->where('organized_by', 'like', '%' . $request->organized_by . '%');
-            })
-            ->when($request->filled('status'), function ($query) use ($request) {
-                $query->where('is_active', $request->status === 'active');
-            })
-            ->paginate($perPage)
-            ->withQueryString();
+        $academicSessions = $this->addFilters($request);
 
         return Inertia::render('AcademicSessions/Index', [
             'academicSessions' => $academicSessions,
-            'filters'  => $request->only(['search', 'date', 'organized_by', 'status']),
         ]);
     }
 
     public function new()
     {
-        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')->get();
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
+            ->get();
+
         return Inertia::render('AcademicSessions/AcademicSessionCreate', [
-            'bank_details' => $bankDetails
+            'bank_details' => $bankDetails,
         ]);
     }
 
@@ -63,116 +47,94 @@ class AcademicSessionsController extends Controller
             $validationRules = $this->getValidationArray();
             $validationRules['cover_image'] = 'required|image|mimes:jpeg,png,jpg,webp';
 
-            $data = $request->validate($validationRules, $this->getValidatonMessages());
-
-            $sessions = $data['sessions'];
-            unset($data['sessions']);
+            $data = $request->validate($validationRules, $this->getValidationMessages());
 
             $academicSession = AcademicSession::create($data);
 
-            foreach ($sessions as $session) {
-                $academicSession->sessions()->create([
-                    'date' => $this->formatDateTime($session['date'], $session['time']),
-                    'time' => $session['time'],
-                ]);
-            }
+            $academicSession->sessions()->createMany(
+                $this->formatSessions($request->sessions)
+            );
 
             $this->updateAcademicSessionMedia($academicSession, $request);
             $this->updateSponsorMedia($academicSession, $request);
-
-            /* if ($request->input('create_banner') === '1' && $request->hasFile('banner_image')) {
-                BannersController::createFromEvent(
-                    title: $request->input('banner_title', $academicSession->topic),
-                    image: $request->file('banner_image'),
-                    link: $request->input('banner_link') ?: null,
-                    eventId: $academicSession->id,
-                    eventType: 'academic_session'
-                );
-            } */
 
             return redirect()
                 ->route('academicsessions.index')
                 ->with('success', 'Sesión académica creada exitosamente');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Hubo un error al crear la sesión académica.')
+        } catch (Exception $e) {
+            Log::error('Error al crear sesión académica', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('error', 'Hubo un error al crear la sesión académica. Por favor intenta de nuevo.')
                 ->withInput();
         }
     }
 
     public function edit($id)
     {
-        $academicSession = AcademicSession::with('sessions')->findOrFail($id);
-        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')->get();
+        $academicSession = AcademicSession::withTrashed()->findOrFail($id);
+
+        $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')
+            ->get();
 
         return Inertia::render('AcademicSessions/AcademicSessionEdit', [
-            'academicSession' => $academicSession,
-            'bank_details' => $bankDetails
+            'academicSession' => $academicSession->load('sessions'),
+            'bank_details'    => $bankDetails,
         ]);
     }
 
     public function update(Request $request)
     {
         try {
-            $this->mergeNullableFields($request);
-            $validationRules = $this->getValidationArray();
-            $data = $request->validate($validationRules, $this->getValidatonMessages());
+            DB::beginTransaction();
 
             $academicSession = AcademicSession::findOrFail($request->id);
+            $this->ensureNotTrashed($academicSession);
 
-            $sessions = $data['sessions'];
-            unset($data['sessions']);
+            $this->mergeNullableFields($request);
 
+            $data = $request->validate(
+                $this->getValidationArray(),
+                $this->getValidationMessages()
+            );
+
+            $academicSession = AcademicSession::findOrFail($request->id);
             $academicSession->update($data);
-            $academicSession->sessions()->delete();
 
-            foreach ($sessions as $session) {
-                $academicSession->sessions()->create([
-                    'date' => $this->formatDateTime($session['date'], $session['time']),
-                    'time' => $session['time'],
-                ]);
-            }
+            $academicSession->sessions()->delete();
+            $academicSession->sessions()->createMany(
+                $this->formatSessions($request->sessions)
+            );
 
             $this->updateAcademicSessionMedia($academicSession, $request);
             $this->updateSponsorMedia($academicSession, $request);
 
-            /* if ($request->input('update_banner') === '1') {
-
-                $bannerImage = $request->hasFile('banner_image') ? $request->file('banner_image') : null;
-
-                // se uso el 'path' fisico de la imagen, la url truena
-                $bannerImagePath = null;
-                if (!$bannerImage) {
-                    $coverMedia = $academicSession->getFirstMedia('academic_sessions_covers');
-                    $bannerImagePath = $coverMedia?->getPath();
-                }
-
-                $banner = BannersController::updateFromEvent(
-                    title: $request->input('banner_title', $academicSession->topic),
-                    image: $bannerImage,
-                    imagePath: $bannerImagePath,
-                    link: $request->input('banner_link') ?: null,
-                    eventId: $academicSession->id,
-                    eventType: 'academic_session'
-                );
-
-                if ($banner === null) {
-                    return redirect()
-                        ->route('academicsessions.index')
-                        ->with('success', 'Sesión actualizada, pero no se pudo crear el banner porque no hay imagen de portada.');
-                }
-            } */
+            DB::commit();
 
             return redirect()
                 ->route('academicsessions.index')
                 ->with('success', 'Sesión académica actualizada exitosamente');
         } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
             return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Hubo un error al actualizar la sesión académica.')
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error al actualizar sesión académica', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('error', 'Hubo un error al actualizar la sesión académica. Intenta de nuevo más tarde.')
                 ->withInput();
         }
     }
@@ -181,31 +143,84 @@ class AcademicSessionsController extends Controller
     {
         try {
             $academicSession = AcademicSession::findOrFail($id);
-            $this->deleteAcademicSessionMedia($academicSession);
-            $this->deleteSponsorMedia($academicSession);
-            BannersController::deleteFromEvent(eventId: $id, eventType: 'academic_session');
-            $academicSession->sessions()->delete();
             $academicSession->delete();
 
             return redirect()
                 ->route('academicsessions.index')
                 ->with('success', 'Sesión académica eliminada exitosamente');
-        } catch (\Exception $e) {
-            return redirect()->route('academicsessions.index')
-                ->with('error', 'Hubo un error al eliminar la sesión académica.');
+        } catch (Exception $e) {
+            return redirect()
+                ->route('academicsessions.index')
+                ->with('error', 'Hubo un error al eliminar la sesión académica. Intenta de nuevo más tarde.');
         }
     }
 
-    private function deleteAcademicSessionMedia(AcademicSession $academicSession)
+    public function restore(int $id)
     {
-        $academicSession->clearMediaCollection('academic_sessions_covers');
-        $academicSession->clearMediaCollection('academic_sessions_previews');
-        $academicSession->clearMediaCollection('academic_sessions_gallery');
-        $academicSession->clearMediaCollection('academic_sessions_program');
-        $academicSession->clearMediaCollection('academic_sessions_sponsors_logos');
+        try {
+            $academicSession = AcademicSession::withTrashed()->findOrFail($id);
+            $academicSession->restore();
+
+            return redirect()
+                ->route('academicsessions.index')
+                ->with('success', 'Sesión académica restaurada exitosamente');
+        } catch (Exception $e) {
+            return redirect()
+                ->route('academicsessions.index')
+                ->with('error', 'Hubo un error al restaurar la sesión académica. Intenta de nuevo más tarde.');
+        }
     }
 
-    private function updateAcademicSessionMedia(AcademicSession $academicSession, Request $request)
+    public function changeStatus($id)
+    {
+        try {
+            $academicSession = AcademicSession::findOrFail($id);
+            $this->ensureNotTrashed($academicSession);
+            
+            $academicSession->is_active = !$academicSession->is_active;
+            $academicSession->save();
+
+            return redirect()->route('academicsessions.index');
+        } catch (Exception $e) {
+            return redirect()
+                ->route('academicsessions.index')
+                ->with('error', 'Hubo un error al actualizar la sesión académica. Intenta de nuevo más tarde.');
+        }
+    }
+
+    // ---------------------------------------------
+    // PRIVATE: Filters / Queries
+    // ---------------------------------------------
+
+    private function addFilters(Request $request)
+    {
+        $perPage = $request->get('per_page', 10);
+        $search  = $request->get('search', null);
+        $status  = $request->input('status', '');
+
+        $query = AcademicSession::orderBy('created_at', 'desc');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('topic', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('organized_by', 'like', "%{$search}%");
+            });
+        }
+
+        $query->with('sessions');
+
+        return $query
+            ->withTrashFilter($status)
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    // ---------------------------------------------
+    // PRIVATE: Media
+    // ---------------------------------------------
+
+    private function updateAcademicSessionMedia(AcademicSession $academicSession, Request $request): void
     {
         if ($request->hasFile('cover_image')) {
             $academicSession->clearMediaCollection('academic_sessions_covers');
@@ -223,67 +238,100 @@ class AcademicSessionsController extends Controller
         }
     }
 
-    private function getValidationArray()
+    // ---------------------------------------------
+    // PRIVATE: Validation
+    // ---------------------------------------------
+
+    private function getValidationArray(): array
     {
-        return [
-            'topic' => 'required|string|max:255',
-            'description' => 'required|string|max:5000',
-            'objectives' => 'nullable|string|max:2000',
-            'duration' => 'required|numeric',
-            'organized_by' => 'required|string|max:255',
-            'sponsored_by' => 'nullable|string|max:255',
-            'member_price' => 'required|numeric',
-            'guest_price' => 'nullable|numeric',
-            'resident_price' => 'nullable|numeric',
-            'format' => 'required|string',
-            'link' => 'required_if:format,online|nullable|url',
-            'address' => 'required_if:format,in_person,hybrid|nullable|string',
+        return array_merge([
+            'topic'           => 'required|string|max:255',
+            'description'     => 'required|string|max:5000',
+            'objectives'      => 'nullable|string|max:2000',
+            'duration'        => 'required|numeric|max:255',
+            'organized_by'    => 'required|string|max:255',
+            'sponsored_by'    => 'nullable|string|max:255',
+            'member_price'    => 'required|numeric',
+            'guest_price'     => 'nullable|numeric',
+            'resident_price'  => 'nullable|numeric',
+            'format'          => 'required|string',
+            'link'            => 'required_if:format,online|nullable|url',
+            'address'         => 'required_if:format,in_person,hybrid|nullable|string',
             'additional_info' => 'nullable|string',
-            'bank_detail_id' => 'required|numeric|exists:bank_details,id',
-            'is_active' => 'boolean',
-            'cover_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
-            'cover_preview_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
-            'program_pdf' => 'nullable|mimes:pdf',
-            'sessions' => 'required|array|min:1',
+            'bank_detail_id'  => 'required|numeric|exists:bank_details,id',
+            'is_active'       => 'boolean',
+            // Sesiones
+            'sessions'        => 'required|array|min:1',
             'sessions.*.date' => 'required|date',
             'sessions.*.time' => 'required|date_format:H:i',
-            //sponsors
-            $this->sponsorValidationRules(),
-        ];
+            // Archivos
+            'cover_image'         => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'cover_preview_image' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+            'program_pdf'         => 'nullable|mimes:pdf',
+        ], $this->sponsorValidationRules());
     }
 
-    private function getValidatonMessages()
+    private function getValidationMessages(): array
     {
         return [
-            'cover_image.required' => 'La imagen de portada es obligatoria.',
-            'program_pdf.mimes' => 'El archivo del programa debe ser un PDF.',
-            '*.required' => 'Este campo es obligatorio.',
+            'cover_image.required'  => 'La imagen de portada es obligatoria.',
+            'cover_image.image'     => 'El archivo debe ser una imagen.',
+            '*.mimes'               => 'La imagen debe ser un archivo de tipo: jpeg, png, jpg, webp.',
+            'program_pdf.mimes'     => 'El archivo del programa debe ser un PDF.',
+            '*.required'            => 'Este campo es obligatorio.',
+            '*.required_if'         => 'Este campo es obligatorio.',
+            '*.string'              => 'El campo debe ser una cadena de texto.',
+            '*.max'                 => 'El campo no debe exceder los :max caracteres.',
+            '*.numeric'             => 'El campo debe ser un número.',
+            '*.url'                 => 'El campo debe ser una URL válida.',
+            'sessions.*.date'       => 'El campo debe ser una fecha válida.',
+            'sessions.*.time'       => 'Selecciona un horario válido.',
             'bank_detail_id.exists' => 'Seleccione una cuenta válida.',
+            'is_active.boolean'     => 'El estado de activación solo admite verdadero/falso.',
         ];
     }
 
-    private function mergeNullableFields(Request $request)
+    private function mergeNullableFields(Request $request): void
     {
         $request->mergeIfMissing([
-            'description' => 'No disponible',
-            'is_active' => true,
-            'guest_price' => 0,
-            'resident_price' => 0,
+            'description'     => 'No disponible',
+            'objectives'      => null,
+            'sponsored_by'    => null,
+            'guest_price'     => 0,
+            'resident_price'  => 0,
+            'link'            => null,
+            'address'         => null,
+            'additional_info' => null,
+            'is_active'       => true,
         ]);
     }
 
-    private function formatDateTime($date, $time)
+    // ---------------------------------------------
+    // PRIVATE: Helpers
+    // ---------------------------------------------
+
+    private function formatSessions(array $sessions): array
+    {
+        return array_map(fn($s) => [
+            'date' => $this->formatDateTime($s['date'], $s['time']),
+            'time' => $s['time'],
+        ], $sessions);
+    }
+
+    private function formatDateTime(string $date, string $time): string
     {
         $date = date('Y-m-d', strtotime($date));
         return date('Y-m-d H:i:s', strtotime("$date $time"));
     }
 
-    public function statusChange($id)
-    {
-        $academicSession = AcademicSession::findOrFail($id);
-        $academicSession->is_active = !$academicSession->is_active;
-        $academicSession->save();
+    // ---------------------------------------------
+    // PRIVATE: Guards
+    // ---------------------------------------------
 
-        return redirect()->route('academicsessions.index');
+    private function ensureNotTrashed(AcademicSession $academicSession): void
+    {
+        if ($academicSession->trashed()) {
+            abort(403, 'No puedes modificar una sesión academica eliminada.');
+        }
     }
 }

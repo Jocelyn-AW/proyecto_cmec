@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import DataTable from '@/Components/DataTable.vue';
 
@@ -10,7 +10,7 @@ defineOptions({
     layout: AuthenticatedLayout
 })
 
-const { alertState, success, errorA, warning, hideAlert } = useAlert()
+const { alertState, success, errorA, warning, hideAlert, info } = useAlert()
 
 const props = defineProps({
     courses: {
@@ -57,13 +57,25 @@ const handleOnEdit = (course) => {
 }
 
 const handleOnDelete = (courseId) => {
-    warning('¿Confirma que desea eliminar este curso? Esta acción no se puede deshacer.', {
+    warning('¿Confirma que desea eliminar este curso?.', {
         title: 'Eliminar curso',
         buttonText: 'Sí, eliminar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
             router.delete(route('courses.delete', courseId));
+        }
+    })
+}
+
+const handleOnRestore = (courseId) => {
+    info('¿Confirma que desea restaurar este curso?.', {
+        title: 'Restaurar curso',
+        buttonText: 'Sí, restaurar',
+        cancelText: 'Cancelar',
+        onConfirm: () => {
+            hideAlert();
+            router.put(route('courses.restore', courseId));
         }
     })
 }
@@ -122,6 +134,21 @@ const formattedDate = (item) => {
     }
 }
 
+//Filtros
+const status = ref(route().params.status ?? '')
+
+const filters = {
+    status: status,
+}
+
+const hasActiveFilters = () =>
+    status.value
+
+
+const clearFilters = () => {
+    status.value = ''
+}
+
 </script>
 <template>
     <Head title="Cursos" />
@@ -143,8 +170,8 @@ const formattedDate = (item) => {
                     { label: 'Costo Invitado', key: 'guest_price' },
                     { label: 'Modalidad', key: 'format' },
                     { label: 'Link de conexion', key: 'link' },
-                    { label: 'Estatus', key: 'is_active' }
                 ]"
+                :filter-values="filters"
                 :paginator="props.courses"
                 :searchable="true"
                 :per-page-options="[5, 10, 15]"
@@ -154,10 +181,38 @@ const formattedDate = (item) => {
                 :allow-delete="true"
                 @create="handleOnCreate"
                 @edit="handleOnEdit"
-                
+                @restore="handleOnRestore"
                 @delete="handleOnDelete"
                 :only="['courses']"
                 >
+
+                <template #filters
+                    class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+                    <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <!-- Asistencia -->
+                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
+                                Estatus
+                            </label>
+                            <select id="attend" v-model="status" 
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
+                                >
+                                <option value="all">Todos</option>
+                                <option value="">Activos</option>
+                                <option value="trashed">Inactivos</option> 
+                            </select>
+                            <!-- Limpiar filtros -->
+                            <button v-if="hasActiveFilters()" @click="clearFilters"
+                                class="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-red-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </template>
 
                 <template #cell-topic="{item}">
                     {{ truncate(item.topic, 25) }}
@@ -210,13 +265,13 @@ const formattedDate = (item) => {
                 </template>
 
                 <template #cell-is_active="{ item }">
-                    <span role="button" @click="onChangeStatus(item)"
+                    <span role="button"
                         class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.is_active 
+                        :class="!item.deleted_at 
                             ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
                             : 'bg-orange-200 text-orange-700 hover:bg-orange-300'"
                     >
-                        {{ item.is_active ? 'Activo' : 'Inactivo' }}
+                        {{ !item.deleted_at ? 'Activo' : 'Inactivo' }}
                     </span>
                 </template>
 

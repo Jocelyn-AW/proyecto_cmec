@@ -180,10 +180,11 @@ const flatpickrTimeConfig = {
             </div>
 
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
-                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                <div class="grid lg:grid-cols-4 gap-4 p-8">
                     <div>
-                        <span class="text-sm text-gray-700">
-                            Datos Generales</span>
+                        <span class="text-base font-semibold text-slate-700">
+                            Datos Generales
+                        </span>
                     </div>
                     <div class="lg:col-span-3 space-y-6">
                         <div class="grid lg:grid-cols-3 gap-3">
@@ -282,10 +283,11 @@ const flatpickrTimeConfig = {
                 </div>
             </div>
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
-                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                <div class="grid lg:grid-cols-4 gap-4 p-8">
                     <div>
-                        <span class="text-sm text-gray-700">
-                            Patrocinadores</span>
+                        <span class="text-base font-semibold text-slate-700">
+                            Patrocinadores
+                        </span>
                     </div>
                     <div class="col-span-3 space-y-6">
                         <div>
@@ -297,6 +299,7 @@ const flatpickrTimeConfig = {
                                 :is-dragging="platinum_sponsor.isDragging.value" 
                                 :max-files="20"
                                 :columns="'6'"
+                                :object-fit="'contain'"
                                 @change="platinum_sponsor.handleChange" 
                                 @drop="platinum_sponsor.handleDrop" 
                                 @drag-enter="platinum_sponsor.handleDragEnter"
@@ -315,6 +318,7 @@ const flatpickrTimeConfig = {
                                 :is-dragging="golden_sponsor.isDragging.value" 
                                 :max-files="20"
                                 :columns="'6'"
+                                :object-fit="'contain'"
                                 @change="golden_sponsor.handleChange" 
                                 @drop="golden_sponsor.handleDrop" 
                                 @drag-enter="golden_sponsor.handleDragEnter"
@@ -333,6 +337,7 @@ const flatpickrTimeConfig = {
                                 :is-dragging="silver_sponsor.isDragging.value" 
                                 :max-files="20"
                                 :columns="'6'"
+                                :object-fit="'contain'"
                                 @change="silver_sponsor.handleChange" 
                                 @drop="silver_sponsor.handleDrop" 
                                 @drag-enter="silver_sponsor.handleDragEnter"
@@ -347,9 +352,9 @@ const flatpickrTimeConfig = {
                 </div>
             </div>
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
-                <div class="grid lg:grid-cols-4 gap-4 p-6">
+                <div class="grid lg:grid-cols-4 gap-4 p-8">
                     <div class="">
-                        <span class="text-sm text-gray-700"> Detalles Adicionales</span>
+                        <span class="text-base font-semibold text-slate-700"> Detalles Adicionales</span>
                     </div>
                     <div class="lg:col-span-3 space-y-6">
                         <div>
@@ -501,12 +506,10 @@ const flatpickrTimeConfig = {
                     </div>
                 </div>
             </div>
-            <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
-                >
-                <div class="grid  md.grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]" >
+                <div class="grid  md.grid-cols-2 lg:grid-cols-4 gap-4 p-8">
                     <div class="">
-                        <span class="text-sm text-gray-700">Costos</span>
+                        <span class="text-base font-semibold text-slate-700">Costos</span>
                     </div>
                     <div>
                         <label
@@ -556,7 +559,7 @@ const flatpickrTimeConfig = {
                         <label
                             class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400"
                         >
-                            Para no miembros (invitados)
+                            Para Invitados (no socios)
                         </label>
                         <div class="relative">
                             <span
@@ -575,7 +578,7 @@ const flatpickrTimeConfig = {
                         </div>
                     </div>
                     <div class="">
-                        <span class="text-sm text-gray-700">Detalles de pago</span>
+                        <span class="text-base font-semibold text-slate-700">Detalles de pago</span>
                     </div>
                     <div class="lg:col-span-3">
                         <label
@@ -608,13 +611,10 @@ const flatpickrTimeConfig = {
             </div>
             
             <div
-                class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]"
+                class="overflow-hidden rounded-2xl dark:border-gray-800 dark:bg-white/[0.03]"
                 >
-                <div class="grid grid-cols-4 gap-4 p-6">
-                    <div class="col-span-2">
-                        <span class="text-sm text-gray-700"></span>
-                    </div>
-                    <div class="col-span-2 flex justify-end items-center">
+                <div class="grid grid-cols-4 gap-4 p-1">
+                    <div class="col-span-2 col-start-3 flex justify-end items-center">
                         <button @click="handleCancel"
                             class="rounded-lg border border-gray-300 bg-transparent px-4 mx-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 ">
                             Cancelar

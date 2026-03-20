@@ -104,7 +104,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['create', 'edit', 'delete'])
+const emit = defineEmits(['create', 'edit', 'delete', 'restore'])
 
 // --- Registros por pagina ---
 const currentUrlParams = new URLSearchParams(window.location.search)
@@ -283,7 +283,7 @@ watch(
                         v-for="item in paginator.data"
                         :key="item.id"
                         class="transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                    >
+                        :class="item.deleted_at ? 'bg-red-50 hover:bg-red-100' : ''">
                         <td
                             v-for="col in columns"
                             :key="col.key"
@@ -314,13 +314,29 @@ watch(
                                 </svg>
                             </button>
                             <button
-                                v-if="allowDelete"
+                                v-if="allowDelete && !item.deleted_at"
                                 @click="emit('delete', item.id)"
                                 title="Eliminar"
                                 class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-100 hover:border-red-600"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg> -->
+
+                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 22 22" stroke-width=".2" stroke="currentColor" class="w-4 h-4">
+                                    <path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10s10-4.47 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8s8 3.59 8 8s-3.59 8-8 8zm3.59-13L12 10.59L8.41 7L7 8.41L10.59 12L7 15.59L8.41 17L12 13.41L15.59 17L17 15.59L13.41 12L17 8.41z" fill="currentColor"></path>
+                                </svg>
+                            </button>
+
+                            <button
+                                v-if="allowDelete && item.deleted_at"
+                                @click="emit('restore', item.id)"
+                                title="Restaurar"
+                                class="p-2 rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white transition-colors border border-teal-100 hover:border-teal-600"
+                            >
+                                
+                                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="3 0 22 22" stroke-width=".2" stroke="currentColor" class="w-4 h-4">
+                                    <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89l.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7s-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54l.72-1.21l-3.5-2.08V8H12z" fill="currentColor"></path>
                                 </svg>
                             </button>
                         </td>

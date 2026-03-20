@@ -66,6 +66,7 @@ class Album extends Model implements HasMedia
             ->width(400)
             ->height(400)
             ->sharpen(10)
-            ->nonQueued();
+            //->nonQueued()
+        ;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\AcademicSession;
 use Inertia\Inertia;
 use App\Models\Course;
 use App\Models\Conference;
+use App\Models\InvoiceData;
 use App\Models\Webinar;
 use App\Models\Member;
 use App\Models\Payment;
@@ -25,16 +26,7 @@ class AttendeesController extends Controller
         $attendees = $this->addFilters($request, $event_type);
         $events = $this->getEvents($event_type);
 
-        $view = 'CoursesAttendees/Index';
-        if ($event_type === Constants::EVENT_WEBINAR) {
-            $view = 'WebinarsAttendees/Index';
-        } else if ($event_type === Constants::EVENT_ACADEMIC_SESSION) {
-            $view = 'AcademicSessionsAttendees/Index';
-        } else if ($event_type === Constants::EVENT_CONFERENCE) {
-            $view = 'ConferencesAttendees/Index';
-        }
-
-        return Inertia::render($view, [
+        return Inertia::render('Attendees/Index', [
             'attendees' => $attendees,
             'eventName' => $events['eventName'],
             'allEvents' => $events['allEvents'],
@@ -45,27 +37,34 @@ class AttendeesController extends Controller
     private function addFilters(Request $request, $event_type)
     {
         try {
-            $search = $request->input('search', null);
-            $event_id = $request->input('event_id', null);
+            $search     = $request->input('search', null);
+            $event_id   = $request->input('event_id', null);
             $did_attend = $request->input('did_attend', null);
-            $perPage = $request->input('per_page', 10);
+            $perPage    = $request->input('per_page', 10);
+            $status     = $request->input('status', '');
 
             $is_conference = $event_type == Constants::EVENT_CONFERENCE;
-            $title = $is_conference ? 'name' : 'topic';
+            $title         = $is_conference ? 'name' : 'topic';
 
             $attendees = Attendee::where('event_type', $event_type);
 
+            $attendees->withTrashFilter($status);
+
             $attendees->with([
                 'event' => function (MorphTo $morphTo) use ($event_type, $title) {
-                    $morphTo->morphWith([
+                    $morphTo->withTrashed()->morphWith([
                         $event_type => function ($query) use ($title) {
                             $query->select('id', $title);
                         }
                     ]);
+                },
+                'payments' => function ($query) {
+                    $query->withTrashed();
+                },
+                'invoiceData' => function ($query) {
+                    $query->withTrashed();
                 }
             ]);
-
-            $attendees->with('payments');
 
             if (!empty($search)) {
                 $attendees->where(function ($query) use ($search, $event_type, $title) {
@@ -73,17 +72,71 @@ class AttendeesController extends Controller
                         ->orWhere('email', 'like', "%{$search}%")
                         ->orWhere('state', 'like', "%{$search}%")
                         ->orWhere('city', 'like', "%{$search}%")
-                        ->orWhereMorphRelation('event', $event_type, $title, 'like', "%{$search}%");
+                        ->orWhereHasMorph('event', [$event_type], function ($query) use ($search, $title) {
+                            $query->withTrashed()->where($title, 'like', "%{$search}%");
+                        });
                 });
             }
 
-            if (!empty($event_id)) {
-                $attendees->where('event_id', $event_id);
-            }
-
+            if (!empty($event_id))  $attendees->where('event_id', $event_id);
             if (isset($did_attend)) $attendees->where('did_attend', $did_attend);
 
-            return $attendees->latest()->paginate($perPage)->withQueryString();
+            $paginated = $attendees->latest()->paginate($perPage)->withQueryString();
+
+            $memberIds = $paginated->getCollection()
+                ->where('person_type', 'member')
+                ->whereNotNull('person_id')
+                ->pluck('person_id');
+
+            if ($memberIds->isNotEmpty()) {
+                $members = Member::select('id', 'cmec_member_id')
+                    ->whereIn('id', $memberIds)
+                    ->get()
+                    ->keyBy('id');
+
+                $paginated->getCollection()->transform(function ($attendee) use ($members) {
+                    if ($attendee->person_type === 'member' && $attendee->person_id) {
+                        $member = $members->get($attendee->person_id);
+                        if ($member) {
+                            $attendee->person = $member;
+                        }
+                    }
+                    return $attendee;
+                });
+            }
+
+            // inyección de pagos de miembros POR EVENTO
+            $memberPersonIds = $memberIds;
+
+            if ($memberPersonIds->isNotEmpty()) {
+                $memberPayments = Payment::where('user_type', 'member')
+                    ->whereIn('user_id', $memberPersonIds)
+                    ->withTrashed()
+                    ->get()
+                    ->groupBy('user_id');
+
+                $paginated->getCollection()->transform(function ($attendee) use ($memberPayments) {
+                    if (
+                        $attendee->person_type === 'member' &&
+                        $attendee->person_id &&
+                        $attendee->payments->isEmpty()
+                    ) {
+                        $payments = $memberPayments->get($attendee->person_id, collect())
+                            ->filter(
+                                fn($p) =>
+                                $p->event_payed_type === $attendee->event_type &&
+                                    $p->event_payed_id   === $attendee->event_id
+                            )
+                            ->values();
+
+                        $attendee->setRelation('payments', $payments);
+                    }
+                    return $attendee;
+                });
+            }
+            //
+
+            return $paginated;
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }
@@ -98,7 +151,18 @@ class AttendeesController extends Controller
                 break;
             case Constants::EVENT_CONFERENCE:
                 $eventName = 'Congreso';
-                $events = Conference::select('id', 'name');
+                $events = Conference::select('id', 'name')
+                            ->where('subtype', Constants::EVENT_CONFERENCE);
+                break;
+            case Constants::EVENT_PRECONFERENCE:
+                $eventName = 'Pre-congreso';
+                $events = Conference::select('id', 'name')
+                            ->where('subtype', Constants::EVENT_PRECONFERENCE);
+                break;
+            case Constants::EVENT_TRANSCONFERENCE:
+                $eventName = 'Trans-congreso';
+                $events = Conference::select('id', 'name')
+                            ->where('subtype', Constants::EVENT_TRANSCONFERENCE);
                 break;
             case Constants::EVENT_WEBINAR:
                 $eventName = 'Webinar';
@@ -113,18 +177,19 @@ class AttendeesController extends Controller
                 $events = collect();
         }
 
-        $allEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'is_active');
-        if ($event_type == Constants::EVENT_CONFERENCE) {
-            $allEvents->addSelect('surgeon_price', 'nurse_price');
-        }
-        $allEvents->orderBy('created_at', 'desc');
+        $activeEvents = $events->addSelect('member_price', 'guest_price', 'resident_price', 'deleted_at');
 
-        $active = (clone $allEvents)->where('is_active', '1');
+        if ($this->isConferenceRelated($event_type)) {
+            $activeEvents->addSelect('surgeon_price', 'nurse_price');
+        }
+
+        $activeEvents->orderBy('created_at', 'desc');
+        $allEvents = (clone $activeEvents)->withTrashed();
 
         return [
             'eventName' => $eventName,
             'allEvents' => $allEvents->get(),
-            'activeEvents' => $active->get()
+            'activeEvents' => $activeEvents->get()
         ];
     }
 
@@ -138,15 +203,35 @@ class AttendeesController extends Controller
             $data = $request->validate($rules, $this->getValidationMessages());
             $data['person_id'] = $this->getMemberByCmecId($request);
 
+
+            $exists = Attendee::where('event_id', $request->event_id)
+                ->where('event_type', $request->event_type)
+                ->where('person_type', $request->person_type)
+                ->when($request->person_type === Constants::PERSON_MEMBER, function ($query) use ($data) {
+                    $query->where('person_id', $data['person_id']);
+                }, function ($query) use ($request) {
+                    $query->where('email', $request->email);
+                })
+                ->whereNull('deleted_at')
+                ->exists();
+
+            if ($exists) {
+                throw ValidationException::withMessages([
+                    'event_id' => 'Este usuario ya está registrado en este evento.'
+                ]);
+            }
+
             $attendee = Attendee::create($data);
+
             $this->registerPayment($attendee, $data);
+            $this->saveInvoiceData($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', ['event' => $data['event_type']])
                 ->with('success', 'Asistente creado exitosamente');
         } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->with('error', 'Ocurrió un error al crear el asistente. Por favor, inténtalo de nuevo.')
@@ -165,7 +250,9 @@ class AttendeesController extends Controller
 
             $attendee = Attendee::findOrFail($id);
             $attendee->update($data);
+
             $this->registerPayment($attendee, $data);
+            $this->saveInvoiceData($attendee, $data);
 
             return redirect()
                 ->route('attendees.index', $this->getActiveFilters($request, $data['event_type']))
@@ -173,7 +260,7 @@ class AttendeesController extends Controller
         } catch (ValidationException $e) {
             Log::error($e->getMessage());
             return redirect()->back()->withErrors($e->errors())->withInput();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error($e->getMessage());
             return redirect()
                 ->back()
@@ -185,16 +272,21 @@ class AttendeesController extends Controller
     public function delete(Request $request, $id)
     {
         $attendee = Attendee::findOrFail($id);
-
-        if ($attendee->payments()->count() > 0) {
-            $attendee->payments()->delete();
-        }
-        $attendee->clearMediaCollection('diplomas');
         $attendee->delete();
 
         return redirect()
             ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
             ->with('success', 'Asistente eliminado exitosamente');
+    }
+
+    public function restore(Request $request, $id)
+    {
+        $attendee = Attendee::withTrashed()->findOrFail($id);
+        $attendee->restore();
+
+        return redirect()
+            ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
+            ->with('success', 'Asistente restaurado exitosamente');
     }
 
     public function uploadDiploma(Request $request, $id)
@@ -247,24 +339,42 @@ class AttendeesController extends Controller
             'special_needs' => 'nullable|string|max:250',
 
             'event_id' => 'required|integer',
-            'event_type' => 'required|string|in:course,conference,webinar,academic_session',
+            'event_type' => 'required|string|in:course,conference,webinar,academic_session,pre_conference,trans_conference',
             'person_id' => 'nullable|integer',
             'person_type' => 'required|string|in:member,resident,guest,surgeon,nurse',
 
             'payment_method' => 'required|string|in:debit_card,credit_card,cash,transfer,stripe,free',
             'reference' => 'nullable|string',
-            'specialty' => 'nullable|string|max:200'
+            'specialty' => 'nullable|string|max:200',
+
+            //Datos de Facturacion
+            'has_invoice' => 'required|boolean',
+            'rfc' => 'required_if:has_invoice,true|nullable|string|uppercase|min:12|max:13',
+            'tax_name' => 'required_if:has_invoice,true|nullable|string|min:3|max:190',
+            'address' => 'required_if:has_invoice,true|nullable|string|min:3|max:190',
+            'postal_code' => 'required_if:has_invoice,true|nullable|string|digits:5',
+            'tax_regime' => 'required_if:has_invoice,true|nullable|string|digits:3',
+            'cfdi_use' => 'required_if:has_invoice,true|nullable|string|between:3,4',
+            'tax_person_type' => 'required_if:has_invoice,true|nullable|in:fisica,moral',
         ];
 
         if ($request->input('person_type') === Constants::PERSON_MEMBER) {
             $rules['cmec_member_id'] = 'required|string|max:50';
         }
 
-        if (
-            $request->input('status', 'pending') != Constants::STATUS_PENDING &&
-            $request->input('payment_method', 'cash') != Constants::METHOD_CASH &&
-            $request->input('payment_method', 'cash') != Constants::METHOD_FREE
-        ) {
+        $methodsWithReference = [
+            Constants::METHOD_DEBIT_CARD,
+            Constants::METHOD_CREDIT_CARD,
+            Constants::METHOD_TRANSFER,
+            Constants::METHOD_STRIPE,
+        ];
+        $statusWithReference = [
+            Constants::STATUS_CANCELLED,
+            Constants::STATUS_PAID,
+        ];
+
+        if (in_array($request->payment_method, $methodsWithReference) && 
+            in_array($request->status, $statusWithReference)) {
             $rules['reference'] = 'required|string|max:100';
         }
 
@@ -278,7 +388,7 @@ class AttendeesController extends Controller
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe ser una dirección válida.',
             'status.required' => 'El estado de pago es obligatorio.',
-            'status.in' => 'El estado de pago debe ser "paid", "pending" o "cancelled".',
+            'status.in' => 'El estado de pago debe ser "pagado", "pendiente" o "cancelado".',
             'price.numeric' => 'El precio debe ser un número.',
             'price.min' => 'El precio no puede ser negativo.',
             'folio.required' => 'El folio es obligatorio.',
@@ -291,6 +401,7 @@ class AttendeesController extends Controller
             'phone.min' => 'El teléfono debe tener minimo :min digitos',
             'phone.max' => 'El teléfono debe tener maximo :max digitos',
             '*.required' => 'Este campo es obligatorio',
+            '*.required_if' => 'Este campo es obligatorio',
         ];
     }
 
@@ -372,6 +483,36 @@ class AttendeesController extends Controller
         }
     }
 
+    private function saveInvoiceData(Attendee $attendee, array $data) {
+        try {
+            $isMember = $attendee->person_type == Constants::PERSON_MEMBER && !empty($attendee->person_id);
+
+            $attributes = [
+                'billable_type' => $isMember ? Constants::PERSON_MEMBER : 'attendee',
+                'billable_id' => $isMember ? $attendee->person_id : $attendee->id,
+            ];
+
+            $values = [
+                
+                'rfc' => $data['rfc'] ?? null,
+                'name' => $data['tax_name'] ?? null,
+                'email' => $attendee->email,
+                'postal_code' => $data['postal_code'] ?? null,
+                'person_type' => $data['tax_person_type'] ?? null,
+                'tax_regime' => $data['tax_regime'] ?? null,
+                'cfdi_use' => $data['cfdi_use'] ?? null,
+                'address' => $data['address'] ?? null,
+            ];
+
+            InvoiceData::updateOrCreate($attributes, $values);
+
+            return true;
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            return false;
+        }
+    }
+
     /**
      * extraemos los filtros activos del request y los combinamos con el event_type
      * agregar aqui filtros nuevos para que se propague en todos los redirects
@@ -384,5 +525,16 @@ class AttendeesController extends Controller
             'did_attend' => $request->get('_filters_did_attend'),
             // 'search'  => $request->get('_filters_search'),   // ejemplo
         ], fn($v) => $v !== null && $v !== '');
+    }
+
+    private function isConferenceRelated (string $event_type)
+    {
+        $events = [
+            Constants::EVENT_CONFERENCE,
+            Constants::EVENT_PRECONFERENCE,
+            Constants::EVENT_TRANSCONFERENCE,
+        ];
+
+        return in_array($event_type, $events);
     }
 }

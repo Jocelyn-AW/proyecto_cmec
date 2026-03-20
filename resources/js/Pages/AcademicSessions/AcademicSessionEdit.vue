@@ -1,14 +1,12 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
-import { Head, useForm, usePage, router } from "@inertiajs/vue3";
+import { Head, router } from "@inertiajs/vue3";
 import flatPickr from "vue-flatpickr-component";
 import { Spanish } from "flatpickr/dist/l10n/es.js";
 import "flatpickr/dist/flatpickr.css";
 import Dropzone from "@/Components/Dropzone.vue";
 import { useFileUpload, useImageUpload } from "@/composables/useImageDropped";
-import Alerta from '@/Components/Alerta.vue';
-import { useAlert } from '@/composables/useAlert';
-import { ref, watch, computed } from "vue";
+import { computed, reactive, watch, ref } from "vue";
 import SponsorsSection from '@/Components/SponsorsSection.vue'
 
 defineOptions({
@@ -34,241 +32,200 @@ const props = defineProps({
     },
 });
 
-const { alertState, warning, hideAlert } = useAlert();
-const page = usePage()
-const sponsorsRef = ref(null)
-/* const updateBanner = ref(false); */
+// ---------------------------------
+// Estado
+// ---------------------------------
 
-const form = useForm({
+const isSubmitting = ref(false);
+const sponsorsRef = ref(null);
+const isTrashed = computed(() => !!props.academicSession?.deleted_at);
+
+const formData = reactive({
     id: null,
-    topic: "",
-    description: "",
-    objectives: "",
-    duration: "",
-    organized_by: "",
-    sponsored_by: "",
-    format: "",
-    link: "",
-    address: "",
-    additional_info: "",
-    member_price: "",
-    resident_price: "",
-    guest_price: "",
-    bank_detail_id: "",
-    cover_image: null,
-    program_pdf: null,
-    sessions: [
-        { date: "", time: "" }
-    ],
+    topic: '',
+    description: '',
+    objectives: '',
+    duration: '',
+    organized_by: '',
+    link: '',
+    member_price: '',
+    resident_price: '',
+    guest_price: '',
+    format: '',
+    address: '',
+    additional_info: '',
+    bank_detail_id: '',
+    sessions: [{ date: '', time: '' }],
 });
 
-const addSession = () => {
-    form.sessions.push({ date: "", time: "" });
-};
-
-const removeSession = (index) => {
-    form.sessions.splice(index, 1);
-};
+// ---------------------------------
+// Media
+// ---------------------------------
 
 const cover = useImageUpload({
     maxSizeMB: 1,
-    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
-    onError: (message) => warning(message),
+    acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+    onError: (msg) => alert(msg),
 });
 
 const previewCover = useImageUpload({
     maxSizeMB: 1,
-    dimensions: {
-        minWidth: 400,
-        minHeight: 400,
-        maxWidth: 800,
-        maxHeight: 800,
-    },
-    acceptedTypes: ["image/jpeg", "image/png", "image/jpg", "image/webp"],
-    onError: (message) => {
-        warning(message);
-    },
+    dimensions: { minWidth: 400, minHeight: 400, maxWidth: 800, maxHeight: 800 },
+    acceptedTypes: ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'],
+    onError: (msg) => alert(msg),
 });
 
 const pdf = useFileUpload({
     acceptedTypes: ['application/pdf'],
     maxSizeMB: 5,
-    onError: (msg) => warning(msg),
+    onError: (msg) => alert(msg),
 });
 
-const currentCover = computed(() => {
-    if (cover.file.value) {
-        return cover.preview.value;
-    } else if (props.academicSession?.cover_url) {
-        return props.academicSession?.cover_url;
-    } else {
-        return null;
-    }
-});
+// ---------------------------------
+// Computeds de media
+// ---------------------------------
 
-const currentPreview = computed(() => {
-    if (previewCover.file.value) {
-        return previewCover.preview.value;
-    } else if (props.academicSession?.cover_preview_url) {
-        return props.academicSession?.cover_preview_url;
-    } else {
-        return null;
-    }
-});
+const currentCover = computed(() =>
+    cover.file.value ? cover.preview.value : (props.academicSession?.cover_url ?? null)
+);
+
+const currentPreview = computed(() =>
+    previewCover.file.value ? previewCover.preview.value : (props.academicSession?.cover_preview_url ?? null)
+);
 
 const currentPdf = computed(() => {
-    if (pdf.file.value) {
-        return pdf.preview.value;
-    } else if (props.academicSession?.program_url) {
+    if (pdf.file.value) return pdf.preview.value;
+    if (props.academicSession?.program_url) {
         return {
             type: 'application/pdf',
             isFile: true,
             size: null,
-            name: props.academicSession?.program_url.split('/').pop(),
+            name: props.academicSession.program_url.split('/').pop(),
         };
-    } else {
-        return null;
     }
+    return null;
 });
 
-const getDateFromDateTime = (dateTime) => {
-    if (!dateTime) return "";
-    return dateTime.split('T')[0].split(' ')[0];
-};
+// ---------------------------------
+// Fill form
+// ---------------------------------
 
 const fillForm = (academicSession) => {
-    form.id = academicSession.id || null;
-    form.topic = academicSession.topic || "";
-    form.description = academicSession.description || "";
-    form.objectives = academicSession.objectives || "";
-    form.duration = academicSession.duration || "";
-    form.organized_by = academicSession.organized_by || "";
-    form.sponsored_by = academicSession.sponsored_by || "";
-    form.format = academicSession.format || "";
-    form.link = academicSession.link || "";
-    form.address = academicSession.address || "";
-    form.additional_info = academicSession.additional_info || "";
-    form.member_price = academicSession.member_price || "";
-    form.resident_price = academicSession.resident_price || "";
-    form.guest_price = academicSession.guest_price || "";
-    form.bank_detail_id = academicSession.bank_detail_id || "";
+    formData.id = academicSession.id ?? null;
+    formData.topic = academicSession.topic ?? '';
+    formData.description = academicSession.description ?? '';
+    formData.objectives = academicSession.objectives ?? '';
+    formData.duration = academicSession.duration ?? '';
+    formData.organized_by = academicSession.organized_by ?? '';
+    formData.format = academicSession.format ?? '';
+    formData.link = academicSession.link ?? '';
+    formData.address = academicSession.address ?? '';
+    formData.additional_info = academicSession.additional_info ?? '';
+    formData.member_price = academicSession.member_price ?? '';
+    formData.resident_price = academicSession.resident_price ?? '';
+    formData.guest_price = academicSession.guest_price ?? '';
+    formData.bank_detail_id = academicSession.bank_detail_id ?? '';
 
-    if (academicSession.sessions && academicSession.sessions.length > 0) {
-        form.sessions = academicSession.sessions.map(session => ({
-            date: getDateFromDateTime(session.date),
-            time: session.time ? session.time.substring(0, 5) : ''
-        }));
-    } else {
-        form.sessions = [{ date: '', time: '' }];
-    }
+    formData.sessions = academicSession.sessions?.length
+        ? academicSession.sessions.map(s => ({
+            date: s.date?.split(/[T ]/)[0] ?? '',
+            time: s.time?.substring(0, 5) ?? '',
+        }))
+        : [{ date: '', time: '' }];
 };
 
-watch(
-    [() => page.props.flash, () => props.academicSession],
-    ([flash, academicSession]) => {
-        if (flash?.error) {
-            warning(flash.error);
-        }
+watch(() => props.academicSession, (val) => {
+    if (val?.id) fillForm(val);
+}, { immediate: true });
 
-        if (flash?.success) {
-            warning(flash.success);
-        }
+// ---------------------------------
+// Sesiones
+// ---------------------------------
 
-        if (academicSession && academicSession.id) {
-            fillForm(academicSession);
-        }
-    },
-    { immediate: true }
-);
+const addSession = () => formData.sessions.push({ date: '', time: '' });
+const removeSession = (index) => formData.sessions.splice(index, 1);
+
+// ---------------------------------
+// Submit
+// ---------------------------------
 
 const handleSubmit = () => {
+    if (isTrashed.value || isSubmitting.value) return;
+
+    if (!cover.file.value && !props.academicSession?.cover_url) {
+        alert('Por favor selecciona una imagen de portada para la sesión académica');
+        return;
+    }
+
+    if (!previewCover.file.value && !props.academicSession?.cover_preview_url) {
+        alert('Por favor selecciona una imagen de preview para la sesión académica');
+        return;
+    }
+
+    isSubmitting.value = true;
+
+    const sponsorsData = sponsorsRef.value.getData();
     const data = new FormData();
-    const sponsorsData = sponsorsRef.value.getData()
 
     data.append('_method', 'PUT');
+    data.append('id', formData.id);
+    data.append('topic', formData.topic);
+    data.append('description', formData.description);
+    data.append('objectives', formData.objectives ?? '');
+    data.append('duration', formData.duration);
+    data.append('organized_by', formData.organized_by);
+    data.append('member_price', formData.member_price);
+    data.append('resident_price', formData.resident_price ?? '');
+    data.append('guest_price', formData.guest_price ?? '');
+    data.append('format', formData.format ?? '');
+    data.append('link', formData.link ?? '');
+    data.append('address', formData.address ?? '');
+    data.append('additional_info', formData.additional_info ?? '');
+    data.append('bank_detail_id', formData.bank_detail_id ?? '');
 
-    data.append('topic', form.topic ?? '');
-    data.append('description', form.description ?? '');
-    data.append('objectives', form.objectives ?? '');
-    data.append('duration', form.duration ?? '');
-    data.append('organized_by', form.organized_by ?? '');
-    data.append('sponsored_by', form.sponsored_by ?? '');
-    data.append('format', form.format ?? '');
-    data.append('link', form.link ?? '');
-    data.append('address', form.address ?? '');
-    data.append('additional_info', form.additional_info ?? '');
-
-    data.append('member_price', form.member_price ?? '');
-    data.append('resident_price', form.resident_price ?? '');
-    data.append('guest_price', form.guest_price ?? '');
-    data.append('bank_detail_id', form.bank_detail_id ?? '');
-
-    form.sessions.forEach((session, index) => {
-        data.append(`sessions[${index}][date]`, session.date ?? '');
-        data.append(`sessions[${index}][time]`, session.time ?? '');
+    formData.sessions.forEach((s, i) => {
+        data.append(`sessions[${i}][date]`, s.date);
+        data.append(`sessions[${i}][time]`, s.time);
     });
 
-    if (cover.file.value) {
-        data.append('cover_image', cover.file.value);
-    }
+    if (cover.file.value) data.append('cover_image', cover.file.value);
+    if (previewCover.file.value) data.append('cover_preview_image', previewCover.file.value);
+    if (pdf.file.value) data.append('program_pdf', pdf.file.value);
 
-    if (previewCover.file.value) {
-        data.append('cover_preview_image', previewCover.file.value);
-    }
+    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f));
+    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f));
+    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f));
+    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id));
+    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id));
+    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id));
 
-    if (pdf.file.value) {
-        data.append('program_pdf', pdf.file.value);
-    }
-
-    // archivos nuevos
-    sponsorsData.platinum_sponsors.forEach(f => data.append('platinum_sponsors[]', f))
-    sponsorsData.golden_sponsors.forEach(f => data.append('golden_sponsors[]', f))
-    sponsorsData.silver_sponsors.forEach(f => data.append('silver_sponsors[]', f))
-
-    // ids a eliminar
-    sponsorsData.platinum_delete.forEach(id => data.append('platinum_delete[]', id))
-    sponsorsData.golden_delete.forEach(id => data.append('golden_delete[]', id))
-    sponsorsData.silver_delete.forEach(id => data.append('silver_delete[]', id))
-
-    /* if (updateBanner.value) {
-        data.append('update_banner', '1');
-        data.append('banner_title', form.topic ?? '');
-
-        if (cover.file.value) {
-            data.append('banner_image', cover.file.value);
-        }
-
-        if (form.link && form.link.trim() !== '') {
-            data.append('banner_link', form.link);
-        }
-    } */
-
-    router.post(`/academicsessions/${form.id}`, data, {
+    router.post(route('academicsessions.update', formData.id), data, {
         forceFormData: true,
-        onError: (errors) => {
-            console.error('Errores de validación:', errors);
-        },
+        onFinish: () => { isSubmitting.value = false; },
     });
 };
 
-const handleCancel = () => {
-    router.get(route('academicsessions.index'));
-};
+const handleCancel = () => router.get(route('academicsessions.index'));
 
-// Flatpickr
+// ---------------------------------
+// Flatpickr configs
+// ---------------------------------
+
 const flatpickrConfig = {
     locale: Spanish,
-    dateFormat: "Y-m-d",
+    dateFormat: 'Y-m-d',
     altInput: true,
-    altFormat: "F j, Y",
+    altFormat: 'F j, Y',
+    wrap: false,
 };
 
 const flatpickrTimeConfig = {
     enableTime: true,
     noCalendar: true,
-    dateFormat: "H:i",
+    dateFormat: 'H:i',
     time_24hr: false,
     minuteIncrement: 1,
+    wrap: false,
 };
 </script>
 
@@ -279,22 +236,34 @@ const flatpickrTimeConfig = {
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
 
-            <!-- ENCABEZADO -->
+            <!-- Encabezado -->
             <div>
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Editar Sesión Académica</h3>
-                <p class="text-sm text-gray-500">Modifica los datos de la sesión académica</p>
+                <p class="text-sm text-gray-500">Edita los detalles de la sesión académica desde esta sección</p>
             </div>
 
-            <!--  DATOS GENERALES -->
+            <!-- Aviso sesión eliminada -->
+            <div v-if="isTrashed"
+                class="flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                Esta sesión académica ha sido eliminada. No es posible modificarla hasta que sea restaurada.
+            </div>
+
+            <!-- DATOS GENERALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
                     <div>
-                        <span class="text-sm text-gray-700 dark:text-gray-400">Datos Generales</span>
+                        <span class="text-sm text-gray-700">Datos Generales</span>
                     </div>
-                    <div class="col-span-3 space-y-6">
+                    <div class="lg:col-span-3 space-y-6">
+
+                        <!-- Imágenes -->
                         <div class="grid lg:grid-cols-3 gap-3">
-                            <!-- FOTO -->
                             <div class="lg:col-span-2">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Foto de Portada
@@ -303,9 +272,8 @@ const flatpickrTimeConfig = {
                                     hint="JPG, PNG, WEBP (max. 1MB)" @change="cover.handleChange"
                                     @drop="cover.handleDrop" @drag-enter="cover.handleDragEnter"
                                     @drag-leave="cover.handleDragLeave" @remove="cover.reset" />
-                                <span v-if="form.errors?.cover_image"
-                                    class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.cover_image }}
+                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">
+                                    {{ errors.cover_image }}
                                 </span>
                             </div>
                             <div>
@@ -313,193 +281,140 @@ const flatpickrTimeConfig = {
                                     Previsualización
                                 </label>
                                 <Dropzone :preview="currentPreview" :is-dragging="previewCover.isDragging.value"
-                                    hint="Min. 400 x 400 (max. 1MB) " @change="previewCover.handleChange"
+                                    hint="Min. 400 x 400 (max. 1MB)" @change="previewCover.handleChange"
                                     @drop="previewCover.handleDrop" @drag-enter="previewCover.handleDragEnter"
                                     @drag-leave="previewCover.handleDragLeave" @remove="previewCover.reset" />
-
-                                <span v-if="errors.cover_image" class="text-red-500 text-xs flex justify-end">{{
-                                    errors.cover_image }}</span>
+                                <span v-if="errors.cover_preview_image" class="text-red-500 text-xs flex justify-end">
+                                    {{ errors.cover_preview_image }}
+                                </span>
                             </div>
                         </div>
-                        <!-- TEMA -->
+
+                        <!-- Tema -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Tema de la Sesión
                             </label>
-                            <input type="text" v-model="form.topic"
+                            <input type="text" v-model="formData.topic"
                                 placeholder="Ej. Inteligencia Artificial en Medicina"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.topic" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.topic }}
-                            </span>
+                            <span v-if="errors.topic" class="text-red-500 text-xs flex justify-end">{{ errors.topic
+                                }}</span>
                         </div>
 
-                        <!-- DESCRIPCION -->
+                        <!-- Descripción -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Descripción
                             </label>
-                            <textarea v-model="form.description" rows="3" maxlength="5000"
+                            <textarea v-model="formData.description" rows="3" maxlength="5000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <span v-if="form.errors?.description" class="text-red-500 text-sm font-medium">
-                                    {{ form.errors?.description }}
-                                </span>
-                                <p class="text-xs text-gray-400 ml-auto">{{ form.description.length }}/5000</p>
+                                <span v-if="errors.description" class="text-red-500 text-sm font-medium">{{
+                                    errors.description }}</span>
+                                <p class="text-xs text-gray-400 ml-auto">{{ formData.description.length }}/5000</p>
                             </div>
                         </div>
 
-                        <!-- OBJETIVOS -->
+                        <!-- Objetivos -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Objetivos
                                 <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 ml-1">
-                                    opcional
-                                </span>
+                                    class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
                             </label>
-                            <textarea v-model="form.objectives" rows="3" maxlength="2000"
+                            <textarea v-model="formData.objectives" rows="3" maxlength="2000"
                                 class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                             <div class="flex justify-between items-center mt-1">
-                                <span v-if="form.errors?.objectives" class="text-red-500 text-sm font-medium">
-                                    {{ form.errors?.objectives }}
-                                </span>
-                                <p class="text-xs text-gray-400 ml-auto">{{ form.objectives.length }}/2000</p>
+                                <span v-if="errors.objectives" class="text-red-500 text-sm font-medium">{{
+                                    errors.objectives }}</span>
+                                <p class="text-xs text-gray-400 ml-auto">{{ formData.objectives.length }}/2000</p>
                             </div>
                         </div>
 
-                        <!-- ORGANIZADO POR -->
+                        <!-- Organizado por -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Organizado por
                             </label>
-                            <input type="text" v-model="form.organized_by" placeholder="Ej. Dpto. de Medicina Interna"
+                            <input type="text" v-model="formData.organized_by"
+                                placeholder="Ej. Dpto. de Medicina Interna"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.organized_by" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.organized_by }}
-                            </span>
+                            <span v-if="errors.organized_by" class="text-red-500 text-xs flex justify-end">{{
+                                errors.organized_by }}</span>
                         </div>
-
-                        <!-- PATROCINIO -->
-                        <!-- <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                Patrocinado por
-                                <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 ml-1">
-                                    opcional
-                                </span>
-                            </label>
-                            <input type="text" v-model="form.sponsored_by" placeholder="Ej. Laboratorio XYZ"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.sponsored_by" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.sponsored_by }}
-                            </span>
-                        </div> -->
-
-                        <!-- ACTUALIZAR BANNER -->
-                        <!-- <div
-                            class="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-4 py-3">
-                            <div>
-                                <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    ¿Actualizar banner de esta sesión?
-                                </p>
-                                <p class="text-xs text-gray-400 mt-0.5">
-                                    Se actualizará el banner (si existe) usando la portada, el título y el link de la
-                                    sesión.
-                                </p>
-                            </div>
-                            <button type="button" @click="updateBanner = !updateBanner"
-                                :class="updateBanner ? 'bg-brand-500' : 'bg-gray-200 dark:bg-gray-700'"
-                                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none">
-                                <span :class="updateBanner ? 'translate-x-5' : 'translate-x-0'"
-                                    class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" />
-                            </button>
-                        </div> -->
 
                     </div>
                 </div>
             </div>
 
+            <!-- SPONSORS -->
             <SponsorsSection ref="sponsorsRef" :initial-platinum="academicSession.platinum_sponsors_urls"
                 :initial-golden="academicSession.golden_sponsors_urls"
-                :initial-silver="academicSession.silver_sponsors_urls" :errors="errors" @error="warning" />
+                :initial-silver="academicSession.silver_sponsors_urls" :errors="errors" />
 
             <!-- DETALLES ADICIONALES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
                     <div>
-                        <span class="text-sm text-gray-700 dark:text-gray-400">Detalles Adicionales</span>
+                        <span class="text-sm text-gray-700">Detalles Adicionales</span>
                     </div>
                     <div class="col-span-3 space-y-6">
 
-                        <!-- MODALIDAD -->
+                        <!-- Modalidad -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Modalidad
                             </label>
-                            <select v-model="form.format"
+                            <select v-model="formData.format"
                                 class="w-full py-2.5 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90">
                                 <option value="">Seleccionar modalidad</option>
                                 <option value="in_person">Presencial</option>
                                 <option value="hybrid">Híbrida</option>
                                 <option value="online">En línea</option>
                             </select>
-                            <span v-if="form.errors?.format" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.format }}
-                            </span>
+                            <span v-if="errors.format" class="text-red-500 text-xs flex">{{ errors.format }}</span>
                         </div>
 
-                        <!-- EXTENSIONES POR MODALIDAD -->
-                        <template v-if="form.format !== ''">
-
-                            <!-- DIRECCIÓN (PRESENCIAL / HÍBRIDO) -->
-                            <div v-if="form.format !== 'online'">
+                        <template v-if="formData.format !== ''">
+                            <!-- Dirección -->
+                            <div v-if="formData.format !== 'online'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Dirección
                                 </label>
-                                <input type="text" v-model="form.address"
+                                <input type="text" v-model="formData.address"
                                     placeholder="Ej. Av. Universidad 3000, Ciudad de México"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="form.errors?.address" class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.address }}
-                                </span>
+                                <span v-if="errors.address" class="text-red-500 text-xs flex">{{ errors.address
+                                    }}</span>
                             </div>
 
-                            <!-- INFO ADICIONAL (PRESENCIAL / HÍBRIDO) -->
-                            <div v-if="form.format !== 'online'">
+                            <!-- Información adicional -->
+                            <div v-if="formData.format !== 'online'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Información adicional
                                     <span
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 ml-1">
-                                        opcional
-                                    </span>
+                                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
                                 </label>
-                                <input type="text" v-model="form.additional_info"
+                                <input type="text" v-model="formData.additional_info"
                                     placeholder="Ej. Planta Alta, Auditorio 2"
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="form.errors?.additional_info"
-                                    class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.additional_info }}
-                                </span>
+                                <span v-if="errors.additional_info" class="text-red-500 text-xs flex">{{
+                                    errors.additional_info }}</span>
                             </div>
 
-                            <!-- LINK (ONLINE / HÍBRIDO) -->
-                            <div v-if="form.format !== 'in_person'">
+                            <!-- Link -->
+                            <div v-if="formData.format !== 'in_person'">
                                 <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                     Link de conexión
-                                    <span v-if="form.format === 'hybrid'"
-                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 ml-1">
-                                        opcional
-                                    </span>
+                                    <span v-if="formData.format === 'hybrid'"
+                                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
                                 </label>
-                                <input type="url" v-model="form.link" placeholder="https://meet.google.com/..."
+                                <input type="text" v-model="formData.link" placeholder="https://meet.google.com/..."
                                     class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                <span v-if="form.errors?.link" class="text-red-500 text-sm flex justify-start mt-1">
-                                    {{ form.errors?.link }}
-                                </span>
+                                <span v-if="errors.link" class="text-red-500 text-xs flex">{{ errors.link }}</span>
                             </div>
-
                         </template>
 
                         <!-- PDF -->
@@ -507,55 +422,42 @@ const flatpickrTimeConfig = {
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Programa de la Sesión
                                 <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 ml-1">
-                                    opcional
-                                </span>
+                                    class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400">opcional</span>
                             </label>
                             <Dropzone :preview="currentPdf" :is-dragging="pdf.isDragging.value"
                                 :accept="'application/pdf'" label="Arrastra tu PDF aquí o haz clic para seleccionar"
                                 hint="PDF (max. 5MB)" @change="pdf.handleChange" @drop="pdf.handleDrop"
                                 @drag-enter="pdf.handleDragEnter" @drag-leave="pdf.handleDragLeave"
                                 @remove="pdf.reset" />
-                            <span v-if="form.errors?.program_pdf" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.program_pdf }}
-                            </span>
+                            <span v-if="errors.program_pdf" class="text-red-500 text-xs flex">{{ errors.program_pdf
+                                }}</span>
                         </div>
 
-                        <!-- HORARIOS -->
+                        <!-- Sesiones -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Horarios
                             </label>
-
-                            <div v-for="(session, index) in form.sessions" :key="index"
+                            <div v-for="(session, index) in formData.sessions" :key="index"
                                 class="relative grid grid-cols-2 gap-4 my-3">
-
-                                <!-- HORA -->
                                 <div>
                                     <flat-pickr v-model="session.time" :config="flatpickrTimeConfig"
                                         placeholder="Selecciona una hora"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                    <span v-if="form.errors?.[`sessions.${index}.time`]"
-                                        class="text-red-500 text-xs mt-0.5 block">
-                                        {{ form.errors?.[`sessions.${index}.time`] }}
+                                    <span v-if="errors[`sessions.${index}.time`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.time`] }}
                                     </span>
                                 </div>
-
-                                <!-- FECHA -->
                                 <div>
                                     <flat-pickr v-model="session.date" :config="flatpickrConfig"
                                         placeholder="Selecciona una fecha"
                                         class="dark:bg-dark-900 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                                    <span v-if="form.errors?.[`sessions.${index}.date`]"
-                                        class="text-red-500 text-xs mt-0.5 block">
-                                        {{ form.errors?.[`sessions.${index}.date`] }}
+                                    <span v-if="errors[`sessions.${index}.date`]" class="text-red-500 text-xs">
+                                        {{ errors[`sessions.${index}.date`] }}
                                     </span>
                                 </div>
-
-                                <!-- ELIMINAR SESIÓN -->
-                                <button v-if="form.sessions.length > 1" type="button" @click="removeSession(index)"
-                                    class="absolute -right-6 top-3 text-red-400 hover:text-red-600 transition-colors"
-                                    title="Eliminar esta fecha">
+                                <button v-if="formData.sessions.length > 1" @click="removeSession(index)" type="button"
+                                    class="absolute -right-6 top-3 text-red-400 hover:text-red-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20"
                                         fill="currentColor">
                                         <path fill-rule="evenodd"
@@ -564,32 +466,21 @@ const flatpickrTimeConfig = {
                                     </svg>
                                 </button>
                             </div>
-
-                            <span v-if="form.errors?.sessions" class="text-red-500 text-sm block mb-2">
-                                {{ form.errors?.sessions }}
-                            </span>
-
-                            <button type="button" @click="addSession"
-                                class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1 transition-colors mt-2">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    viewBox="0 0 24 24">
-                                    <line x1="12" y1="5" x2="12" y2="19" />
-                                    <line x1="5" y1="12" x2="19" y2="12" />
-                                </svg>
-                                Agregar fecha
+                            <button @click="addSession" type="button"
+                                class="text-sm text-brand-500 hover:text-brand-600 flex items-center gap-1">
+                                + Agregar fecha
                             </button>
                         </div>
 
-                        <!-- DURACIÓN -->
+                        <!-- Duración -->
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                 Duración total (en horas)
                             </label>
-                            <input type="number" v-model="form.duration" min="1" placeholder="Ej. 3"
+                            <input type="number" v-model="formData.duration" min="1" placeholder="Ej. 3"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="form.errors?.duration" class="text-red-500 text-sm flex justify-start mt-1">
-                                {{ form.errors?.duration }}
-                            </span>
+                            <span v-if="errors.duration" class="text-red-500 text-xs flex justify-end">{{
+                                errors.duration }}</span>
                         </div>
 
                     </div>
@@ -600,68 +491,55 @@ const flatpickrTimeConfig = {
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <div class="grid grid-cols-4 gap-4 p-6">
-
                     <div>
-                        <span class="text-sm text-gray-700 dark:text-gray-400">Costos</span>
+                        <span class="text-sm text-gray-700">Costos</span>
                     </div>
 
-                    <!-- MIEMBRO -->
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para miembros
-                        </label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Para
+                            miembros</label>
                         <div class="relative">
                             <span
-                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                                $
-                            </span>
-                            <input v-model="form.member_price" type="number" min="0" placeholder="0.00"
+                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
+                            <input v-model="formData.member_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="form.errors?.member_price" class="text-red-500 text-sm flex justify-start mt-1">
-                            {{ form.errors?.member_price }}
-                        </span>
+                        <span v-if="errors.member_price" class="text-red-500 text-xs flex justify-end">{{
+                            errors.member_price
+                            }}</span>
                     </div>
 
-                    <!-- RESIDENTE -->
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para residentes
-                        </label>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Para
+                            residentes</label>
                         <div class="relative">
                             <span
-                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                                $
-                            </span>
-                            <input v-model="form.resident_price" type="number" min="0" placeholder="0.00"
+                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
+                            <input v-model="formData.resident_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="form.errors?.resident_price" class="text-red-500 text-xs flex justify-end mt-1">
-                            {{ form.errors?.resident_price }}
-                        </span>
+                        <span v-if="errors.resident_price" class="text-red-500 text-xs flex justify-end">{{
+                            errors.resident_price
+                            }}</span>
                     </div>
 
-                    <!-- INVITADO -->
-                    <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para no miembros (invitados)
-                        </label>
+                    <div class="mb-3">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Para Invitados
+                            (no
+                            socios)</label>
                         <div class="relative">
                             <span
-                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                                $
-                            </span>
-                            <input v-model="form.guest_price" type="number" min="0" placeholder="0.00"
+                                class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3.5 py-1 text-gray-500 dark:border-gray-800 dark:text-gray-400">$</span>
+                            <input v-model="formData.guest_price" type="number" min="0" placeholder="0.00"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-[62px] text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         </div>
-                        <span v-if="form.errors?.guest_price" class="text-red-500 text-xs flex justify-end mt-1">
-                            {{ form.errors?.guest_price }}
-                        </span>
+                        <span v-if="errors.guest_price" class="text-red-500 text-xs flex justify-end">{{
+                            errors.guest_price
+                            }}</span>
                     </div>
 
-                    <!-- DETALLES PAGO -->
                     <div>
-                        <span class="text-sm text-gray-700 dark:text-gray-400">Detalles de pago</span>
+                        <span class="text-sm text-gray-700">Detalles de pago</span>
                     </div>
                     <div class="col-span-3">
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -676,7 +554,7 @@ const flatpickrTimeConfig = {
                                         d="M470.1 231.3s7.6 37.2 9.3 45H446c3.3-8.9 16-43.5 16-43.5-.2.3 3.3-9.1 5.3-14.9zM576 80v352c0 26.5-21.5 48-48 48H48c-26.5 0-48-21.5-48-48V80c0-26.5 21.5-48 48-48h480c26.5 0 48 21.5 48 48zM152.5 331.2 215.7 176h-42.5l-39.3 106-4.3-21.5-14-71.4c-2.3-9.9-9.4-12.7-18.2-13.1H32.7l-.7 3.1c15.8 4 29.9 9.8 42.2 17.1l35.8 135zm94.4.2L272.1 176h-40.2l-25.1 155.4zm139.9-50.8c.2-17.7-10.6-31.2-33.7-42.3-14.1-7.1-22.7-11.9-22.7-19.2.2-6.6 7.3-13.4 23.1-13.4 13.1-.3 22.7 2.8 29.9 5.9l3.6 1.7 5.5-33.6c-7.9-3.1-20.5-6.6-36-6.6-39.7 0-67.6 21.2-67.8 51.4-.3 22.3 20 34.7 35.2 42.2 15.5 7.6 20.8 12.6 20.8 19.3-.2 10.4-12.6 15.2-24.1 15.2-16 0-24.6-2.5-37.7-8.3l-5.3-2.5-5.6 34.9c9.4 4.3 26.8 8.1 44.8 8.3 42.2.1 69.7-20.8 70-53zM528 331.4 495.6 176h-31.1c-9.6 0-16.9 2.8-21 12.9l-59.7 142.5H426s6.9-19.2 8.4-23.3H486c1.2 5.5 4.8 23.3 4.8 23.3z" />
                                 </svg>
                             </span>
-                            <select v-model="form.bank_detail_id"
+                            <select v-model="formData.bank_detail_id"
                                 class="w-full py-2.5 pl-[55px] rounded-lg border border-gray-300 px-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white/90">
                                 <option value="">Seleccionar cuenta</option>
                                 <option v-for="detail in bank_details" :key="detail.id" :value="detail.id">
@@ -684,38 +562,35 @@ const flatpickrTimeConfig = {
                                 </option>
                             </select>
                         </div>
-                        <span v-if="form.errors?.bank_detail_id" class="text-red-500 text-xs flex justify-end mt-1">
-                            {{ form.errors?.bank_detail_id }}
-                        </span>
+                        <span v-if="errors.bank_detail_id" class="text-red-500 text-xs flex justify-end">{{
+                            errors.bank_detail_id
+                            }}</span>
                     </div>
-
                 </div>
             </div>
 
             <!-- ACCIONES -->
             <div
                 class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-                <div class="flex items-center justify-end gap-3 p-6">
-                    <button type="button" @click="handleCancel"
-                        class="rounded-lg border border-gray-300 bg-transparent px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="button" @click="handleSubmit" :disabled="form.processing"
-                        class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                        <svg v-if="form.processing" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        <span>{{ form.processing ? 'Guardando...' : 'Guardar Cambios' }}</span>
-                    </button>
+                <div class="grid grid-cols-4 gap-4 p-6">
+                    <div class="col-span-2" />
+                    <div class="col-span-2 flex justify-end items-center gap-3">
+                        <button @click="handleCancel"
+                            class="rounded-lg border border-gray-300 bg-transparent px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                            Cancelar
+                        </button>
+                        <button @click="handleSubmit" :disabled="isTrashed || isSubmitting"
+                            :title="isTrashed ? 'Restaura la sesión para poder editarla' : ''"
+                            class="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" :class="isTrashed
+                                ? 'bg-gray-400 cursor-not-allowed opacity-60'
+                                : 'bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed'">
+                            <span v-if="isSubmitting">Guardando...</span>
+                            <span v-else>Actualizar Sesión Académica</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
         </div>
     </div>
-
-    <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
-        :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"
-        @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()" @cancel="hideAlert()"
-        @close="hideAlert()" />
 </template>

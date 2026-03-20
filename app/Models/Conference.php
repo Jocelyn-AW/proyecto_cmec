@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Http\Helpers\Constants;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
@@ -33,6 +34,8 @@ class Conference extends Model implements HasMedia
         'is_active',
         'bank_detail_id',
         'additional_comments',
+        'parent_id',
+        'subtype'
     ];
 
     protected $dates = [
@@ -59,15 +62,73 @@ class Conference extends Model implements HasMedia
         'surgeon_price' => 'decimal:2',
     ];
 
+    protected static function booted()
+    {
+        static::deleted(function ($model) {
+            if ($model->isForceDeleting()) {
+                $model->sessions()->forceDelete();
+                $model->attendees()->forceDelete();
+                $model->children()->each(fn($child) => $child->forceDelete());
+            } else {
+                $model->sessions()->delete();
+                $model->attendees()->delete();
+                $model->children()->each(fn($child) => $child->delete());
+                $model->updateQuietly(['is_active' => false]);
+            }
+
+        });
+
+        static::restored(function ($model) {
+            $model->sessions()->withTrashed()->restore();
+            $model->attendees()->withTrashed()->restore();
+            $model->children()->withTrashed()->each(fn($child) => $child->restore());
+            $model->updateQuietly(['is_active' => true]);
+        });
+    }
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all' => $query->withTrashed(),      // Todos
+            'trashed' => $query->onlyTrashed(),  // Solo Inactivos
+            default => $query,                   // Solo Activos
+        };
+    }
+
+    //Children
+    public function preConferences()
+    {
+        return $this->hasMany(Conference::class, 'parent_id')
+                    ->where('type', Constants::EVENT_PRECONFERENCE);
+    }
+
+    public function transConferences()
+    {
+        return $this->hasMany(Conference::class, 'parent_id')
+                    ->where('type', Constants::EVENT_TRANSCONFERENCE);
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Conference::class, 'parent_id');
+    }
+
+    //Parent
+    public function parent()
+    {
+        return $this->belongsTo(Conference::class, 'parent_id');
+    }
+
     //Morph Relations
-    // public function speakers()
-    // {
-    //     return $this->morphMany(EventSpeaker::class, 'event');
-    // }
-    
     public function sessions()
     {
         return $this->morphMany(EventSession::class, 'sessionable');
+    }
+
+    public function attendees()
+    {
+        return $this->hasMany(Attendee::class, 'event_id')
+                    ->where('event_type', $this->subtype ?? 'conference');
     }
 
     //Media

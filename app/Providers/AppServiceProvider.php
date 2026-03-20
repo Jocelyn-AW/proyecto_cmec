@@ -26,6 +26,7 @@ use App\Models\Conference;
 use App\Models\News;
 use App\Models\AcademicSession;
 use App\Models\Album;
+use App\Models\MembershipPrice;
 use Illuminate\Support\Facades\Schema;
 
 class AppServiceProvider extends ServiceProvider
@@ -52,12 +53,15 @@ class AppServiceProvider extends ServiceProvider
             'candidate' => Candidate::class,
             'clinic' => Clinic::class,
             'conference' => Conference::class,
+            'pre_conference' => Conference::class,
+            'trans_conference' => Conference::class,
             'course' => Course::class,
             'directory_data' => DirectoryData::class,
             'invoice_data' => InvoiceData::class,
             // 'media' => Media::class,
             'member' => Member::class,
             'membership' => Membership::class,
+            'membership_price' => MembershipPrice::class,
             'payment_method' => PaymentMethod::class,
             'payment' => Payment::class,
             'post' => Post::class,

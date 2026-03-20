@@ -8,6 +8,7 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -53,6 +54,34 @@ class Attendee extends Model implements HasMedia
         'diploma_url',
     ];
 
+    protected static function booted()
+    {
+        static::deleted(function ($model) {
+            if ($model->isForceDeleting()) {
+                $model->payments()->forceDelete();
+                $model->invoiceData()->forceDelete();
+            } else {
+                $model->payments()->delete();
+                $model->invoiceData()->delete();
+            }
+
+        });
+
+        static::restored(function ($model) {
+            $model->payments()->withTrashed()->restore();
+            $model->invoiceData()->withTrashed()->restore();
+        });
+    }
+
+    public function scopeWithTrashFilter($query, $filter)
+    {
+        return match ($filter) {
+            'all' => $query->withTrashed(),      // Todos
+            'trashed' => $query->onlyTrashed(),  // Solo Inactivos
+            default => $query,                   // Solo Activos
+        };
+    }
+
     public function event() : MorphTo
     {
         return $this->morphTo(null, 'event_type', 'event_id');
@@ -66,6 +95,11 @@ class Attendee extends Model implements HasMedia
     public function payments() : MorphMany
     {
         return $this->morphMany(Payment::class, 'user');
+    }
+
+    public function invoiceData() : MorphOne
+    {
+        return $this->morphOne(InvoiceData::class, 'billable');
     }
 
     public function registermediaCollections(): void

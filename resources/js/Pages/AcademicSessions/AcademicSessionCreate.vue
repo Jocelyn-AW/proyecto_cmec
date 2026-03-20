@@ -565,7 +565,7 @@ const flatpickrTimeConfig = {
                     <!-- INVITADO -->
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Para no miembros (invitados)
+                            Para Invitados (no socios)
                         </label>
                         <div class="relative">
                             <span
