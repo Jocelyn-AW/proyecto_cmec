@@ -161,7 +161,7 @@ const createForm = reactive({
     rfc: '',
     tax_name: '',
     postal_code: '',
-    person_type: '',
+    tax_person_type: '',
     tax_regime: '',
     cfdi_use: '',
     address: '',
