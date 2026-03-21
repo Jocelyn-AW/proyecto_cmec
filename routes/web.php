@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -19,10 +20,14 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::get('/profile',          [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile',        [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile',       [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/avatar',  [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+
+    Route::get('/directory', [DirectoryController::class, 'index'])->name('directory');
+    Route::post('/directory', [DirectoryController::class, 'saveChanges'])->name('directory.save');
+    Route::post('/directory/profile/{id}',[DirectoryController::class, 'uploadProfile'])->name('directory.profile');
 });
 
 require __DIR__.'/auth.php';

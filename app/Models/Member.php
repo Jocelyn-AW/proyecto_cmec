@@ -116,6 +116,16 @@ class Member extends Model implements HasMedia
         return $this->morphMany(Payment::class, 'user');
     }
 
+    public function directory() : HasOne
+    {
+        return $this->hasOne(DirectoryData::class, 'member_id', 'id');
+    }
+
+    public function clinics() : HasMany
+    {
+        return $this->hasMany(Clinic::class, 'member_id', 'id');
+    }
+
     // ---------------------------------------------
     // Media Collections
     // ---------------------------------------------

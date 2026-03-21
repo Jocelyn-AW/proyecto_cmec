@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Clinic;
+use App\Models\DirectoryData;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +117,7 @@ class MembersController extends Controller
             }
 
             $this->updateMemberMedia($member, $request);
+            $this->saveDirectoryData($member);
 
             DB::commit();
 
@@ -219,7 +222,7 @@ class MembersController extends Controller
                     'payment_method' => $data['payment_method'],
                     'amount'         => $data['amount'],
                     'payment_date'   => $data['payment_date'],
-                    'reference'      => $data['reference'],
+                    'reference'      => $data['reference'] ?? '',
                     'status'         => 'paid',
                 ];
 
@@ -235,6 +238,7 @@ class MembersController extends Controller
             }
 
             $this->updateMemberMedia($member, $request);
+            $this->saveDirectoryData($member);
 
             DB::commit();
 
@@ -411,4 +415,40 @@ class MembersController extends Controller
             abort(403, 'No puedes modificar un miembro eliminado.');
         }
     }
+
+    // ---------------------------------------------
+    // PRIVATE: Save Directory Data
+    // ---------------------------------------------
+
+    private function saveDirectoryData(Member $member) : void
+    {
+        try {
+            $attributes = [
+                'member_id' => $member->id
+            ];
+
+            $data = [
+                'name' => $member->name,
+                'state' => $member->state,
+                'city' => $member->city
+            ];
+
+            $clinic = [
+                'hospital_name' => $member->hospital ?? '',
+                'phone' => $member->phone
+            ];
+
+            DirectoryData::updateOrCreate($attributes, $data);
+            Clinic::updateOrCreate($attributes, $clinic);
+
+        } catch (Exception $e) {
+            Log::error('Error al guardar los datos en el directorio', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+        }
+    }
+
+    
 }
