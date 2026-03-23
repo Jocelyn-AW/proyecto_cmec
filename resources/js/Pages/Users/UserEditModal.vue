@@ -16,7 +16,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'updated', 'warning', 'error'])
 
-// Uso de useForm para gestión automática de errores y estados
 const form = useForm({
     id: null,
     name: '',
@@ -26,7 +25,7 @@ const form = useForm({
     role: ''
 })
 
-// Error local de coincidencia de contraseñas
+// error local
 const passwordMatchError = computed(() => {
     if (!form.password && !form.password_confirmation) return null
     if (form.password !== form.password_confirmation) {
@@ -61,7 +60,6 @@ const submit = () => {
         return
     }
 
-    // Usamos put y enviamos el objeto form directamente
     form.put(route('users.edit', props.user.id), {
         preserveScroll: true,
         onSuccess: () => {
@@ -69,7 +67,6 @@ const submit = () => {
             emit('updated')
         },
         onError: (errors) => {
-            // Los errores ya se cargan automáticamente en form.errors
             emit('error', 'Error al actualizar el usuario. Revisa los campos.')
         }
     })

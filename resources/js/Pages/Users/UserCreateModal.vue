@@ -12,7 +12,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'created', 'warning', 'error', 'info'])
 
-// Inicializamos el formulario con useForm
 const form = useForm({
     name: '',
     email: '',
@@ -20,7 +19,7 @@ const form = useForm({
     password_confirmation: ''
 })
 
-// Error local de coincidencia (frontend)
+// error local
 const passwordMismatch = computed(() => {
     if (!form.password && !form.password_confirmation) return null
     return form.password !== form.password_confirmation ? 'Las contraseñas no coinciden' : null
@@ -55,7 +54,6 @@ const submit = () => {
             emit('created')
         },
         onError: (errors) => {
-            // Si hay un error general que no sea de campos (como el catch del controller)
             if (errors.message) {
                 emit('error', errors.message)
             } else {

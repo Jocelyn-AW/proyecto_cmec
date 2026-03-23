@@ -53,7 +53,7 @@ class UsersController extends Controller
                 'role'     => $data['role'] ?? 'miembro',
             ]);
 
-            // Notificación por correo
+            // correo
             $this->sendWelcomeEmail($user, $data['password']);
 
             return redirect()

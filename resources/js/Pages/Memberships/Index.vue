@@ -204,10 +204,22 @@ const flatpickrConfig = {
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
                 <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
-                    <!-- igual que antes -->
+                    <div
+                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="20" height="14" x="2" y="5" rx="2" />
+                            <path d="M2 10h20" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Información de la membresía
+                        </h2>
+                        <p class="text-xs text-gray-500">Nombre, descripción y beneficios</p>
+                    </div>
                 </div>
 
-                <div class="p-6 space-y-4"> <!-- era p-8 space-y-6 -->
+                <div class="p-6 space-y-4">
 
                     <!-- NOMBRE -->
                     <div>
@@ -215,7 +227,7 @@ const flatpickrConfig = {
                         <input type="text" v-model="formData.name" placeholder="Ej. Membresía Anual"
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         <span v-if="errors.name" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.name
-                        }}</span>
+                            }}</span>
                     </div>
 
                     <!-- DESCRIPCION -->
