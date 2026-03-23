@@ -361,7 +361,7 @@ class MembersController extends Controller
         return [
             'name'                 => 'required|string|max:191',
             'last_name'            => 'required|string|max:191',
-            'phone'                => 'required|string|max:191',
+            'phone'                => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20',
             'email'                => 'required|email|max:191',
             'city'                 => 'required|string|max:191',
             'state'                => 'nullable|string|max:191',
@@ -391,6 +391,8 @@ class MembersController extends Controller
             'name.required'                    => 'El nombre es obligatorio.',
             'last_name.required'               => 'Los apellidos son obligatorios.',
             'phone.required'                   => 'El teléfono es obligatorio.',
+            'phone.min'                        => 'El teléfono debe tener minimo 10 digitos.',
+            'phone.max'                        => 'El teléfono no debe exceder de 20 digitos',
             'email.required'                   => 'El correo electrónico es obligatorio.',
             'email.email'                      => 'El correo electrónico no es válido.',
             'city.required'                    => 'La ciudad es obligatoria.',
