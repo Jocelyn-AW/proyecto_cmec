@@ -137,28 +137,23 @@ class Conference extends Model implements HasMedia
         $this->addMediaCollection('conference_covers')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('conference_gallery')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_platinum_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_golden_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_silver_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_program')
             ->acceptsMimeTypes(['application/pdf'])

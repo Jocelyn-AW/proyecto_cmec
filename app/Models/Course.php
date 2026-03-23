@@ -122,34 +122,28 @@ class Course extends Model implements HasMedia
         $this->addMediaCollection('courses_covers')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('courses_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('courses_gallery')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('courses_platinum_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('courses_golden_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('courses_silver_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('courses_program')
             ->acceptsMimeTypes(['application/pdf'])
