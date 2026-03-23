@@ -147,11 +147,11 @@ class WebinarsController extends Controller
 
             return redirect()
                 ->route('webinars.index')
-                ->with('success', 'Webinar eliminado exitosamente');
+                ->with('success', 'Webinar desactivado exitosamente');
         } catch (Exception $e) {
             return redirect()
                 ->route('webinars.index')
-                ->with('error', 'Hubo un error al eliminar el webinar. Intenta de nuevo más tarde.');
+                ->with('error', 'Hubo un error al desactivar el webinar. Intenta de nuevo más tarde.');
         }
     }
 

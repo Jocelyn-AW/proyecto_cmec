@@ -180,9 +180,9 @@ const handleOnEdit = (attendee) => {
 }
 
 const handleOnDelete = (attendeeId) => {
-    warning('¿Confirma que desea eliminar a este asistente?.', {
-        title: 'Eliminar registro',
-        buttonText: 'Sí, eliminar',
+    warning('¿Confirma que desea desactivar a este asistente?.', {
+        title: 'Desactivar registro',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();

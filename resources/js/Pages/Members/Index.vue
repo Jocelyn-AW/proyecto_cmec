@@ -34,9 +34,9 @@ const handleOnCreate = () => router.get(route('members.new'))
 const handleOnEdit = (member) => router.get(route('members.edit', member.id), {}, { preserveState: false })
 
 const handleOnDelete = (memberId) => {
-    warning('¿Confirma que desea eliminar este miembro?', {
-        title: 'Eliminar miembro',
-        buttonText: 'Sí, eliminar',
+    warning('¿Confirma que desea desactivar este miembro?', {
+        title: 'Desactivar miembro',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert()
@@ -118,7 +118,7 @@ const isExpired = (dateStr) => {
                                 class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                                 <option value="all">Todos</option>
                                 <option value="">Activos</option>
-                                <option value="trashed">Eliminados</option>
+                                <option value="trashed">Desactivados</option>
                             </select>
                             <button v-if="hasActiveFilters()" @click="clearFilters"
                                 class="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-red-500 transition-colors">

@@ -271,11 +271,11 @@ class MembersController extends Controller
 
             return redirect()
                 ->route('members.index')
-                ->with('success', 'Miembro eliminado exitosamente');
+                ->with('success', 'Miembro desactivado exitosamente');
         } catch (Exception $e) {
             return redirect()
                 ->route('members.index')
-                ->with('error', 'Hubo un error al eliminar el miembro. Intenta de nuevo más tarde.');
+                ->with('error', 'Hubo un error al desactivar el miembro. Intenta de nuevo más tarde.');
         }
     }
 

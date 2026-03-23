@@ -147,11 +147,11 @@ class AcademicSessionsController extends Controller
 
             return redirect()
                 ->route('academicsessions.index')
-                ->with('success', 'Sesión académica eliminada exitosamente');
+                ->with('success', 'Sesión académica desactivada exitosamente');
         } catch (Exception $e) {
             return redirect()
                 ->route('academicsessions.index')
-                ->with('error', 'Hubo un error al eliminar la sesión académica. Intenta de nuevo más tarde.');
+                ->with('error', 'Hubo un error al desactivar la sesión académica. Intenta de nuevo más tarde.');
         }
     }
 

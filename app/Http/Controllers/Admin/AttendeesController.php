@@ -280,7 +280,7 @@ class AttendeesController extends Controller
 
         return redirect()
             ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
-            ->with('success', 'Asistente eliminado exitosamente');
+            ->with('success', 'Asistente desactivado exitosamente');
     }
 
     public function restore(Request $request, $id)
