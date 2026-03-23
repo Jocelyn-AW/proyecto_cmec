@@ -46,9 +46,9 @@ const handleOnCreate = () => router.get(route('academicsessions.new'))
 const handleOnEdit = (session) => router.get(route('academicsessions.edit', session.id), {}, { preserveState: false })
 
 const handleOnDelete = (sessionId) => {
-    warning('¿Confirma que desea eliminar esta sesión académica?.', {
-        title: 'Eliminar sesión académica',
-        buttonText: 'Sí, eliminar',
+    warning('¿Confirma que desea desactivar esta sesión académica?.', {
+        title: 'Desactivar sesión académica',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
@@ -257,7 +257,10 @@ const formatLabels = {
                     </button>
 
                     <button title="Ver galería" @click="openGallery(item)"
-                        class="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600">
+                        class="p-2 rounded-lg transition-colors border"
+                        :class="item.albums_with_photos_count > 0
+                            ? 'bg-indigo-500 text-white border-indigo-500 hover:bg-indigo-700 hover:border-indigo-700'
+                            : 'bg-indigo-50 text-indigo-600 border-indigo-100 hover:bg-indigo-600 hover:text-white hover:border-indigo-600'">
                         <svg width="18" height="18" fill="currentColor" class="w-4 h-4" viewBox="0 0 17 17">
                             <path
                                 d="M13 10V0H0v13h13zM1 1h11v8h-.755L8.681 5.681 7.522 6.895 5.274 3.014 1.698 9H1zm8.982 8H2.863l2.398-4.014L7.325 8.55 8.6 7.213zM1 12v-2h11v2zm16-9v13H4v-1.984h1V15h11V4h-2V3z" />

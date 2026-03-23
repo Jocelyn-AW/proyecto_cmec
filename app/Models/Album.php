@@ -13,7 +13,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Album extends Model implements HasMedia
 {
-    use InteractsWithMedia, SoftDeletes;
+    use InteractsWithMedia;
 
     protected $table = Constants::TABLE_ALBUMS;
 
@@ -29,6 +29,17 @@ class Album extends Model implements HasMedia
         'photos_count',
     ];
 
+    // ---------------------------------------------
+    // nombre de coleccion dinamica por tipo de evento
+    // ej: webinar_album_photos, academic_session_album_photos
+    // ---------------------------------------------
+
+    public function collectionName(): string
+    {
+        return ($this->event_type ?? 'default') . '_album_photos';
+    }
+
+    // ---------------------------------------------
     // relacion polimorfica con evento
     // cualquier tipo registrado en el morphMap del AppServiceProvider
     public function event(): MorphTo
@@ -36,27 +47,32 @@ class Album extends Model implements HasMedia
         return $this->morphTo();
     }
 
-    // media collection 
+    // ---------------------------------------------
+    // media collection (usa el nombre dinamico)
+    // ---------------------------------------------
+
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('album_photos')
+        $this->addMediaCollection($this->collectionName())
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
     }
 
-    // accessors
+    // ---------------------------------------------
+    // Accessors (usan el nombre dinamico)
+    // ---------------------------------------------
+
     protected function coverUrl(): Attribute
     {
         return Attribute::make(function () {
-            return $this->getFirstMediaUrl('album_photos');
+            return $this->getFirstMediaUrl($this->collectionName());
         });
     }
 
     protected function photosCount(): Attribute
     {
         return Attribute::make(function () {
-            return $this->getMedia('album_photos')->count();
+            return $this->getMedia($this->collectionName())->count();
         });
     }
 
@@ -65,8 +81,6 @@ class Album extends Model implements HasMedia
         $this->addMediaConversion('thumb')
             ->width(400)
             ->height(400)
-            ->sharpen(10)
-            //->nonQueued()
-        ;
+            ->sharpen(10);
     }
 }
