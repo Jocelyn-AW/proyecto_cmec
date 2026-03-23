@@ -33,6 +33,10 @@ const props = defineProps({
         type: String,
         default: ''
     },
+    eventType: {
+        type: String,
+        default: ''
+    },
     flash: {
         type: Object,
         default: () => ({})
@@ -199,6 +203,22 @@ const handleOnRestore = (attendeeId) => {
     })
 }
 
+const handleExportPdf = () => {
+    const params = new URLSearchParams(window.location.search)
+    window.open(
+        route('attendees.export.pdf', { event: props.eventType }) + '?' + params.toString(),
+        '_blank'
+    )
+}
+
+const handleExportExcel = () => {
+    const params = new URLSearchParams(window.location.search)
+    window.open(
+        route('attendees.export.excel', { event: props.eventType }) + '?' + params.toString(),
+        '_blank'
+    )
+}
+
 </script>
 <template>
     <Head :title="`Asistentes a  ${ pluralName }`" />
@@ -219,10 +239,13 @@ const handleOnRestore = (attendeeId) => {
                 :allow-actions="true"
                 :allow-edit="true"
                 :allow-delete="true"
+                :allow-exports="true"
                 @create="handleOnCreate"
                 @edit="handleOnEdit"
                 @delete="handleOnDelete"
                 @restore="handleOnRestore"
+                @export_excel="handleExportExcel"
+                @export_pdf="handleExportPdf"
                 :only="['attendees']"
                 >
 
