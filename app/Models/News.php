@@ -38,8 +38,7 @@ class News extends Model implements HasMedia
         $this->addMediaCollection('news_images')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         // PDF'S
         $this->addMediaCollection('news_pdfs')

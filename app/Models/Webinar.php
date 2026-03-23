@@ -129,14 +129,12 @@ class Webinar extends Model implements HasMedia
         $this->addMediaCollection('webinars_covers')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('webinars_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('webinars_program')
             ->acceptsMimeTypes(['application/pdf'])

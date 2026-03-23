@@ -130,14 +130,12 @@ class AcademicSession extends Model implements HasMedia
         $this->addMediaCollection('academic_sessions_covers')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('academic_sessions_previews')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('academic_sessions_program')
             ->acceptsMimeTypes(['application/pdf'])
