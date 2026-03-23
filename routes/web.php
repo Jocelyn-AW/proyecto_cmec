@@ -28,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/directory', [DirectoryController::class, 'index'])->name('directory');
     Route::post('/directory', [DirectoryController::class, 'saveChanges'])->name('directory.save');
     Route::post('/directory/profile/{id}',[DirectoryController::class, 'uploadProfile'])->name('directory.profile');
+    Route::delete('/{id}', [DirectoryController::class, 'delete'])->name('directory.delete');
+    Route::put('restore/{id}', [DirectoryController::class, 'restore'])->name('directory.restore');
 });
 
 require __DIR__.'/auth.php';

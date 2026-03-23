@@ -183,7 +183,7 @@ class ConferencesController extends Controller
         } catch (Exception $e) {
             return redirect()
                 ->back()
-                ->with('success', "Ocurrió un error al desactivar el congreso");
+                ->with('error', "Ocurrió un error al desactivar el congreso");
         }
     }
 
@@ -200,7 +200,7 @@ class ConferencesController extends Controller
         } catch (Exception $e) {
             return redirect()
                 ->back()
-                ->with('success', 'Ocurrió un error al activar el congreso');
+                ->with('error', 'Ocurrió un error al activar el congreso');
         }
     }
 

@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Clinic extends Model
 {
-    
+    use SoftDeletes;
+
     protected $fillable =  [
         'member_id',
         'hospital_name',
@@ -20,6 +21,7 @@ class Clinic extends Model
     protected $dates = [
         'created_at',
         'updated_at',
+        'deleted_at',
     ];
 
     //---------------------

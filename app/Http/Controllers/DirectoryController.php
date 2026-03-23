@@ -15,32 +15,110 @@ use Inertia\Inertia;
 
 class DirectoryController extends Controller
 {
-    public function index ()
+    public function index (Request $request)
     {
         try {
             $user = Auth::user();
 
             if ($user->role == 'administrador') {
-                $view = 'Directory/Admin/Index';
-                $members = Member::with('directory', 'clinics')->get();
+                return Inertia::render('Directory/Admin/Index', [
+                    'members' => $this->getAdminData($request)
+                ]); 
 
-                return Inertia::render($view, [
-                    'members' => $members
-                ]);
             } else {
+
                 $member = Member::where('user_id', $user->id)->first()->id;
                 $directory = DirectoryData::where('member_id', $member)->first();
                 $clinics = Clinic::where('member_id', $member)->get();
-                $view = 'Directory/Member/Index';
 
-                return Inertia::render($view, [
+                return Inertia::render('Directory/Member/Index', [
                     'member' => $member,
                     'directory' => $directory,
                     'clinics' => $clinics
                 ]);
             }
+            
         } catch (Exception $e) {
             Log::error($e->getMessage());
+        }
+    }
+
+    private function getAdminData(Request $request)
+    {
+        $search = $request->input('search', null);
+        $perPage = $request->input('per_page', 10);
+        $status = $request->input('status', '');
+
+        $members = Member::with([
+            'directory' => function ($q) {
+                $q->withTrashed();
+            }, 
+            'clinics' => function ($q) {
+                $q->withTrashed();
+            }]);
+
+        if (!empty($search)) {
+            $members->where(function ($query) use ($search){
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('cmec_member_id', 'like', "%{$search}%")
+                    ->orWhere('state', 'like', "%{$search}%");
+            });   
+        }
+
+        if ($status === 'trashed') {
+            $members->whereHas('directory', function ($query) {
+                $query->onlyTrashed();
+            });
+        } elseif ($status === '') {
+            $members->whereHas('directory'); 
+        }
+
+
+        return $members->withTrashFilter($status)    
+            ->paginate($perPage)->through(function ($member) {
+                if ($member->directory?->trashed()) {
+                    $member->deleted_at = $member->directory->deleted_at;
+                }
+
+                return $member;
+            })
+            ->withQueryString();
+    }
+
+    public function delete(int $member_id) {
+        try {
+            $directory = DirectoryData::where('member_id', $member_id);
+            $directory->delete();
+
+            $clinics = Clinic::where('member_id', $member_id);
+            $clinics->delete();
+
+            return redirect()
+                ->back()
+                ->with('success', 'Directorio desaactivado correctamente');
+        } catch (Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Ocurrio un error al desactivar el directorio');
+        }
+    }
+
+    public function restore(int $member_id) {
+        try {
+            $directory = DirectoryData::withTrashed()->where('member_id', $member_id);
+            $directory->restore();
+
+            $clinics = Clinic::withTrashed()->where('member_id', $member_id);
+            $clinics->restore();
+
+            return redirect()
+                ->back()
+                ->with('success', 'Directorio activado correctamente');
+        } catch (Exception $e) {
+            return redirect()
+                ->back()
+                ->with('error', 'Ocurrio un error al activar el directorio');
         }
     }
 

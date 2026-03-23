@@ -23,6 +23,7 @@ const props = defineProps({
 //--------------- Constants and Computed -----------------------------------
 const selectedState = ref(props.directory?.state ?? '');
 const selectedCity = ref(props.directory?.city ?? '');
+const isActive = ref(props.directory?.deleted_at == null)
 const isSubmitting = ref(false)
 
 const cities = computed(() => {
@@ -125,10 +126,15 @@ watch(selectedState, (value, old) => {
                         Gestiona los datos de tu directorio. Puedes actualizar su información y subir nuevo archivos en cualquier momento.
                     </p>
                     <div class="mt-5">
-                        <span
+                        <span v-if="isActive"
                             class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-400">
                             <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
                             Directorio activo
+                        </span>
+                        <span v-else
+                            class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                            <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                            Directorio inactivo
                         </span>
                     </div>
                 </div>
