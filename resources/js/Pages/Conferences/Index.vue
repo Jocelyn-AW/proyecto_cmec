@@ -60,9 +60,10 @@ const handleOnEdit = (conference) => {
 }
 
 const handleOnDelete = (conferenceId) => {
-    warning('¿Confirma que desea eliminar este congreso?.', {
-        title: 'Eliminar congreso',
-        buttonText: 'Sí, eliminar',
+    let prefix = props.prefix == 'main' ? '' : props.prefix + '-';
+    warning('¿Confirma que desea desactivar este ' + prefix +'congreso?.', {
+        title: 'Desactivar ' + prefix + 'congreso',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
@@ -72,9 +73,10 @@ const handleOnDelete = (conferenceId) => {
 }
 
 const handleOnRestore = (conferenceId) => {
-    info('¿Confirma que desea restaurar este congreso?.', {
-        title: 'Restaurar congreso',
-        buttonText: 'Sí, restaurar',
+    let prefix = props.prefix == 'main' ? '' : props.prefix + '-';
+    info('¿Confirma que desea activar este '+ prefix + 'congreso?.', {
+        title: 'Activar ' + prefix + 'congreso',
+        buttonText: 'Sí, activar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();

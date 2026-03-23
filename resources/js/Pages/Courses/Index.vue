@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import DataTable from '@/Components/DataTable.vue';
 
@@ -33,18 +33,13 @@ const props = defineProps({
 
 const page = usePage();
 
-onMounted(() => {
-    if (page.props.success || props.flash.success) {
-        success(page.props.success || props.flash.success)
-    }
-    if (page.props.error || props.flash.error) {
-        errorA(page.props.error || props.flash.error)
-    }
+watch(() => props.flash, (value) => {
+    if (!value) return
 
-    if (page.props.warning || props.flash.warning) {
-        warning(page.props.warning || props.flash.warning)
-    }
-})
+    if (value.success) success(value.success)
+    if (value.warning) warning(value.warning)
+    if (value.error) errorA(value.error)
+}, {immediate: true, deep: true})
 
 const handleOnCreate = () => {
     router.get(route('courses.new'));
@@ -57,9 +52,9 @@ const handleOnEdit = (course) => {
 }
 
 const handleOnDelete = (courseId) => {
-    warning('¿Confirma que desea eliminar este curso?.', {
-        title: 'Eliminar curso',
-        buttonText: 'Sí, eliminar',
+    warning('¿Confirma que desea desactivar este curso?.', {
+        title: 'Desactivar curso',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
@@ -69,9 +64,9 @@ const handleOnDelete = (courseId) => {
 }
 
 const handleOnRestore = (courseId) => {
-    info('¿Confirma que desea restaurar este curso?.', {
-        title: 'Restaurar curso',
-        buttonText: 'Sí, restaurar',
+    info('¿Confirma que desea activar este curso?.', {
+        title: 'Activar curso',
+        buttonText: 'Sí, activar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();

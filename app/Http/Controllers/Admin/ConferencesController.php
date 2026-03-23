@@ -89,7 +89,10 @@ class ConferencesController extends Controller
         $eventNames =  [
             'main' => 'Congreso',
             'pre' => 'Pre-congreso',
-            'trans' => 'Trans-congreso'
+            'trans' => 'Trans-congreso',
+            Constants::EVENT_CONFERENCE => 'Congreso',
+            Constants::EVENT_PRECONFERENCE => 'Pre-congreso',
+            Constants::EVENT_TRANSCONFERENCE => 'Trans-congreso',
         ];
 
         return $eventNames[$prefix];
@@ -171,15 +174,16 @@ class ConferencesController extends Controller
     {
         try {
             $conference = Conference::findOrFail($id);
+            $eventName = $this->getEventName($conference->subtype);
             $conference->delete();
 
             return redirect()
                 ->back()
-                ->with('success', 'Congreso eliminado exitosamente');
+                ->with('success', "$eventName desactivado exitosamente");
         } catch (Exception $e) {
             return redirect()
                 ->back()
-                ->with('success', 'Ocurrió un error al eliminar el congreso');
+                ->with('success', "Ocurrió un error al desactivar el congreso");
         }
     }
 
@@ -187,15 +191,16 @@ class ConferencesController extends Controller
     {
         try {
             $conference = Conference::withTrashed()->findOrFail($id);
+            $eventName = $this->getEventName($conference->subtype);
             $conference->restore();
 
             return redirect()
                 ->back()
-                ->with('success', 'Congreso restaurado exitosamente');
+                ->with('success', "$eventName activado exitosamente");
         } catch (Exception $e) {
             return redirect()
                 ->back()
-                ->with('success', 'Ocurrió un error al restaurara el congreso');
+                ->with('success', 'Ocurrió un error al activar el congreso');
         }
     }
 

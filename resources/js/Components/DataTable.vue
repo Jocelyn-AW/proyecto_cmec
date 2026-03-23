@@ -316,7 +316,7 @@ watch(
                             <button
                                 v-if="allowDelete && !item.deleted_at"
                                 @click="emit('delete', item.id)"
-                                title="Eliminar"
+                                title="Desactivar"
                                 class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors border border-red-100 hover:border-red-600"
                             >
                                 <!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
@@ -331,7 +331,7 @@ watch(
                             <button
                                 v-if="allowDelete && item.deleted_at"
                                 @click="emit('restore', item.id)"
-                                title="Restaurar"
+                                title="Activar"
                                 class="p-2 rounded-lg bg-teal-50 text-teal-600 hover:bg-teal-600 hover:text-white transition-colors border border-teal-100 hover:border-teal-600"
                             >
                                 
