@@ -76,7 +76,9 @@ const fillForm = (membership) => {
 };
 
 watch(() => props.membership, (val) => {
-    if (val?.id) fillForm(val);
+    if (val?.id && Object.keys(props.errors).length === 0) {
+        fillForm(val);
+    }
 }, { immediate: true });
 
 // ---------------------------------
@@ -105,6 +107,8 @@ const handleSubmit = () => {
             benefits: formData.benefits,
             prices: formData.prices,
         }, {
+            preserveState: true,
+            preserveScroll: true,
             onFinish: () => { isSubmitting.value = false; },
         });
     } else {
@@ -116,6 +120,8 @@ const handleSubmit = () => {
             benefits: formData.benefits,
             prices: formData.prices,
         }, {
+            preserveState: true,
+            preserveScroll: true,
             onFinish: () => { isSubmitting.value = false; },
         });
     }
@@ -191,13 +197,13 @@ const flatpickrConfig = {
         </div>
 
         <!-- FORMULARIO: DOS COLUMNAS -->
-        <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
 
             <!-- IZQUIERDA: DATOS -->
             <div
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
-                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
+                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
                     <div
                         class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
@@ -213,7 +219,7 @@ const flatpickrConfig = {
                     </div>
                 </div>
 
-                <div class="p-8 space-y-6">
+                <div class="p-6 space-y-4">
 
                     <!-- NOMBRE -->
                     <div>
@@ -242,7 +248,7 @@ const flatpickrConfig = {
                             <span
                                 class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400 ml-1">opcional</span>
                         </label>
-                        <textarea v-model="formData.benefits" rows="5"
+                        <textarea v-model="formData.benefits" rows="3"
                             placeholder="Describe los beneficios de esta membresía..."
                             class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 resize-none" />
                         <span v-if="errors.benefits" class="text-red-500 text-xs flex justify-end mt-1">{{
@@ -256,7 +262,7 @@ const flatpickrConfig = {
             <div
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
-                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
+                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
                     <div
                         class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
@@ -271,12 +277,12 @@ const flatpickrConfig = {
                     </div>
                 </div>
 
-                <div class="p-8">
+                <div class="p-6">
 
                     <span v-if="errors.prices" class="text-red-500 text-xs block mb-4">{{ errors.prices }}</span>
 
                     <!-- Cabecera -->
-                    <div class="grid grid-cols-[1fr_1fr_110px_110px_20px] gap-3 mb-2 px-1">
+                    <div class="grid grid-cols-[1fr_1fr_1.5fr_1.5fr_20px] gap-3 mb-2 px-1">
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha inicio</span>
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha fin</span>
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio General</span>
@@ -287,7 +293,7 @@ const flatpickrConfig = {
                     <!-- Todas las filas -->
                     <div class="space-y-3">
                         <div v-for="(price, index) in formData.prices" :key="index"
-                            class="grid grid-cols-[1fr_1fr_110px_110px_20px] gap-3 items-start">
+                            class="grid grid-cols-[1fr_1fr_1.5fr_1.5fr_20px] gap-3 items-start">
 
                             <!-- Fecha inicio -->
                             <div>
@@ -353,7 +359,6 @@ const flatpickrConfig = {
                                     </svg>
                                 </button>
                             </div>
-
                         </div>
                     </div>
 

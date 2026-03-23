@@ -17,6 +17,7 @@ const props = defineProps({
     event_type: { type: String, default: '' },
     event_id: { type: Number, default: null },
     event_label: { type: String, default: 'Evento' },
+    event_name: { type: String, default: null },
     back_route: { type: String, default: null },
     flash: { type: Object, default: () => ({}) },
 })
@@ -31,16 +32,13 @@ onMounted(() => {
 // crear albums
 const showCreate = ref(false)
 const createForm = ref({ title: '', description: '' })
-const createError = ref('')
 
 // editar album 
 const showEdit = ref(false)
 const editForm = ref({ id: null, title: '', description: '' })
-const editError = ref('')
 
 const openEdit = (album) => {
     editForm.value = { id: album.id, title: album.title, description: album.description ?? '' }
-    editError.value = ''
     showEdit.value = true
 }
 
@@ -73,16 +71,26 @@ const openAlbum = (album) => {
             <!-- encabezado -->
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-1">
+                    <!-- breadcrumb -->
+                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-1 flex-wrap">
                         <button v-if="back_route" @click="router.get(route(back_route))"
                             class="hover:text-gray-700 transition-colors">
                             ← {{ event_label }}
                         </button>
                         <span v-if="back_route">/</span>
+                        <template v-if="event_name">
+                            <span class="text-gray-600 font-medium truncate max-w-[200px]">{{ event_name }}</span>
+                        </template>
+                        <span>/</span>
                         <span>Álbumes</span>
                     </div>
                     <h3 class="text-lg font-semibold text-gray-800">Galería de álbumes</h3>
-                    <p class="text-sm text-gray-500">Organiza las fotos en álbumes</p>
+                    <!-- nombre real del evento -->
+                    <p v-if="event_name" class="text-sm text-gray-500 mt-0.5">
+                        <span class="font-medium text-gray-700">{{ event_label }}:</span>
+                        {{ event_name }}
+                    </p>
+                    <p v-else class="text-sm text-gray-500">Organiza las fotos en álbumes</p>
                 </div>
                 <button @click="showCreate = true; createForm = { title: '', description: '' }"
                     class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
@@ -93,12 +101,15 @@ const openAlbum = (album) => {
                 </button>
             </div>
 
-            <!-- grid de los albumes -->
+            <!-- grid de álbumes -->
             <div v-if="albums.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                 <div v-for="album in albums" :key="album.id"
-                    class="group relative rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    class="group relative rounded-xl border bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    :class="album.photos_count > 0
+                        ? 'border-blue-200 ring-1 ring-blue-100'
+                        : 'border-gray-200'">
 
-                    <!-- portada del album -->
+                    <!-- portada -->
                     <div class="aspect-video bg-gray-100 overflow-hidden cursor-pointer" @click="openAlbum(album)">
                         <img v-if="album.cover_url" :src="album.cover_url" :alt="album.title"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
@@ -112,7 +123,7 @@ const openAlbum = (album) => {
                     </div>
 
                     <!-- info + acciones -->
-                    <div class="p-3">
+                    <div class="p-3" :class="album.photos_count > 0 ? 'bg-blue-50/40' : ''">
                         <button @click="openAlbum(album)" class="text-left w-full">
                             <p class="font-medium text-gray-800 truncate hover:text-blue-600 transition-colors">
                                 {{ album.title }}
@@ -122,8 +133,17 @@ const openAlbum = (album) => {
                             </p>
                         </button>
                         <div class="flex items-center justify-between mt-2">
-                            <span class="text-xs text-gray-400">{{ album.photos_count }} foto{{ album.photos_count !== 1
-                                ? 's' : '' }}</span>
+                            <!-- badge de fotos -->
+                            <span class="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
+                                :class="album.photos_count > 0
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-gray-100 text-gray-400'">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {{ album.photos_count }} foto{{ album.photos_count !== 1 ? 's' : '' }}
+                            </span>
                             <div class="flex gap-1">
                                 <button @click="openEdit(album)" title="Editar"
                                     class="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">

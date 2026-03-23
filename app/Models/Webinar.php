@@ -47,6 +47,7 @@ class Webinar extends Model implements HasMedia
         'platinum_sponsors_urls',
         'golden_sponsors_urls',
         'silver_sponsors_urls',
+        'albums_with_photos_count',
     ];
 
     protected $casts = [
@@ -120,6 +121,11 @@ class Webinar extends Model implements HasMedia
         return $this->morphOne(BankDetail::class, 'event');
     }
 
+    public function albums(): MorphMany
+    {
+        return $this->morphMany(Album::class, 'event');
+    }
+
     // ---------------------------------------------
     // Media Collections
     // ---------------------------------------------
@@ -162,6 +168,15 @@ class Webinar extends Model implements HasMedia
         return Attribute::make(function () {
             $media = $this->getFirstMedia('webinars_program');
             return $media ? $media->getUrl() : null;
+        });
+    }
+
+    protected function albumsWithPhotosCount(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->albums()
+                ->whereHas('media')
+                ->count();
         });
     }
 

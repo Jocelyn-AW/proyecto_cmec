@@ -25,8 +25,7 @@ trait HasSponsorMedia
         foreach (['platinum', 'golden', 'silver'] as $tier) {
             $this->addMediaCollection("{$prefix}_{$tier}_sponsors")
                 ->acceptsMimeTypes($mimes)
-                ->useDisk('public')
-                ->withResponsiveImages();
+                ->useDisk('public');
         }
     }
 
