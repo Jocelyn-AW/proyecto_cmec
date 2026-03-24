@@ -81,7 +81,6 @@ const findMembershipPrice = (dateStr) => {
 const latestPayment = computed(() => props.member.payments?.[0] ?? null)
 
 const form = ref({
-    cmec_member_id: props.member.cmec_member_id ?? '',
     name: props.member.name ?? '',
     last_name: props.member.last_name ?? '',
     phone: props.member.phone ?? '',
@@ -311,10 +310,13 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
 
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                                        ID CMEC <span class="ml-1 text-xs text-gray-400 font-normal">(opcional)</span>
+                                        ID CMEC
                                     </label>
-                                    <input type="text" v-model="form.cmec_member_id" placeholder="Ej. CMEC-0001"
-                                        class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
+                                    <div
+                                        class="h-11 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 flex items-center text-sm text-gray-500 dark:text-gray-400 cursor-not-allowed font-mono">
+                                        {{ member.cmec_member_id ?? '—' }}
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400">El ID CMEC no puede modificarse</p>
                                 </div>
 
                                 <div>
