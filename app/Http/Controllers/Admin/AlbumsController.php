@@ -58,7 +58,7 @@ class AlbumsController extends Controller
 
         // nombre real del evento (topic)
         $event     = $this->resolveEvent($event_type, $event_id);
-        $eventName = $event?->topic ?? null;
+        $eventName = $this->isConferenceRelated($event_type) ? $event?->name : $event?->topic;
 
         return Inertia::render('Albums/Index', [
             'albums'      => $albums,
@@ -218,5 +218,16 @@ class AlbumsController extends Controller
         }
 
         return $modelClass::withTrashed()->find($event_id);
+    }
+
+    private function isConferenceRelated (string $event_type)
+    {
+        $events = [
+            Constants::EVENT_CONFERENCE,
+            Constants::EVENT_PRECONFERENCE,
+            Constants::EVENT_TRANSCONFERENCE,
+        ];
+
+        return in_array($event_type, $events);
     }
 }

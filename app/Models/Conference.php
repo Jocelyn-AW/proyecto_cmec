@@ -50,6 +50,7 @@ class Conference extends Model implements HasMedia
         'golden_sponsors_urls',
         'silver_sponsors_urls',
         'program_url',
+        'albums_count'
     ];
 
     protected $casts = [
@@ -123,6 +124,12 @@ class Conference extends Model implements HasMedia
     public function sessions()
     {
         return $this->morphMany(EventSession::class, 'sessionable');
+    }
+
+    public function albums()
+    {
+        return $this->hasMany(Album::class, 'event_id')
+                    ->where('event_type', $this->subtype);
     }
 
     public function attendees()
@@ -227,6 +234,13 @@ class Conference extends Model implements HasMedia
                     'url' =>  $media->getUrl()
                 ];
             });
+        });
+    }
+
+    protected function albumsCount(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->albums()->count();
         });
     }
 }

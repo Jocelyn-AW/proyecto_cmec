@@ -276,7 +276,7 @@ const clearFilters = () => {
                         :class="
                             item.program_url == null || item.program_url == '' 
                             ? 'bg-red-20 text-red-500 transition-colors border border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600' 
-                            : 'bg-red-400 text-white transition-colors border border-red-400 hover:bg-red-600 hover:text-white hover:border-red-600'
+                            : 'bg-rose-500 text-white transition-colors border border-red-400 hover:bg-red-600 hover:text-white hover:border-red-600'
                         ">
                         <svg width="18" height="18" fill="currentcolor"
                             class="bi bi-filetype-pdf text-8xl w-4 h-4 dark:text-stone-200" viewBox="0 0 16 16"
@@ -288,7 +288,11 @@ const clearFilters = () => {
                     </button>
                     <button 
                         title="Ver galería" @click="openGallery(item)"
-                        class="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
+                        class="p-2 rounded-lg"
+                        :class="item.albums_count > 0 
+                                ? 'bg-violet-500 text-white hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white'
+                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white'
+                            ">
                             <svg width="18" height="18" fill="currentColor"
                             class="text-8xl w-4 h-4" viewBox="0 0 17 17"
                             xmlns="http://www.w3.org/2000/svg">

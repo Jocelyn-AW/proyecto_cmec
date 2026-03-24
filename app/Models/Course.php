@@ -55,6 +55,7 @@ class Course extends Model implements HasMedia
         'golden_sponsors_urls',
         'silver_sponsors_urls',
         'program_url',
+        'albums_count'
     ];
 
     protected $casts = [
@@ -104,6 +105,11 @@ class Course extends Model implements HasMedia
     public function sessions(): MorphMany
     {
         return $this->morphMany(EventSession::class, 'sessionable');
+    }
+
+    public function albums()
+    {
+        return $this->morphMany(Album::class, 'event');
     }
 
     public function payments(): MorphMany
@@ -217,5 +223,12 @@ class Course extends Model implements HasMedia
             $media = $this->getFirstMedia('courses_program');
             return $media ? $media->getUrl() : null;
         });
-    }      
+    }
+    
+    protected function albumsCount(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->albums()->whereHas('media')->count();
+        });
+    }
 }
