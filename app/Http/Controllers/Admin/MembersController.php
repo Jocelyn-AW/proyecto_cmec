@@ -169,7 +169,6 @@ class MembersController extends Controller
             );
 
             $member->update([
-                'cmec_member_id'   => $data['cmec_member_id']   ?? null,
                 'name'             => $data['name'],
                 'last_name'        => $data['last_name'],
                 'phone'            => $data['phone'],
