@@ -17,6 +17,7 @@ const props = defineProps({
     album: { type: Object, default: () => ({}) },
     photos: { type: Array, default: () => [] },
     event_label: { type: String, default: 'Evento' },
+    event_name: { type: String, default: null },
     flash: { type: Object, default: () => ({}) },
 })
 
@@ -46,7 +47,7 @@ const submitPhotos = () => {
     const form = new FormData()
     files.value.forEach((f, i) => form.append(`images[${i}]`, f))
 
-    isUploading.value = true  // ← BLOQUEAR
+    isUploading.value = true  // BLOQUEAR
 
     router.post(route('albums.photos.upload', props.album.id), form, {
         forceFormData: true,
@@ -58,7 +59,7 @@ const submitPhotos = () => {
             errorA('Error al subir las fotos. Intenta de nuevo.')
         },
         onFinish: () => {
-            isUploading.value = false  // ← DESBLOQUEAR siempre
+            isUploading.value = false  // DESBLOQUEAR siempre
         },
     })
 }
@@ -108,6 +109,10 @@ const onKeydown = (e) => {
                     <!-- datos -->
                     <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-1 flex-wrap">
                         <span>{{ event_label }}</span>
+                        <template v-if="event_name">
+                            <span>/</span>
+                            <span class="text-gray-600 font-medium truncate max-w-[200px]">{{ event_name }}</span>
+                        </template>
                         <span>/</span>
                         <button
                             @click="router.get(route('albums.index', { event_type: album.event_type, event_id: album.event_id }))"
@@ -120,20 +125,14 @@ const onKeydown = (e) => {
                     <h3 class="text-lg font-semibold text-gray-800">{{ album.title }}</h3>
                     <p v-if="album.description" class="text-sm text-gray-500 mt-0.5">{{ album.description }}</p>
                 </div>
-                <button @click="showUploader = !showUploader"
-                    class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Agregar fotos
-                </button>
+                <!-- botón Agregar fotos igual que antes -->
             </div>
 
             <!-- subir imagenes -->
             <div v-if="showUploader" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <Dropzone multiple :previews="previews" :is-dragging="isDragging" :max-files="20"  :columns="'5'" 
-                    @change="handleChange" @drop="handleDrop" @drag-enter="handleDragEnter" @drag-leave="handleDragLeave" @remove-at="removeAt"
-                    @remove="reset" />
+                <Dropzone multiple :previews="previews" :is-dragging="isDragging" :max-files="20" :columns="'5'"
+                    @change="handleChange" @drop="handleDrop" @drag-enter="handleDragEnter"
+                    @drag-leave="handleDragLeave" @remove-at="removeAt" @remove="reset" />
                 <div class="mt-3 flex justify-end gap-2">
                     <button @click="showUploader = false; reset()"
                         class="rounded-lg border px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition-colors">

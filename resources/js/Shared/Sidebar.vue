@@ -13,11 +13,11 @@
             'py-8 flex',
             !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
         ]">
-            <Link v-if="isExpanded || isHovered || isMobileOpen" href="/" >
+            <Link v-if="isExpanded || isHovered || isMobileOpen" href="/">
                 <ApplicationLogo class="h-10 pt-3 w-auto fill-current text-gray-500 hidden" alt="Logo" height="40" />
             </Link>
-            <Link v-else href="/" >
-                <ApplicationLogo class="h-10 w-auto fill-current text-gray-500" alt="Logo" height="32"/>
+            <Link v-else href="/">
+                <ApplicationLogo class="h-10 w-auto fill-current text-gray-500" alt="Logo" height="32" />
             </Link>
         </div>
         <div class="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
@@ -210,106 +210,101 @@ const menuGroups = computed(() => [
                 name: "Mi Cuenta",
                 path: "/profile",
             }
-        ]}, {
+        ]
+    },
+    ...(isAdmin.value ? [{
         title: "administracion",
         items: [
+            {
+                icon: PresentationIcon,
+                name: "Congresos",
+                subItems: [
+                    { name: "Listado", path: "/conferences/main", pro: false },
+                    { name: "Asistentes Registrados", path: "/attendees/conference", pro: false },
 
-            ...(isAdmin.value ? [
-                {
-                    icon: PresentationIcon,
-                    name: "Congresos",
-                    subItems: [
-                        { name: "Listado", path: "/conferences/main", pro: false },
-                        { name: "Asistentes Registrados", path: "/attendees/conference", pro: false },
-                        
-                    ],
-                },
-                {
-                    icon: PresentationIcon,
-                    name: "Pre-congresos",
-                    subItems: [
-                        { name: "Listado", path: "/conferences/pre", pro: false },
-                        { name: "Asistentes Registrados", path: "/attendees/pre_conference", pro: false },
-                        
-                    ],
-                },
-                {
-                    icon: PresentationIcon,
-                    name: "Trans-congresos",
-                    subItems: [
-                        { name: "Listado", path: "/conferences/trans", pro: false },
-                        { name: "Asistentes Registrados", path: "/attendees/trans_conference", pro: false },
-                        
-                    ],
-                },
-                {
-                    icon: WebinarIcon,
-                    name: "Webinars",
-                    subItems: [
-                        { name: "Listado", path: "/webinars", pro: false},
-                        { name: "Asistentes Registrados", path: "/attendees/webinar", pro: false },
-                        
-                    ],
-                },
-                {
-                    icon: AcademicSesion,
-                    name: "Sesiones Academicas",
-                    subItems: [
-                        { name: "Listado", path: "/academicsessions", pro: false},
-                        { name: "Asistentes Registrados", path: "/attendees/academic_session", pro: false },
-                        
-                    ],
-                },
-                {
-                    icon: PresentationIcon,
-                    name: "Cursos",
-                    subItems: [
-                        { name: "Listado", path: "/courses", pro: false },
-                        { name: "Asistentes Registrados", path: "/attendees/course", pro: false },
-                        
-                    ],
-                },
-                {
-                    icon: ImagesIcon,
-                    name: "Banners",
-                    path: '/banners'
-                },
-                {
-                    icon: NewsIcon,
-                    name: "Publicidad",
-                    path: '/publicity'
-                },
-                {
-                    icon: BlogIcon,
-                    name: "Noticias",
-                    path: '/news'
-                },
-                {
-                    icon: PriceTagIcon,
-                    name: "Membresías",
-                    path: '/memberships'
-                },
-                {
-                    icon: BankIcon,
-                    name: "Gestión de Datos de Bancarios",
-                    path: "/bankdetails",
-                },
-                {
-                    icon: UserGroupIcon,
-                    name: "Gestión de usuarios",
-                    subItems: [
-                        { name: "Miembros", path: "/members", pro: false },
-                        { name: "Usuarios", path: "/users", pro: false },
-                        
-                    ],
-                },
+                ],
+            },
+            {
+                icon: PresentationIcon,
+                name: "Pre-congresos",
+                subItems: [
+                    { name: "Listado", path: "/conferences/pre", pro: false },
+                    { name: "Asistentes Registrados", path: "/attendees/pre_conference", pro: false },
 
+                ],
+            },
+            {
+                icon: PresentationIcon,
+                name: "Trans-congresos",
+                subItems: [
+                    { name: "Listado", path: "/conferences/trans", pro: false },
+                    { name: "Asistentes Registrados", path: "/attendees/trans_conference", pro: false },
 
-            ] : []),
+                ],
+            },
+            {
+                icon: WebinarIcon,
+                name: "Webinars",
+                subItems: [
+                    { name: "Listado", path: "/webinars", pro: false },
+                    { name: "Asistentes Registrados", path: "/attendees/webinar", pro: false },
 
-            
+                ],
+            },
+            {
+                icon: AcademicSesion,
+                name: "Sesiones Academicas",
+                subItems: [
+                    { name: "Listado", path: "/academicsessions", pro: false },
+                    { name: "Asistentes Registrados", path: "/attendees/academic_session", pro: false },
+
+                ],
+            },
+            {
+                icon: PresentationIcon,
+                name: "Cursos",
+                subItems: [
+                    { name: "Listado", path: "/courses", pro: false },
+                    { name: "Asistentes Registrados", path: "/attendees/course", pro: false },
+
+                ],
+            },
+            {
+                icon: ImagesIcon,
+                name: "Banners",
+                path: '/banners'
+            },
+            {
+                icon: NewsIcon,
+                name: "Publicidad",
+                path: '/publicity'
+            },
+            {
+                icon: BlogIcon,
+                name: "Noticias",
+                path: '/news'
+            },
+            {
+                icon: PriceTagIcon,
+                name: "Membresías",
+                path: '/memberships'
+            },
+            {
+                icon: BankIcon,
+                name: "Gestión de Datos de Bancarios",
+                path: "/bankdetails",
+            },
+            {
+                icon: UserGroupIcon,
+                name: "Gestión de usuarios",
+                subItems: [
+                    { name: "Miembros", path: "/members", pro: false },
+                    { name: "Usuarios", path: "/users", pro: false },
+
+                ],
+            },
         ]
-    }
+    }] : [])
 
 ])
 

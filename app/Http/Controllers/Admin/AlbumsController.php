@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
 use App\Http\Controllers\Controller;
 use App\Http\Helpers\Constants;
-use App\Models\Album;
-use Exception;
 use Illuminate\Http\Request;
+use App\Models\Album;
 use Inertia\Inertia;
+use Exception;
 
 class AlbumsController extends Controller
 {
@@ -32,7 +33,7 @@ class AlbumsController extends Controller
         Constants::EVENT_ACADEMIC_SESSION => 'academicsessions.index',
         Constants::EVENT_CONFERENCE       => 'conferences.main.index',
         Constants::EVENT_PRECONFERENCE    => 'conferences.pre.index',
-        Constants::EVENT_TRANSCONFERENCE  => 'conferences.trans.index', 
+        Constants::EVENT_TRANSCONFERENCE  => 'conferences.trans.index',
     ];
 
 
@@ -45,23 +46,27 @@ class AlbumsController extends Controller
     {
         $albums = Album::where('event_type', $event_type)
             ->where('event_id', $event_id)
-            ->withCount('media')          // mostrar cantidad
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn($album) => [
-                'id'          => $album->id,
-                'title'       => $album->title,
-                'description' => $album->description,
-                'cover_url'   => $album->cover_url,
-                'photos_count' => $album->media_count,
+                'id'           => $album->id,
+                'title'        => $album->title,
+                'description'  => $album->description,
+                'cover_url'    => $album->cover_url,
+                'photos_count' => $album->photos_count, // usa el accessor con collectionName()
             ]);
 
+        // nombre real del evento (topic)
+        $event     = $this->resolveEvent($event_type, $event_id);
+        $eventName = $this->isConferenceRelated($event_type) ? $event?->name : $event?->topic;
+
         return Inertia::render('Albums/Index', [
-            'albums'     => $albums,
-            'event_type' => $event_type,
-            'event_id'   => $event_id,
+            'albums'      => $albums,
+            'event_type'  => $event_type,
+            'event_id'    => $event_id,
             'event_label' => $this->eventLabels[$event_type] ?? 'Evento',
-            'back_route' => $this->eventRoutes[$event_type] ?? null,
+            'event_name'  => $eventName,
+            'back_route'  => $this->eventRoutes[$event_type] ?? null,
         ]);
     }
 
@@ -115,7 +120,8 @@ class AlbumsController extends Controller
             $event_type = $album->event_type;
             $event_id   = $album->event_id;
 
-            $album->clearMediaCollection('album_photos');
+            // nombre dinamico
+            $album->clearMediaCollection($album->collectionName());
             $album->delete();
 
             return redirect()->route('albums.index', [
@@ -131,22 +137,28 @@ class AlbumsController extends Controller
     {
         $album = Album::findOrFail($id);
 
-        $photos = $album->getMedia('album_photos')->map(fn($media) => [
+        // nombre dinamico
+        $photos = $album->getMedia($album->collectionName())->map(fn($media) => [
             'id'    => $media->id,
             'url'   => $media->getUrl(),
             'thumb' => $media->getUrl('thumb'),
         ]);
 
+        // mombre real del evento
+        $event     = $this->resolveEvent($album->event_type, $album->event_id);
+        $eventName = $event?->topic ?? null;
+
         return Inertia::render('Albums/Photos', [
-            'album'      => [
+            'album' => [
                 'id'          => $album->id,
                 'title'       => $album->title,
                 'description' => $album->description,
                 'event_type'  => $album->event_type,
                 'event_id'    => $album->event_id,
             ],
-            'photos'     => $photos,
+            'photos'      => $photos,
             'event_label' => $this->eventLabels[$album->event_type] ?? 'Evento',
+            'event_name'  => $eventName,
         ]);
     }
 
@@ -161,7 +173,8 @@ class AlbumsController extends Controller
             ]);
 
             foreach ($request->file('images') as $image) {
-                $album->addMedia($image)->toMediaCollection('album_photos');
+                // nombre dinamico de coleccion
+                $album->addMedia($image)->toMediaCollection($album->collectionName());
             }
 
             return redirect()->route('albums.photos', $id)
@@ -175,7 +188,9 @@ class AlbumsController extends Controller
     {
         try {
             $album = Album::findOrFail($id);
-            $media = $album->getMedia('album_photos')->firstWhere('id', $mediaId);
+
+            // nombre dinamico de coleccion
+            $media = $album->getMedia($album->collectionName())->firstWhere('id', $mediaId);
 
             if ($media) {
                 $media->delete();
@@ -187,5 +202,32 @@ class AlbumsController extends Controller
         } catch (Exception $e) {
             return redirect()->back()->with('error', 'Error al eliminar la foto.');
         }
+    }
+
+    // ---------------------------------------------
+    // PRIVATE: Resuelve el modelo del evento por morphMap
+    // para obtener su nombre
+    // ---------------------------------------------
+
+    private function resolveEvent(string $event_type, int $event_id)
+    {
+        $modelClass = Relation::getMorphedModel($event_type);
+
+        if (!$modelClass) {
+            return null;
+        }
+
+        return $modelClass::withTrashed()->find($event_id);
+    }
+
+    private function isConferenceRelated (string $event_type)
+    {
+        $events = [
+            Constants::EVENT_CONFERENCE,
+            Constants::EVENT_PRECONFERENCE,
+            Constants::EVENT_TRANSCONFERENCE,
+        ];
+
+        return in_array($event_type, $events);
     }
 }

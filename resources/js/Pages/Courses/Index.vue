@@ -2,7 +2,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3'
 import { useAlert } from '@/composables/useAlert'
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import Alerta from '@/Components/Alerta.vue';
 import DataTable from '@/Components/DataTable.vue';
 
@@ -33,18 +33,13 @@ const props = defineProps({
 
 const page = usePage();
 
-onMounted(() => {
-    if (page.props.success || props.flash.success) {
-        success(page.props.success || props.flash.success)
-    }
-    if (page.props.error || props.flash.error) {
-        errorA(page.props.error || props.flash.error)
-    }
+watch(() => props.flash, (value) => {
+    if (!value) return
 
-    if (page.props.warning || props.flash.warning) {
-        warning(page.props.warning || props.flash.warning)
-    }
-})
+    if (value.success) success(value.success)
+    if (value.warning) warning(value.warning)
+    if (value.error) errorA(value.error)
+}, {immediate: true, deep: true})
 
 const handleOnCreate = () => {
     router.get(route('courses.new'));
@@ -57,9 +52,9 @@ const handleOnEdit = (course) => {
 }
 
 const handleOnDelete = (courseId) => {
-    warning('¿Confirma que desea eliminar este curso?.', {
-        title: 'Eliminar curso',
-        buttonText: 'Sí, eliminar',
+    warning('¿Confirma que desea desactivar este curso?.', {
+        title: 'Desactivar curso',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
@@ -69,9 +64,9 @@ const handleOnDelete = (courseId) => {
 }
 
 const handleOnRestore = (courseId) => {
-    info('¿Confirma que desea restaurar este curso?.', {
-        title: 'Restaurar curso',
-        buttonText: 'Sí, restaurar',
+    info('¿Confirma que desea activar este curso?.', {
+        title: 'Activar curso',
+        buttonText: 'Sí, activar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
@@ -281,7 +276,7 @@ const clearFilters = () => {
                         :class="
                             item.program_url == null || item.program_url == '' 
                             ? 'bg-red-20 text-red-500 transition-colors border border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600' 
-                            : 'bg-red-400 text-white transition-colors border border-red-400 hover:bg-red-600 hover:text-white hover:border-red-600'
+                            : 'bg-rose-500 text-white transition-colors border border-red-400 hover:bg-red-600 hover:text-white hover:border-red-600'
                         ">
                         <svg width="18" height="18" fill="currentcolor"
                             class="bi bi-filetype-pdf text-8xl w-4 h-4 dark:text-stone-200" viewBox="0 0 16 16"
@@ -293,7 +288,11 @@ const clearFilters = () => {
                     </button>
                     <button 
                         title="Ver galería" @click="openGallery(item)"
-                        class="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white">
+                        class="p-2 rounded-lg"
+                        :class="item.albums_count > 0 
+                                ? 'bg-violet-500 text-white hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white'
+                                : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600 hover:bg-indigo-600 hover:text-white'
+                            ">
                             <svg width="18" height="18" fill="currentColor"
                             class="text-8xl w-4 h-4" viewBox="0 0 17 17"
                             xmlns="http://www.w3.org/2000/svg">

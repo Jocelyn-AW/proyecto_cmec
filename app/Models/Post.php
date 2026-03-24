@@ -57,8 +57,7 @@ class Post extends Model implements HasMedia
         $this->addMediaCollection('posts')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
     }
 
     /**

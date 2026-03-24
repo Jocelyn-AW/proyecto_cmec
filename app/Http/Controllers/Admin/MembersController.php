@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Clinic;
+use App\Models\DirectoryData;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +86,7 @@ class MembersController extends Controller
             }
 
             $member = Member::create([
-                'cmec_member_id'   => $data['cmec_member_id']   ?? null,
+                'cmec_member_id'   => $this->generateCmecMemberId(),
                 'name'             => $data['name'],
                 'last_name'        => $data['last_name'],
                 'phone'            => $data['phone'],
@@ -115,6 +117,7 @@ class MembersController extends Controller
             }
 
             $this->updateMemberMedia($member, $request);
+            $this->saveDirectoryData($member);
 
             DB::commit();
 
@@ -219,7 +222,7 @@ class MembersController extends Controller
                     'payment_method' => $data['payment_method'],
                     'amount'         => $data['amount'],
                     'payment_date'   => $data['payment_date'],
-                    'reference'      => $data['reference'],
+                    'reference'      => $data['reference'] ?? '',
                     'status'         => 'paid',
                 ];
 
@@ -235,6 +238,7 @@ class MembersController extends Controller
             }
 
             $this->updateMemberMedia($member, $request);
+            $this->saveDirectoryData($member);
 
             DB::commit();
 
@@ -267,11 +271,11 @@ class MembersController extends Controller
 
             return redirect()
                 ->route('members.index')
-                ->with('success', 'Miembro eliminado exitosamente');
+                ->with('success', 'Miembro desactivado exitosamente');
         } catch (Exception $e) {
             return redirect()
                 ->route('members.index')
-                ->with('error', 'Hubo un error al eliminar el miembro. Intenta de nuevo más tarde.');
+                ->with('error', 'Hubo un error al desactivar el miembro. Intenta de nuevo más tarde.');
         }
     }
 
@@ -335,6 +339,7 @@ class MembersController extends Controller
             'cedula_especialista'  => 'members_cedula_especialista',
             'constancia_fiscal'    => 'members_constancia_fiscal',
             'factura'              => 'members_factura',
+            'comprobante_pago'     => 'members_comprobante_pago',
         ];
 
         foreach ($collections as $field => $collection) {
@@ -354,10 +359,9 @@ class MembersController extends Controller
         $pdfRule = 'nullable|mimes:pdf|max:10240';
 
         return [
-            'cmec_member_id'       => 'nullable|string|max:191',
             'name'                 => 'required|string|max:191',
             'last_name'            => 'required|string|max:191',
-            'phone'                => 'required|string|max:191',
+            'phone'                => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|max:20',
             'email'                => 'required|email|max:191',
             'city'                 => 'required|string|max:191',
             'state'                => 'nullable|string|max:191',
@@ -377,6 +381,7 @@ class MembersController extends Controller
             'cedula_especialista'  => $pdfRule,
             'constancia_fiscal'    => $pdfRule,
             'factura'              => $pdfRule,
+            'comprobante_pago'     => $pdfRule,
         ];
     }
 
@@ -386,6 +391,8 @@ class MembersController extends Controller
             'name.required'                    => 'El nombre es obligatorio.',
             'last_name.required'               => 'Los apellidos son obligatorios.',
             'phone.required'                   => 'El teléfono es obligatorio.',
+            'phone.min'                        => 'El teléfono debe tener minimo 10 digitos.',
+            'phone.max'                        => 'El teléfono no debe exceder de 20 digitos',
             'email.required'                   => 'El correo electrónico es obligatorio.',
             'email.email'                      => 'El correo electrónico no es válido.',
             'city.required'                    => 'La ciudad es obligatoria.',
@@ -411,4 +418,63 @@ class MembersController extends Controller
             abort(403, 'No puedes modificar un miembro eliminado.');
         }
     }
+
+    // ---------------------------------------------
+    // PRIVATE: Generate CMEC ID
+    // ---------------------------------------------
+
+    private function generateCmecMemberId(): string
+    {
+        $maxAttempts = 5;
+
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $last = Member::withTrashed()
+                ->whereNotNull('cmec_member_id')
+                ->where('cmec_member_id', 'like', 'CMEC-%')
+                ->orderByRaw("CAST(SUBSTRING(cmec_member_id, 6) AS UNSIGNED) DESC")
+                ->value('cmec_member_id');
+
+            $next = $last ? ((int) substr($last, 5)) + 1 : 1;
+            $candidate = 'CMEC-' . str_pad($next, 4, '0', STR_PAD_LEFT);
+
+            if (!Member::withTrashed()->where('cmec_member_id', $candidate)->exists()) {
+                return $candidate;
+            }
+        }
+        return 'CMEC-' . now()->format('ymdHis');
+    }
+    // PRIVATE: Save Directory Data
+    // ---------------------------------------------
+
+    private function saveDirectoryData(Member $member) : void
+    {
+        try {
+            $attributes = [
+                'member_id' => $member->id
+            ];
+
+            $data = [
+                'name' => $member->name,
+                'state' => $member->state,
+                'city' => $member->city
+            ];
+
+            $clinic = [
+                'hospital_name' => $member->hospital ?? '',
+                'phone' => $member->phone
+            ];
+
+            DirectoryData::updateOrCreate($attributes, $data);
+            Clinic::updateOrCreate($attributes, $clinic);
+
+        } catch (Exception $e) {
+            Log::error('Error al guardar los datos en el directorio', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+            ]);
+        }
+    }
+
+    
 }

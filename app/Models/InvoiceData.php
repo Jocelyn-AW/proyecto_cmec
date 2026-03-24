@@ -24,7 +24,7 @@ class InvoiceData extends Model
         'tax_regime',
         'cfdi_use',
         'address',
-        
+        'person_type'
     ];
 
     protected $dates = [

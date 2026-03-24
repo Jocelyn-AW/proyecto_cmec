@@ -50,6 +50,7 @@ class Conference extends Model implements HasMedia
         'golden_sponsors_urls',
         'silver_sponsors_urls',
         'program_url',
+        'albums_count'
     ];
 
     protected $casts = [
@@ -125,6 +126,12 @@ class Conference extends Model implements HasMedia
         return $this->morphMany(EventSession::class, 'sessionable');
     }
 
+    public function albums()
+    {
+        return $this->hasMany(Album::class, 'event_id')
+                    ->where('event_type', $this->subtype);
+    }
+
     public function attendees()
     {
         return $this->hasMany(Attendee::class, 'event_id')
@@ -137,28 +144,23 @@ class Conference extends Model implements HasMedia
         $this->addMediaCollection('conference_covers')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
 
         $this->addMediaCollection('conference_gallery')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_platinum_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_golden_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_silver_sponsors')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
-            ->useDisk('public')
-            ->withResponsiveImages();
+            ->useDisk('public');
 
         $this->addMediaCollection('conference_program')
             ->acceptsMimeTypes(['application/pdf'])
@@ -232,6 +234,13 @@ class Conference extends Model implements HasMedia
                     'url' =>  $media->getUrl()
                 ];
             });
+        });
+    }
+
+    protected function albumsCount(): Attribute
+    {
+        return Attribute::make(function () {
+            return $this->albums()->count();
         });
     }
 }

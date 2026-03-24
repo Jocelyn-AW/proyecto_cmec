@@ -15,16 +15,18 @@ class MembershipPrice extends Model
         'membership_id',
         'start_date',
         'end_date',
-        'amount',
+        'amount_general',
+        'amount_preferential',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date'   => 'date',
-        'amount'     => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'deleted_at' => 'datetime',
+        'start_date'          => 'date:Y-m-d',
+        'end_date'            => 'date:Y-m-d',
+        'amount_general'      => 'decimal:2',
+        'amount_preferential' => 'decimal:2',
+        'created_at'          => 'datetime',
+        'updated_at'          => 'datetime',
+        'deleted_at'          => 'datetime',
     ];
 
     public function membership(): BelongsTo

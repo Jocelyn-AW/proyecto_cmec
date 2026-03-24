@@ -33,6 +33,10 @@ const props = defineProps({
         type: String,
         default: ''
     },
+    eventType: {
+        type: String,
+        default: ''
+    },
     flash: {
         type: Object,
         default: () => ({})
@@ -176,9 +180,9 @@ const handleOnEdit = (attendee) => {
 }
 
 const handleOnDelete = (attendeeId) => {
-    warning('¿Confirma que desea eliminar a este asistente?.', {
-        title: 'Eliminar registro',
-        buttonText: 'Sí, eliminar',
+    warning('¿Confirma que desea desactivar a este asistente?.', {
+        title: 'Desactivar registro',
+        buttonText: 'Sí, desactivar',
         cancelText: 'Cancelar',
         onConfirm: () => {
             hideAlert();
@@ -197,6 +201,22 @@ const handleOnRestore = (attendeeId) => {
             router.put(route('attendees.restore', attendeeId));
         }
     })
+}
+
+const handleExportPdf = () => {
+    const params = new URLSearchParams(window.location.search)
+    window.open(
+        route('attendees.export.pdf', { event: props.eventType }) + '?' + params.toString(),
+        '_blank'
+    )
+}
+
+const handleExportExcel = () => {
+    const params = new URLSearchParams(window.location.search)
+    window.open(
+        route('attendees.export.excel', { event: props.eventType }) + '?' + params.toString(),
+        '_blank'
+    )
 }
 
 </script>
@@ -219,10 +239,13 @@ const handleOnRestore = (attendeeId) => {
                 :allow-actions="true"
                 :allow-edit="true"
                 :allow-delete="true"
+                :allow-exports="true"
                 @create="handleOnCreate"
                 @edit="handleOnEdit"
                 @delete="handleOnDelete"
                 @restore="handleOnRestore"
+                @export_excel="handleExportExcel"
+                @export_pdf="handleExportPdf"
                 :only="['attendees']"
                 >
 

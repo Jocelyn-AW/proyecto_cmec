@@ -14,10 +14,13 @@ use App\Models\InvoiceData;
 use App\Models\Webinar;
 use App\Models\Member;
 use App\Models\Payment;
+use App\Exports\AttendeesExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AttendeesController extends Controller
 {
@@ -28,6 +31,7 @@ class AttendeesController extends Controller
 
         return Inertia::render('Attendees/Index', [
             'attendees' => $attendees,
+            'eventType'  => $event_type,
             'eventName' => $events['eventName'],
             'allEvents' => $events['allEvents'],
             'activeEvents' => $events['activeEvents']
@@ -276,7 +280,7 @@ class AttendeesController extends Controller
 
         return redirect()
             ->route('attendees.index', $this->getActiveFilters($request, $attendee->event_type))
-            ->with('success', 'Asistente eliminado exitosamente');
+            ->with('success', 'Asistente desactivado exitosamente');
     }
 
     public function restore(Request $request, $id)
@@ -536,5 +540,63 @@ class AttendeesController extends Controller
         ];
 
         return in_array($event_type, $events);
+    }
+
+    public function exportExcel(Request $request, $event_type)
+    {
+        $attendees = $this->getAttendeesForExport($request, $event_type);
+        $filename  = "asistentes_{$event_type}_" . now()->format('Y-m-d') . '.xlsx';
+
+        return Excel::download(new AttendeesExport($attendees, $event_type), $filename);
+    }
+
+    public function exportPdf(Request $request, $event_type)
+    {
+        $is_conference = $this->isConferenceRelated($event_type);
+        $attendees     = $this->getAttendeesForExport($request, $event_type);
+        $events        = $this->getEvents($event_type);
+
+        $memberIds = $attendees->where('person_type', 'member')->whereNotNull('person_id')->pluck('person_id');
+        $members   = Member::select('id', 'cmec_member_id')->whereIn('id', $memberIds)->get()->keyBy('id');
+
+        $pdf = Pdf::loadView('exports.attendees', [
+            'attendees'     => $attendees,
+            'eventName'     => $events['eventName'],
+            'is_conference' => $is_conference,
+            'members'       => $members,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("asistentes_{$event_type}_" . now()->format('Y-m-d') . '.pdf');
+    }
+
+    private function getAttendeesForExport(Request $request, string $event_type)
+    {
+        $search     = $request->input('search', null);
+        $event_id   = $request->input('event_id', null);
+        $did_attend = $request->input('did_attend', null);
+        $status     = $request->input('status', '');
+
+        $is_conference = $this->isConferenceRelated($event_type);
+        $title         = $is_conference ? 'name' : 'topic';
+
+        $query = Attendee::where('event_type', $event_type)
+            ->withTrashFilter($status);
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search, $event_type, $title) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('state', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhereHasMorph('event', [$event_type], function ($q) use ($search, $title) {
+                        $q->withTrashed()->where($title, 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if (!empty($event_id))  $query->where('event_id', $event_id);
+        if (isset($did_attend)) $query->where('did_attend', $did_attend);
+
+        return $query->latest()->get();
     }
 }

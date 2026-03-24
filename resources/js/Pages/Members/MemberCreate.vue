@@ -74,7 +74,8 @@ const findMembershipPrice = (dateStr) => {
         return d >= start && d <= end
     })
 
-    return matched ? matched.amount : ''
+    // Nuevo miembro -> tarifa general
+    return matched ? matched.amount_general : ''
 }
 
 // ----------------------------------
@@ -82,7 +83,6 @@ const findMembershipPrice = (dateStr) => {
 // ----------------------------------
 
 const form = ref({
-    cmec_member_id: '',
     name: '',
     last_name: '',
     phone: '',
@@ -157,6 +157,7 @@ const docFields = [
     { key: 'cedula_especialista', label: 'Cédula de especialista en coloproctología' },
     { key: 'constancia_fiscal', label: 'Constancia fiscal' },
     { key: 'factura', label: 'Factura' },
+    { key: 'comprobante_pago', label: 'Comprobante de pago' },
 ]
 
 const pdfFiles = ref({})
@@ -313,12 +314,13 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         ID CMEC
-                                        <span class="ml-1 text-xs text-gray-400 font-normal">(opcional)</span>
                                     </label>
-                                    <input type="text" v-model="form.cmec_member_id" placeholder="Ej. CMEC-0001"
-                                        class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
-                                    <p v-if="errors.cmec_member_id" class="mt-1 text-xs text-red-500">{{
-                                        errors.cmec_member_id }}</p>
+                                    <div
+                                        class="h-11 w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 flex items-center gap-2 cursor-not-allowed">
+                                        <span class="text-xs font-mono text-gray-400 dark:text-gray-500">Se asignará
+                                            automáticamente</span>
+                                    </div>
+                                    <p class="mt-1 text-xs text-gray-400">Ej. CMEC-0001 · generado al guardar</p>
                                 </div>
 
                                 <!-- Nombre -->
@@ -347,7 +349,7 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Teléfono <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="tel" v-model="form.phone" placeholder="Ej. 55 1234 5678"
+                                    <input type="tel" v-model="form.phone" placeholder="Ej. 55 1234 5678" maxlength="15"
                                         class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
                                     <p v-if="errors.phone" class="mt-1 text-xs text-red-500">{{ errors.phone }}</p>
                                 </div>
@@ -504,7 +506,6 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Cantidad
-                                        <span class="ml-1 text-xs text-gray-400 font-normal">(opcional)</span>
                                     </label>
                                     <div class="relative">
                                         <span
@@ -512,6 +513,11 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                         <input type="number" v-model="form.amount" min="0" placeholder="0.00"
                                             class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent pl-10 pr-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
                                     </div>
+                                    <!-- Badge tarifa -->
+                                    <p class="mt-1 text-xs text-gray-400 flex items-center gap-1">
+                                        <span class="inline-block h-1.5 w-1.5 rounded-full bg-blue-400"></span>
+                                        Tarifa general aplicada (Revisa que exista el periodo de tiempo)
+                                    </p>
                                     <p v-if="errors.amount" class="mt-1 text-xs text-red-500">{{ errors.amount }}</p>
                                 </div>
 

@@ -70,7 +70,8 @@ const findMembershipPrice = (dateStr) => {
         return d >= start && d <= end
     })
 
-    return matched ? matched.amount : null
+    // Miembro existente -> tarifa preferencial
+    return matched ? matched.amount_preferential : null
 }
 
 // ----------------------------------
@@ -157,6 +158,7 @@ const docFields = [
     { key: 'cedula_especialista', label: 'Cédula de especialista en coloproctología', urlKey: 'cedula_especialista_url' },
     { key: 'constancia_fiscal', label: 'Constancia fiscal', urlKey: 'constancia_fiscal_url' },
     { key: 'factura', label: 'Factura', urlKey: 'factura_url' },
+    { key: 'comprobante_pago', label: 'Comprobante de pago', urlKey: 'comprobante_pago_url' },
 ]
 
 const pdfFiles = ref({})
@@ -338,7 +340,7 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Teléfono <span class="text-red-500">*</span>
                                     </label>
-                                    <input type="tel" v-model="form.phone"
+                                    <input type="tel" v-model="form.phone" maxlength="15"
                                         class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
                                     <p v-if="errors.phone" class="mt-1 text-xs text-red-500">{{ errors.phone }}</p>
                                 </div>
@@ -491,7 +493,6 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                 <div>
                                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                                         Cantidad
-                                        <span class="ml-1 text-xs text-gray-400 font-normal">(opcional)</span>
                                     </label>
                                     <div class="relative">
                                         <span
@@ -499,6 +500,11 @@ const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.sho
                                         <input type="number" v-model="form.amount" min="0" placeholder="0.00"
                                             class="h-11 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent pl-10 pr-4 text-sm text-gray-800 dark:text-white/90 placeholder:text-gray-400 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900" />
                                     </div>
+                                    <!-- Badge tarifa -->
+                                    <p class="mt-1 text-xs text-gray-400 flex items-center gap-1">
+                                        <span class="inline-block h-1.5 w-1.5 rounded-full bg-green-400"></span>
+                                        Tarifa preferencial aplicada
+                                    </p>
                                     <p v-if="errors.amount" class="mt-1 text-xs text-red-500">{{ errors.amount }}</p>
                                 </div>
 

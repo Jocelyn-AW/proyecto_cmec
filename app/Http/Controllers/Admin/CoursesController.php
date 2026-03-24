@@ -144,13 +144,13 @@ class CoursesController extends Controller
 
             return redirect()
                 ->route('courses.index')
-                ->with('success', 'Curso eliminado exitosamente');
+                ->with('success', 'Curso desactivado exitosamente');
 
         } catch (\Exception $e) {
 
             return redirect()
                 ->route('courses.index')
-                ->with('error', 'Hubo un error al eliminar el curso. Intenta de nuevo más tarde.');
+                ->with('error', 'Hubo un error al desactivar el curso. Intenta de nuevo más tarde.');
         }
     }
 
@@ -162,13 +162,13 @@ class CoursesController extends Controller
 
             return redirect()
                 ->route('courses.index')
-                ->with('success', 'Curso restaurado exitosamente');
+                ->with('success', 'Curso activado exitosamente');
 
         } catch (Exception $e) {
 
             return redirect()
                 ->route('courses.index')
-                ->with('error', 'Hubo un error al restaurar el curso. Intenta de nuevo más tarde.');
+                ->with('error', 'Hubo un error al activar el curso. Intenta de nuevo más tarde.');
         }
     }
 

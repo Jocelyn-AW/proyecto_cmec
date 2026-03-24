@@ -52,7 +52,7 @@ const formData = reactive({
     name: '',
     description: '',
     benefits: '',
-    prices: [{ start_date: '', end_date: '', amount: '' }],
+    prices: [{ start_date: '', end_date: '', amount_general: '', amount_preferential: '' }],
 });
 
 // ---------------------------------
@@ -69,13 +69,16 @@ const fillForm = (membership) => {
         ? membership.prices.map(p => ({
             start_date: p.start_date ?? '',
             end_date: p.end_date ?? '',
-            amount: p.amount ?? '',
+            amount_general: p.amount_general ?? '',
+            amount_preferential: p.amount_preferential ?? '',
         }))
-        : [{ start_date: '', end_date: '', amount: '' }];
+        : [{ start_date: '', end_date: '', amount_general: '', amount_preferential: '' }];
 };
 
 watch(() => props.membership, (val) => {
-    if (val?.id) fillForm(val);
+    if (val?.id && Object.keys(props.errors).length === 0) {
+        fillForm(val);
+    }
 }, { immediate: true });
 
 // ---------------------------------
@@ -83,7 +86,10 @@ watch(() => props.membership, (val) => {
 // ---------------------------------
 
 const canAddPrice = computed(() => formData.prices.length < MAX_PRICES);
-const addPrice = () => { if (canAddPrice.value) formData.prices.push({ start_date: '', end_date: '', amount: '' }) };
+const addPrice = () => {
+    if (canAddPrice.value)
+        formData.prices.push({ start_date: '', end_date: '', amount_general: '', amount_preferential: '' });
+};
 const removePrice = (index) => formData.prices.splice(index, 1);
 
 // ---------------------------------
@@ -101,6 +107,8 @@ const handleSubmit = () => {
             benefits: formData.benefits,
             prices: formData.prices,
         }, {
+            preserveState: true,
+            preserveScroll: true,
             onFinish: () => { isSubmitting.value = false; },
         });
     } else {
@@ -112,6 +120,8 @@ const handleSubmit = () => {
             benefits: formData.benefits,
             prices: formData.prices,
         }, {
+            preserveState: true,
+            preserveScroll: true,
             onFinish: () => { isSubmitting.value = false; },
         });
     }
@@ -127,6 +137,10 @@ const flatpickrConfig = {
     altInput: true,
     altFormat: 'F j, Y',
     wrap: false,
+    parseDate: (dateStr) => {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    },
 };
 </script>
 
@@ -183,13 +197,13 @@ const flatpickrConfig = {
         </div>
 
         <!-- FORMULARIO: DOS COLUMNAS -->
-        <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
 
             <!-- IZQUIERDA: DATOS -->
             <div
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
-                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
+                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
                     <div
                         class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
@@ -205,7 +219,7 @@ const flatpickrConfig = {
                     </div>
                 </div>
 
-                <div class="p-8 space-y-6">
+                <div class="p-6 space-y-4">
 
                     <!-- NOMBRE -->
                     <div>
@@ -234,7 +248,7 @@ const flatpickrConfig = {
                             <span
                                 class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-500/10 dark:text-gray-400 ml-1">opcional</span>
                         </label>
-                        <textarea v-model="formData.benefits" rows="5"
+                        <textarea v-model="formData.benefits" rows="3"
                             placeholder="Describe los beneficios de esta membresía..."
                             class="dark:bg-dark-900 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800 resize-none" />
                         <span v-if="errors.benefits" class="text-red-500 text-xs flex justify-end mt-1">{{
@@ -248,7 +262,7 @@ const flatpickrConfig = {
             <div
                 class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
 
-                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
+                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
                     <div
                         class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
@@ -263,22 +277,23 @@ const flatpickrConfig = {
                     </div>
                 </div>
 
-                <div class="p-8">
+                <div class="p-6">
 
                     <span v-if="errors.prices" class="text-red-500 text-xs block mb-4">{{ errors.prices }}</span>
 
                     <!-- Cabecera -->
-                    <div class="grid grid-cols-[1fr_1fr_100px_20px] gap-3 mb-2 px-1">
+                    <div class="grid grid-cols-[1fr_1fr_1.5fr_1.5fr_20px] gap-3 mb-2 px-1">
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha inicio</span>
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha fin</span>
-                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Monto</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio General</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio Preferencial</span>
                         <span></span>
                     </div>
 
                     <!-- Todas las filas -->
                     <div class="space-y-3">
                         <div v-for="(price, index) in formData.prices" :key="index"
-                            class="grid grid-cols-[1fr_1fr_100px_20px] gap-3 items-start">
+                            class="grid grid-cols-[1fr_1fr_1.5fr_1.5fr_20px] gap-3 items-start">
 
                             <!-- Fecha inicio -->
                             <div>
@@ -300,18 +315,35 @@ const flatpickrConfig = {
                                 </span>
                             </div>
 
-                            <!-- Monto -->
+                            <!-- Monto General -->
                             <div>
                                 <div class="relative">
                                     <span
                                         class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3 py-1 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
                                         $
                                     </span>
-                                    <input v-model="price.amount" type="number" min="0" placeholder="0.00"
+                                    <input v-model="price.amount_general" type="number" min="0" placeholder="0.00"
                                         class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-9 pr-3 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                                 </div>
-                                <span v-if="errors[`prices.${index}.amount`]" class="text-red-500 text-xs mt-0.5 block">
-                                    {{ errors[`prices.${index}.amount`] }}
+                                <span v-if="errors[`prices.${index}.amount_general`]"
+                                    class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.amount_general`] }}
+                                </span>
+                            </div>
+
+                            <!-- Monto Preferencial -->
+                            <div>
+                                <div class="relative">
+                                    <span
+                                        class="absolute left-0 top-1/2 -translate-y-1/2 border-r border-gray-200 px-3 py-1 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                                        $
+                                    </span>
+                                    <input v-model="price.amount_preferential" type="number" min="0" placeholder="0.00"
+                                        class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent pl-9 pr-3 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                </div>
+                                <span v-if="errors[`prices.${index}.amount_preferential`]"
+                                    class="text-red-500 text-xs mt-0.5 block">
+                                    {{ errors[`prices.${index}.amount_preferential`] }}
                                 </span>
                             </div>
 
@@ -327,7 +359,6 @@ const flatpickrConfig = {
                                     </svg>
                                 </button>
                             </div>
-
                         </div>
                     </div>
 

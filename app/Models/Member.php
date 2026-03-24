@@ -54,6 +54,7 @@ class Member extends Model implements HasMedia
         'cedula_especialista_url',
         'constancia_fiscal_url',
         'factura_url',
+        'comprobante_pago_url',
     ];
 
     // ---------------------------------------------
@@ -116,6 +117,16 @@ class Member extends Model implements HasMedia
         return $this->morphMany(Payment::class, 'user');
     }
 
+    public function directory() : HasOne
+    {
+        return $this->hasOne(DirectoryData::class, 'member_id', 'id');
+    }
+
+    public function clinics() : HasMany
+    {
+        return $this->hasMany(Clinic::class, 'member_id', 'id');
+    }
+
     // ---------------------------------------------
     // Media Collections
     // ---------------------------------------------
@@ -131,6 +142,7 @@ class Member extends Model implements HasMedia
             'members_cedula_especialista',  // Cedula de especialista
             'members_constancia_fiscal',    // Constancia fiscal (RFC)
             'members_factura',              // Factura
+            'members_comprobante_pago'      // Comprobante de Pago
         ];
 
         foreach ($collections as $collection) {
@@ -197,6 +209,14 @@ class Member extends Model implements HasMedia
     {
         return Attribute::make(function () {
             $media = $this->getFirstMedia('members_factura');
+            return $media ? $media->getUrl() : null;
+        });
+    }
+
+    protected function comprobantePagoUrl(): Attribute
+    {
+        return Attribute::make(function (){
+            $media = $this->getFirstMedia('members_comprobante_pago');
             return $media ? $media->getUrl() : null;
         });
     }

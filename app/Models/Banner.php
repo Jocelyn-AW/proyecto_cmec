@@ -64,8 +64,7 @@ class Banner extends Model implements HasMedia
         $this->addMediaCollection('banners')
             ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp'])
             ->useDisk('public')
-            ->singleFile()
-            ->withResponsiveImages();
+            ->singleFile();
     }
 
     /**
