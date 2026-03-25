@@ -44,7 +44,7 @@ const props = defineProps({
     auth: {
         type: Object,
         default: () => ({})
-    }, 
+    },
     errors: {
         type: Object,
         default: () => ({})
@@ -59,7 +59,7 @@ watch(() => props.flash, (value) => {
     if (value.success) success(value.success)
     if (value.warning) warning(value.warning)
     if (value.error) errorA(value.error)
-}, {immediate: true, deep: true})
+}, { immediate: true, deep: true })
 
 const showCreateDrawer = ref(false);
 const showEditDrawer = ref(false);
@@ -81,14 +81,14 @@ const truncate = (text, max = 50) => {
     return text.length > max ? text.substring(0, max) + '...' : text;
 }
 
-const formatAmount =  (amount) => {
+const formatAmount = (amount) => {
     let options = { style: 'currency', currency: 'USD' }
     return new Intl.NumberFormat('en-US', options).format(amount);
 }
 
 const formattedDate = (originalDate) => {
     if (originalDate) {
-        let fullDate = originalDate.slice(0,10) + 'T00:00:00';
+        let fullDate = originalDate.slice(0, 10) + 'T00:00:00';
         const date = new Date(fullDate);
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         return new Intl.DateTimeFormat('es-MX', options).format(date);
@@ -97,7 +97,7 @@ const formattedDate = (originalDate) => {
 
 //Computed props
 const pluralName = computed(() => {
-    if (props.eventName?.toLowerCase() == 'sesion academica'){
+    if (props.eventName?.toLowerCase() == 'sesion academica') {
         return 'sesiones académicas'
     }
     return props.eventName?.toLowerCase() + 's'
@@ -131,7 +131,7 @@ const tableColumns = computed(() => {
 
 //Table Filters
 const filters = {
-    event_id: event_id, 
+    event_id: event_id,
     did_attend: did_attend,
     status: status
 }
@@ -157,16 +157,16 @@ const openDiploma = (attendee) => {
 }
 
 const openPaymentDetails = (attendee) => {
-    paymentDetails.value = attendee.payments?.[0] ?? null;    
+    paymentDetails.value = attendee.payments?.[0] ?? null;
     showPaymentDetails.value = true;
 }
 
 const openInvoiceDetails = (attendee) => {
-    invoiceDetails.value = attendee.invoice_data ?? null;    
+    invoiceDetails.value = attendee.invoice_data ?? null;
     showInvoiceDetails.value = true;
 }
 
-const onChangeAttend = (attendee) => {    
+const onChangeAttend = (attendee) => {
     router.get(route('attendees.change-attend', attendee.id))
 }
 
@@ -174,7 +174,7 @@ const handleOnCreate = () => {
     showCreateDrawer.value = true;
 }
 
-const handleOnEdit = (attendee) => { 
+const handleOnEdit = (attendee) => {
     selectedItem.value = attendee;
     showEditDrawer.value = true;
 }
@@ -221,73 +221,62 @@ const handleExportExcel = () => {
 
 </script>
 <template>
-    <Head :title="`Asistentes a  ${ pluralName }`" />
+
+    <Head :title="`Asistentes a  ${pluralName}`" />
 
     <div class="p-6 border-t border-gray-100 dark:border-gray-800 sm:p-6">
         <div class="space-y-5">
             <div class="">
-                <h3 class="text-lg font-semibold text-sky-800 dark:text-white/90">Asistentes a <span class="capitalize">{{ pluralName }}</span></h3>
-                <p class="text-sm text-gray-500">Administra los asistentes registrados a {{ pluralName }} desde esta sección</p>
+                <h3 class="text-lg font-semibold text-sky-800 dark:text-white/90">Asistentes a <span
+                        class="capitalize">{{ pluralName }}</span></h3>
+                <p class="text-sm text-gray-500">Administra los asistentes registrados a {{ pluralName }} desde esta
+                    sección</p>
             </div>
-            <DataTable
-                :columns="tableColumns"
-                :filter-values="filters"
-                :paginator="props.attendees"
-                :searchable="true"
-                :per-page-options="[5, 10, 25, 50, 100]"
-                :allow-create="true"
-                :allow-actions="true"
-                :allow-edit="true"
-                :allow-delete="true"
-                :allow-exports="true"
-                @create="handleOnCreate"
-                @edit="handleOnEdit"
-                @delete="handleOnDelete"
-                @restore="handleOnRestore"
-                @export_excel="handleExportExcel"
-                @export_pdf="handleExportPdf"
-                :only="['attendees']"
-                >
+            <DataTable :columns="tableColumns" :filter-values="filters" :paginator="props.attendees" :searchable="true"
+                :per-page-options="[5, 10, 25, 50, 100]" :allow-create="true" :allow-actions="true" :allow-edit="true"
+                :allow-delete="true" :allow-exports="true" @create="handleOnCreate" @edit="handleOnEdit"
+                @delete="handleOnDelete" @restore="handleOnRestore" @export_excel="handleExportExcel"
+                @export_pdf="handleExportPdf" :only="['attendees']">
 
                 <template #filters
                     class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                     <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex flex-wrap items-center gap-3">
                             <!-- Evento -->
-                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize" >
+                            <label for="per-page-select"
+                                class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
                                 {{ pluralName }}
                             </label>
                             <select id="event_id" v-model="event_id"
-                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                                >
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                                 <option value="">Todos</option>
-                                <option v-for="option in allEvents" :key="option.id" :value="option.id" >
+                                <option v-for="option in allEvents" :key="option.id" :value="option.id">
                                     <span v-if="isConference">{{ truncate(option.name, 25) }}</span>
                                     <span v-else>{{ truncate(option.topic, 25) }}</span>
-                                    
+
                                 </option>
                             </select>
                             <!-- Asistencia -->
-                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
+                            <label for="per-page-select"
+                                class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 Asistencia
                             </label>
-                            <select id="attend" v-model="did_attend" 
-                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                                >
+                            <select id="attend" v-model="did_attend"
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                                 <option value="">Todos</option>
                                 <option :value="0">No</option>
-                                <option :value="1">Si</option> 
+                                <option :value="1">Si</option>
                             </select>
                             <!-- Estatus -->
-                            <label for="per-page-select" class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" >
+                            <label for="per-page-select"
+                                class="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                 Estatus
                             </label>
-                            <select id="status" v-model="status" 
-                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                                >
+                            <select id="status" v-model="status"
+                                class="rounded-lg border max-w-sm border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                                 <option value="all">Todos</option>
                                 <option value="">Activos</option>
-                                <option value="trashed">Inactivos</option> 
+                                <option value="trashed">Inactivos</option>
                             </select>
                             <!-- Limpiar filtros -->
                             <button v-if="hasActiveFilters()" @click="clearFilters"
@@ -316,15 +305,13 @@ const handleExportExcel = () => {
                 <template #cell-origin="{ item }">
                     {{ item.city ? item.city + ', ' : '' }}{{ item.state || '' }}.
                 </template>
-                
+
                 <!-- Tipo de asistentes -->
-                <template v-if="isConference"  #cell-person_type="{ item }">
-                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium "
-                        :class="item.person_type == 'member' ? 'bg-indigo-200 text-indigo-700':
-                        (item.person_type == 'resident') ? 'bg-sky-200 text-sky-700': 
-                        (item.person_type == 'surgeon') ? 'bg-teal-200 text-teal-700': 
-                        (item.person_type == 'nurse') ? 'bg-slate-200 text-slate-700' :'bg-gray-200 text-gray-700'"
-                        >
+                <template v-if="isConference" #cell-person_type="{ item }">
+                    <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium " :class="item.person_type == 'member' ? 'bg-indigo-200 text-indigo-700' :
+                        (item.person_type == 'resident') ? 'bg-sky-200 text-sky-700' :
+                            (item.person_type == 'surgeon') ? 'bg-teal-200 text-teal-700' :
+                                (item.person_type == 'nurse') ? 'bg-slate-200 text-slate-700' : 'bg-gray-200 text-gray-700'">
                         {{ item.person_type === 'member' ? 'Miembro CMEC' : '' }}
                         {{ item.person_type === 'guest' ? 'No miembro / Invitado' : '' }}
                         {{ item.person_type === 'resident' ? 'Residente / Medico General' : '' }}
@@ -336,8 +323,7 @@ const handleExportExcel = () => {
                 <template v-else #cell-person_type="{ item }">
                     <span class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
                         :class="item.person_type == 'member' ? 'bg-emerald-200 text-emerald-700' :
-                        (item.person_type == 'resident') ? 'bg-sky-200 text-sky-700': 'bg-gray-200 text-gray-700'"
-                        >
+                            (item.person_type == 'resident') ? 'bg-sky-200 text-sky-700' : 'bg-gray-200 text-gray-700'">
                         {{ item.person_type === 'member' ? 'Miembro CMEC' : '' }}
                         {{ item.person_type === 'guest' ? 'Invitado' : '' }}
                         {{ item.person_type === 'resident' ? 'Residente' : '' }}
@@ -347,57 +333,48 @@ const handleExportExcel = () => {
 
                 <!-- Detalles de Pago -->
                 <template #cell-status="{ item }">
-                    <span
-                        role="button" @click="openPaymentDetails(item)"
-                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.status == 'pending' ? 'bg-amber-200 text-amber-700 hover:bg-amber-300' : 
-                        (item.status == 'paid') 
-                        ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
-                        : 'bg-sky-200 text-sky-700 hover:bg-sky-300'"
-                        >
+                    <span role="button" @click="openPaymentDetails(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize transition-colors"
+                        :class="{
+                            'bg-amber-200 text-amber-700 hover:bg-amber-300': item.status === 'pending',
+                            'bg-emerald-200 text-emerald-700 hover:bg-emerald-300': item.status === 'paid',
+                            'bg-rose-200 text-rose-700 hover:bg-rose-300': item.status === 'cancelled',
+                            'bg-sky-200 text-sky-700 hover:bg-sky-300': item.status === 'free'
+                        }">
                         {{ item.status === 'paid' ? 'Pagado' : '' }}
                         {{ item.status === 'pending' ? 'Pendiente' : '' }}
                         {{ item.status === 'free' ? 'Gratis' : '' }}
+                        {{ item.status === 'cancelled' ? 'Cancelado' : '' }}
                     </span>
                 </template>
 
                 <!-- Datos Fiscales -->
                 <template #cell-invoice_data="{ item }">
-                    <span
-                        role="button" @click="openInvoiceDetails(item)"
-                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="
-                        (item.invoice_data) 
-                        ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
-                        : 'bg-sky-200 text-sky-700 hover:bg-sky-300'"
-                        >
+                    <span role="button" @click="openInvoiceDetails(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize" :class="(item.invoice_data)
+                                ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
+                                : 'bg-sky-200 text-sky-700 hover:bg-sky-300'">
                         {{ item.invoice_data ? 'Ver Datos' : 'Sin datos' }}
                     </span>
                 </template>
 
                 <!-- Cambiar asistencia -->
                 <template #cell-did_attend="{ item }">
-                    <span role="button" @click="onChangeAttend(item)" 
-                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize"
-                        :class="item.did_attend 
-                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300' 
+                    <span role="button" @click="onChangeAttend(item)"
+                        class="inline-flex items-center px-3 py-0.5 rounded-full text-xs font-medium capitalize" :class="item.did_attend
+                            ? 'bg-emerald-200 text-emerald-700 hover:bg-emerald-300'
                             : 'bg-orange-200 text-orange-700 hover:bg-orange-300',
-                            item.deleted_at ? 'disabled border border-gray-600' : ''"
-                    >
+                            item.deleted_at ? 'disabled border border-gray-600' : ''">
                         {{ item.did_attend ? 'Sí' : 'No' }}
                     </span>
                 </template>
 
                 <template #actionButtons="{ item }">
-                    <button title="Ver diploma" @click="openDiploma(item)"
-                        class="p-2 rounded-lg "
-                        :disabled="!item.did_attend"
-                        :class="
-                            item.diploma_url == null || item.diploma_url == '' 
-                            ? 'bg-indigo-30 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600' 
-                            : 'bg-indigo-500 text-white hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-500 hover:border-indigo-100',
-                            (!item.did_attend || item.deleted_at) && (item.diploma_url == null) ? 'disabled' : ''"
-                        >
+                    <button title="Ver diploma" @click="openDiploma(item)" class="p-2 rounded-lg "
+                        :disabled="!item.did_attend" :class="item.diploma_url == null || item.diploma_url == ''
+                                ? 'bg-indigo-30 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-100 hover:border-indigo-600'
+                                : 'bg-indigo-500 text-white hover:bg-indigo-600 hover:text-white transition-colors border border-indigo-500 hover:border-indigo-100',
+                            (!item.did_attend || item.deleted_at) && (item.diploma_url == null) ? 'disabled' : ''">
                         <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"
                             class="text-8xl w-4 h-4">
                             <g fill="none">
@@ -414,56 +391,27 @@ const handleExportExcel = () => {
 
             </DataTable>
 
-            <CreateAttendee 
-                :show="showCreateDrawer"
-                :event-name="props.eventName"
-                :events="props.activeEvents"
-                :errors="props.errors"
-                @close="showCreateDrawer = false"
-            />
+            <CreateAttendee :show="showCreateDrawer" :event-name="props.eventName" :events="props.activeEvents"
+                :errors="props.errors" @close="showCreateDrawer = false" />
 
-            <EditAttendee 
-                :show="showEditDrawer"
-                :event-name="props.eventName"
-                :data="selectedItem"
-                :events="selectedItem?.deleted_at ? props.allEvents : props.activeEvents"
-                :errors="props.errors"
-                @close="showEditDrawer = false"
-            />
-            
-            <UploadDiploma
-                :show="showUploadDiploma"
-                :max-width="'lg'"
-                :attendee="selectedItem"
-                @close="showUploadDiploma = false"
-            />
+            <EditAttendee :show="showEditDrawer" :event-name="props.eventName" :data="selectedItem"
+                :events="selectedItem?.deleted_at ? props.allEvents : props.activeEvents" :errors="props.errors"
+                @close="showEditDrawer = false" />
 
-            <PaymentDetailsModal
-                :show="showPaymentDetails"
-                :max-width="'lg'"
-                @close="showPaymentDetails = false"
-                :payment-details="paymentDetails"
-            />
+            <UploadDiploma :show="showUploadDiploma" :max-width="'lg'" :attendee="selectedItem"
+                @close="showUploadDiploma = false" />
 
-            <InvoiceDetailsModal
-                :show="showInvoiceDetails"
-                :max-width="'xl'"
-                @close="showInvoiceDetails = false"
-                :billing-details="invoiceDetails"
-                />
+            <PaymentDetailsModal :show="showPaymentDetails" :max-width="'lg'" @close="showPaymentDetails = false"
+                :payment-details="paymentDetails" />
+
+            <InvoiceDetailsModal :show="showInvoiceDetails" :max-width="'xl'" @close="showInvoiceDetails = false"
+                :billing-details="invoiceDetails" />
         </div>
     </div>
-    <Alerta
-        :show="alertState.show"
-        :message="alertState.message"
-        :title="alertState.title"
-        :type="alertState.type"
-        :buttonText="alertState.buttonText"
-        :cancelText="alertState.cancelText"
+    <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+        :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"
         @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
-        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()"
-        @close="hideAlert()"
-    />
-    
+        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()" @close="hideAlert()" />
+
 
 </template>

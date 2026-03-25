@@ -27,7 +27,7 @@ class Attendee extends Model implements HasMedia
         'name',
         'email',
         'phone',
-        'state', 
+        'state',
         'city',
         'status',
         'price',
@@ -47,12 +47,14 @@ class Attendee extends Model implements HasMedia
         'did_attend' => 'boolean',
         'birth_date'  => 'date',
         'specialty'   => 'string',
-        'special_needs' => 'string', 
+        'special_needs' => 'string',
     ];
 
     protected $appends = [
         'diploma_url',
     ];
+
+    protected $with = ['eventPayment'];
 
     protected static function booted()
     {
@@ -64,7 +66,6 @@ class Attendee extends Model implements HasMedia
                 $model->payments()->delete();
                 $model->invoiceData()->delete();
             }
-
         });
 
         static::restored(function ($model) {
@@ -82,22 +83,22 @@ class Attendee extends Model implements HasMedia
         };
     }
 
-    public function event() : MorphTo
+    public function event(): MorphTo
     {
         return $this->morphTo(null, 'event_type', 'event_id');
     }
 
-    public function person() : MorphTo
+    public function person(): MorphTo
     {
         return $this->morphTo(null, 'person_type', 'person_id');
     }
 
-    public function payments() : MorphMany
+    public function payments(): MorphMany
     {
         return $this->morphMany(Payment::class, 'user');
     }
 
-    public function invoiceData() : MorphOne
+    public function invoiceData(): MorphOne
     {
         return $this->morphOne(InvoiceData::class, 'billable');
     }
@@ -118,5 +119,11 @@ class Attendee extends Model implements HasMedia
                 return $media ? $media->getUrl() : null;
             }
         );
+    }
+
+    public function eventPayment(): MorphOne
+    {
+        // vinculacion del pago usando los campos event_payed_type y event_payed_id
+        return $this->morphOne(Payment::class, 'event_payed')->latestOfMany();
     }
 }
