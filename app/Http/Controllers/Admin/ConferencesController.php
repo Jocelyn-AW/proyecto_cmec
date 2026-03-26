@@ -29,12 +29,14 @@ class ConferencesController extends Controller
 
     public function new(string $prefix)
     {
-        $conferences = $prefix != 'main' ? Conference::all() : [];
+        $conferences = $prefix != 'main' ? Conference::where('subtype', 'conference') : null;
+        $events = $conferences ? $conferences->get() : [];
+        
         $bankDetails = BankDetail::select('id', 'bank', 'account_number', 'clabe_number')->get();
     
         return Inertia::render('Conferences/CreateConference', [
             'bank_details' => $bankDetails,
-            'events' => $conferences,
+            'events' => $events,
             'eventName' => $this->getEventName($prefix),
             'prefix' => $prefix
         ]);
