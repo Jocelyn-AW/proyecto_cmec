@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -53,8 +54,6 @@ class Attendee extends Model implements HasMedia
     protected $appends = [
         'diploma_url',
     ];
-
-    protected $with = ['eventPayment'];
 
     protected static function booted()
     {
@@ -121,9 +120,26 @@ class Attendee extends Model implements HasMedia
         );
     }
 
-    public function eventPayment(): MorphOne
+    public function payment(): MorphOne
     {
-        // vinculacion del pago usando los campos event_payed_type y event_payed_id
-        return $this->morphOne(Payment::class, 'event_payed')->latestOfMany();
+        // buscar el pago donde el event_payed apunta al mismo evento del attendee
+        return $this->morphOne(
+            Payment::class,
+            'event_payed',         // event_payed_type, event_payed_id
+            'event_payed_type',
+            'event_payed_id',
+            'event_id'
+        )->where('event_payed_type', $this->event_type)
+            ->latestOfMany();
+    }
+
+    public function memberPayment(): HasOne
+    {
+        // busca el pago del member para evento especifico
+        return $this->hasOne(Payment::class, 'event_payed_id', 'event_id')
+            ->where('user_type', 'member')
+            ->where('user_id', $this->person_id)
+            ->whereColumn('event_payed_type', 'event_type')
+            ->latestOfMany('created_at');
     }
 }

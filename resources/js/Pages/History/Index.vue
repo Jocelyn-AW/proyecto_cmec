@@ -231,7 +231,7 @@ const goToPage = (url) => {
                     </div>
                 </div>
 
-                <!-- Estado vacío ─ -->
+                <!-- Info vacia ─ -->
                 <div v-if="!history.data?.length" class="py-24 text-center">
                     <div
                         class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
@@ -269,9 +269,9 @@ const goToPage = (url) => {
                     </div>
                 </div>
 
-                <!--  Paginación -->
-                <div v-if="history.meta?.last_page > 1" class="flex items-center justify-center gap-1.5 pt-2">
-                    <button v-for="link in history.meta.links" :key="link.label" @click="goToPage(link.url)"
+                <!--  Paginacion -->
+                <div v-if="history.last_page > 1" class="flex items-center justify-center gap-1.5 pt-2">
+                    <button v-for="link in history.links" :key="link.label" @click="goToPage(link.url)"
                         :disabled="!link.url" v-html="link.label"
                         class="inline-flex h-9 min-w-[2.25rem] items-center justify-center rounded-lg border px-3 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         :class="link.active
