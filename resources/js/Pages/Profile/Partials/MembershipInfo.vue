@@ -82,18 +82,28 @@ const location = computed(() => {
     <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
 
         <!-- Header -->
-        <div class="flex items-center gap-3 border-b border-slate-100 px-8 py-5">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                    <rect width="20" height="14" x="2" y="5" rx="2" />
-                    <path d="M2 10h20" />
+        <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5">
+            <div class="flex items-center gap-3">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
+                        <rect width="20" height="14" x="2" y="5" rx="2" />
+                        <path d="M2 10h20" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-800">Membresía</h2>
+                    <p class="text-xs text-slate-500">Información de tu membresía CMEC</p>
+                </div>
+            </div>
+
+            <button type="button"
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2">
+                <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                 </svg>
-            </div>
-            <div>
-                <h2 class="text-sm font-semibold text-slate-800">Membresía</h2>
-                <p class="text-xs text-slate-500">Información de tu membresía CMEC</p>
-            </div>
+                Renovar suscripción
+            </button>
         </div>
 
         <!-- Body -->
