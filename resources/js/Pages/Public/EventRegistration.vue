@@ -57,7 +57,7 @@ const validateMember = async () => {
     memberStatus.value = 'Verificando...';
 
     try {
-        const { data } = await axios.post(route('public.conference.validate-member'), {
+        const { data } = await axios.post(route('public.event.validate-member'), {
             cmec_member_id: form.cmec_member_id
         });
 
