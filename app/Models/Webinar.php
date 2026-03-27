@@ -10,10 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use App\Http\Helpers\Constants;
 use App\Traits\HasSponsorMedia;
+use App\Traits\HasStripeProduct;
 
 class Webinar extends Model implements HasMedia
 {
-    use InteractsWithMedia, SoftDeletes, HasSponsorMedia;
+    use InteractsWithMedia, SoftDeletes, HasSponsorMedia, HasStripeProduct;
 
     protected $table = Constants::TABLE_WEBINARS;
 
@@ -187,5 +188,23 @@ class Webinar extends Model implements HasMedia
     public function sponsorCollectionPrefix(): string
     {
         return 'webinars';
+    }
+
+    // ---------------------------------------------
+    // Stripe
+    //----------------------------------------------
+
+    protected function getStripePriceFields(): array
+    {
+        return [
+            'member_price'   => 'Miembro',
+            'guest_price'    => 'Invitado',
+            'resident_price' => 'Residente'
+        ];
+    }
+
+    protected function getStripeName(): string
+    {
+        return $this->topic;
     }
 }

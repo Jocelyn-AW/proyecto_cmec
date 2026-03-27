@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Listeners\StripeWebhookListener;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -27,7 +28,13 @@ use App\Models\News;
 use App\Models\AcademicSession;
 use App\Models\Album;
 use App\Models\MembershipPrice;
+use App\Models\Setting;
+use Exception;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Cashier\Cashier;
+use Laravel\Cashier\Events\WebhookReceived;
+use Stripe\Stripe;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -58,7 +65,6 @@ class AppServiceProvider extends ServiceProvider
             'course' => Course::class,
             'directory_data' => DirectoryData::class,
             'invoice_data' => InvoiceData::class,
-            // 'media' => Media::class,
             'member' => Member::class,
             'membership' => Membership::class,
             'membership_price' => MembershipPrice::class,
@@ -74,6 +80,25 @@ class AppServiceProvider extends ServiceProvider
 
         Vite::prefetch(concurrency: 3);
 
-        
+        //Stripe
+        $this->setStripeKeys();
+        Cashier::useCustomerModel(Member::class);
+        Event::listen(WebhookReceived::class, StripeWebhookListener::class);
+    }
+
+    private function setStripeKeys () :void 
+    {
+        try {
+            $stripeSecret = Setting::get('stripe_secret');
+            $stripeKey = Setting::get('stripe_key');
+
+            if ($stripeSecret && $stripeKey) {
+                config(['cashier.secret' => $stripeSecret]);
+                config(['cashier.key'    => $stripeKey]);
+                Stripe::setApiKey($stripeSecret);
+            }
+        } catch (Exception) {
+            // si no tiene datos se usara el .env por defecto
+        }
     }
 }

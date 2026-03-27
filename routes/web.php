@@ -4,6 +4,7 @@ use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Public\AttendeeRegistrationController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -30,6 +31,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/directory/profile/{id}',[DirectoryController::class, 'uploadProfile'])->name('directory.profile');
     Route::delete('/{id}', [DirectoryController::class, 'delete'])->name('directory.delete');
     Route::put('restore/{id}', [DirectoryController::class, 'restore'])->name('directory.restore');
+});
+
+//Registro al Evento y Pago con Stripe
+Route::prefix('eventos')->group(function () {
+    Route::get('/{eventType}/{eventId}/registro',        [AttendeeRegistrationController::class, 'show'])->name('public.event.register');
+    Route::post('/{eventType}/{eventId}/registro',       [AttendeeRegistrationController::class, 'store'])->name('public.event.store');
+    Route::post('/validate-member',                      [AttendeeRegistrationController::class, 'validateMember'])->name('public.event.validate-member');
+    Route::get('/payment/success/{eventType}/{eventId}', [AttendeeRegistrationController::class, 'success'])->name('payment.success');
+    Route::get('/payment/cancel/{eventType}/{eventId}',  [AttendeeRegistrationController::class, 'cancel'])->name('payment.cancel');
 });
 
 require __DIR__.'/auth.php';
