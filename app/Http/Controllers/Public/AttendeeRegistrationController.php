@@ -130,19 +130,39 @@ class AttendeeRegistrationController extends Controller
     {
         [$event, $config] = $this->resolveEvent($eventType, $eventId);
 
-        $request->validate([
+        $rules = [
             'name'        => 'required|string',
-            'email'       => 'required|email',
+            'email'       => 'required|email|unique:attendees,email',
             'phone'       => 'required|string',
             'state'       => 'required|string',
             'city'        => 'required|string',
             'person_type' => 'required|string',
-        ]);
+        ];
+
+        $messages = [
+            'required'      => 'Este campo es requerido',
+            'email'         => 'Ingrese un email válido',
+            'email.unique'  => 'Este correo ya esta registrado en el evento'
+
+        ];
+
+        $request->validate($rules, $messages);
 
         // Determinar member si aplica
         $member = null;
         if ($request->person_type === 'member') {
             $member = Member::where('cmec_member_id', $request->cmec_member_id)->firstOrFail();
+
+            $exists = Attendee::where('event_type', $eventType)
+                ->where('event_id', $eventId)
+                ->where('person_id', $member->id)
+                ->exists();
+
+            if ($exists) {
+                return back()->withErrors([
+                    'cmec_member_id' => 'Este miembro ya está registrado en este evento.'
+                ]);
+            }
         }
 
         // Resolver price_id y amount
