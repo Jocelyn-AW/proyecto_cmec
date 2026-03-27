@@ -202,9 +202,9 @@ const menuGroups = computed(() => [
                 path: "/directory",
             },
             {
-                name: "Mis Diplomas",
+                name: "Mi historial",
                 icon: DocsIcon,
-                path: '/diplomas',
+                path: '/history',
             },
             {
                 icon: UserCircleIcon,

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Web\HistoryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Public\AttendeeRegistrationController;
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/directory/profile/{id}',[DirectoryController::class, 'uploadProfile'])->name('directory.profile');
     Route::delete('/{id}', [DirectoryController::class, 'delete'])->name('directory.delete');
     Route::put('restore/{id}', [DirectoryController::class, 'restore'])->name('directory.restore');
+
+    Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
 });
 
 //Registro al Evento y Pago con Stripe
