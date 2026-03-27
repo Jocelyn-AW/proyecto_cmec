@@ -9,11 +9,12 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use App\Models\EventSession;
+use App\Traits\HasStripeProduct;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model implements HasMedia
 {
-    use InteractsWithMedia, SoftDeletes;
+    use InteractsWithMedia, SoftDeletes, HasStripeProduct;
 
     /**
      * The table associated with the model.
@@ -230,5 +231,23 @@ class Course extends Model implements HasMedia
         return Attribute::make(function () {
             return $this->albums()->whereHas('media')->count();
         });
+    }
+
+    // ---------------------------------------------
+    // Stripe
+    //----------------------------------------------
+
+    protected function getStripePriceFields(): array
+    {
+        return [
+            'member_price'   => 'Miembro',
+            'guest_price'    => 'Invitado',
+            'resident_price' => 'Residente'
+        ];
+    }
+
+    protected function getStripeName(): string
+    {
+        return $this->topic;
     }
 }

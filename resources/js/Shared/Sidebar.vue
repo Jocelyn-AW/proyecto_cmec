@@ -166,7 +166,8 @@ import {
     WebinarIcon,
     Message2Line,
     BankIcon,
-    AcademicSesion
+    AcademicSesion,
+    SettingsIcon
 } from "../icons"
 import { useSidebar, useSidebarProvider } from "@/composables/useSidebar";
 import { usePage } from "@inertiajs/vue3";
@@ -201,9 +202,9 @@ const menuGroups = computed(() => [
                 path: "/directory",
             },
             {
-                name: "Mis Diplomas",
+                name: "Mi historial",
                 icon: DocsIcon,
-                path: '/diplomas',
+                path: '/history',
             },
             {
                 icon: UserCircleIcon,
@@ -302,6 +303,11 @@ const menuGroups = computed(() => [
                     { name: "Usuarios", path: "/users", pro: false },
 
                 ],
+            },
+            {
+                icon: SettingsIcon,
+                name: "Configuración",
+                path: "/settings",
             },
         ]
     }] : [])

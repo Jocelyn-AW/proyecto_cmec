@@ -4,8 +4,14 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\AcademicSession;
+use App\Models\Course;
+use App\Models\Member;
+use App\Models\News;
+use App\Models\Webinar;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,5 +54,38 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    public function dashboard()
+    {
+        $membersCount = Member::all()->count();
+        $newsCount = News::all()->count();
+
+        $now = Carbon::now();
+
+        $cursos   = Course::whereYear('created_at', $now->year)
+                        ->whereMonth('created_at', $now->month)
+                        ->count();
+
+        $sesiones = AcademicSession::whereYear('created_at', $now->year)
+                        ->whereMonth('created_at', $now->month)
+                        ->count();
+
+        $webinars = Webinar::whereYear('created_at', $now->year)
+                        ->whereMonth('created_at', $now->month)
+                        ->count();
+
+        $totalEvents = $cursos + $sesiones + $webinars;
+
+        $data = [
+            'members_count' => $membersCount,
+            'news_count' => $newsCount,
+            'events_count' => $totalEvents,
+        ];
+
+
+        return Inertia::render('Dashboard', [
+            'data' => $data
+        ]);
     }
 }

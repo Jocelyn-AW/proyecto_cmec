@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Http\Helpers\Constants;
+use App\Traits\HasStripeProduct;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
@@ -12,7 +13,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Conference extends Model implements HasMedia
 {
-    use InteractsWithMedia, SoftDeletes;
+    use InteractsWithMedia, SoftDeletes, HasStripeProduct;
 
     protected $table = Constants::TABLE_CONFERENCES;
 
@@ -242,5 +243,22 @@ class Conference extends Model implements HasMedia
         return Attribute::make(function () {
             return $this->albums()->count();
         });
+    }
+
+    //Stripe
+    protected function getStripePriceFields(): array
+    {
+        return [
+            'member_price'   => 'Miembro',
+            'guest_price'    => 'Invitado',
+            'resident_price' => 'Residente',
+            'nurse_price'    => 'Enfermero',
+            'surgeon_price'  => 'Cirujano',
+        ];
+    }
+
+    protected function getStripeName(): string
+    {
+        return $this->name;
     }
 }

@@ -453,7 +453,7 @@ class AttendeesController extends Controller
         return null;
     }
 
-    private function registerPayment($attendee, $data)
+    public static function registerPayment($attendee, $data)
     {
         try {
             if ($attendee->payments()->count() > 0 || $data['status'] == 'pending') return;

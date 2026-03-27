@@ -42,6 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->group(base_path('routes/memberships_routes.php'));
                 Route::prefix('members')->name('members.')
                     ->group(base_path('routes/members_routes.php'));
+                Route::prefix('settings')->name('settings.')
+                    ->group(base_path('routes/settings_routes.php'));
             });
         }
     )
