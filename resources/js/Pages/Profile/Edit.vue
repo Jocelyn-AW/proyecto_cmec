@@ -1,8 +1,9 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import DeleteUserForm from './Partials/DeleteUserForm.vue';
-import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
+import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
+import DeleteUserForm from './Partials/DeleteUserForm.vue';
+import MembershipInfo from './Partials/MembershipInfo.vue';
 import { Head, usePage, router } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
@@ -12,8 +13,9 @@ defineOptions({
 
 defineProps({
     mustVerifyEmail: { type: Boolean },
-    status: { type: String },
-    avatarUrl: { type: String, default: '' },
+    status:          { type: String },
+    avatarUrl:       { type: String, default: '' },
+    member:          { type: Object, default: null },
 });
 
 const user = computed(() => usePage().props.auth.user)
@@ -112,9 +114,6 @@ const uploadAvatar = (event) => {
                             <circle cx="12" cy="7" r="4" />
                         </svg>
                     </div>
-                    <!-- suavizar borde izquierdo de la foto -->
-                    <!-- <div v-if="avatarUrl"
-                        class="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent lg:block hidden" /> -->
                 </div>
             </div>
         </div>
@@ -122,44 +121,54 @@ const uploadAvatar = (event) => {
         <!-- CONFIG -->
         <div class="mt-8 space-y-6">
 
-            <!-- CORREO + CONTRASEÑA -->
-            <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 px-8 py-5">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="text-sm font-semibold text-slate-800">Información personal</h2>
-                        <p class="text-xs text-slate-500">Nombre y correo electrónico de tu cuenta</p>
-                    </div>
-                </div>
-                <div class="p-8">
-                    <UpdateProfileInformationForm :must-verify-email="mustVerifyEmail" :status="status"
-                        class="max-w-xl" />
-                </div>
-            </div>
+            <!-- MEMBERSHIP INFO -->
+            <MembershipInfo v-if="member" :member="member" />
 
-            <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
-                <div class="flex items-center gap-3 border-b border-slate-100 px-8 py-5">
-                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5">
-                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
+            <!-- INFORMACION PERSONAL + CONTRASEÑA -->
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+                <!-- INFORMACION PERSONAL -->
+                <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
+                    <div class="flex items-center gap-3 border-b border-slate-100 px-8 py-5">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" class="h-5 w-5">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-800">Información personal</h2>
+                            <p class="text-xs text-slate-500">Nombre y correo electrónico de tu cuenta</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-sm font-semibold text-slate-800">Contraseña</h2>
-                        <p class="text-xs text-slate-500">Actualiza tu contraseña de acceso</p>
+                    <div class="p-8">
+                        <UpdateProfileInformationForm :must-verify-email="mustVerifyEmail" :status="status" />
                     </div>
                 </div>
-                <div class="p-8">
-                    <UpdatePasswordForm class="max-w-xl" />
+
+                <!-- CONTRASEÑA -->
+                <div class="overflow-hidden rounded-2xl bg-white shadow-sm">
+                    <div class="flex items-center gap-3 border-b border-slate-100 px-8 py-5">
+                        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                                stroke-linejoin="round" class="h-5 w-5">
+                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-semibold text-slate-800">Contraseña</h2>
+                            <p class="text-xs text-slate-500">Actualiza tu contraseña de acceso</p>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <UpdatePasswordForm />
+                    </div>
                 </div>
+
             </div>
 
             <!-- ELIMINAR CUENTA -->
