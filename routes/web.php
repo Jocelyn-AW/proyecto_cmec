@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\MembershipsController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\DirectoryController;
 use App\Http\Controllers\ProfileController;
@@ -33,6 +34,9 @@ Route::middleware('auth')->group(function () {
     Route::put('restore/{id}', [DirectoryController::class, 'restore'])->name('directory.restore');
 
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
+
+    Route::post('/membership/checkout', [MembershipsController::class, 'checkout'])->name('membership.checkout');
+    Route::get('/membership/success', [MembershipsController::class, 'success'])->name('membership.success');
 });
 
 //Registro al Evento y Pago con Stripe

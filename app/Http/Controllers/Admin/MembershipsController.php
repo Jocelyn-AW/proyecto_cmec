@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Membership;
+use App\Models\MembershipPrice;
 use Inertia\Inertia;
 use Exception;
 
@@ -195,4 +196,44 @@ class MembershipsController extends Controller
             abort(403, 'No puedes modificar una membresía eliminada.');
         }
     }
+
+    // ---------------------------------------------
+    // PRIVATE: Stripe
+    // ---------------------------------------------
+    public function checkout(Request $request)
+    {
+        $member     = $request->user()->member;
+        $membership = Membership::first();
+
+        $membershipPrice = MembershipPrice::where('membership_id', $membership->id)
+            ->where('start_date', '<=', now())
+            ->where('end_date',   '>=', now())
+            ->firstOrFail();
+
+        $esNuevo = empty($member->inscription_date);
+
+        $priceId = $esNuevo
+            ? $membershipPrice->stripe_price_general_id
+            : $membershipPrice->stripe_price_preferential_id;
+
+        $amount = $esNuevo
+            ? $membershipPrice->amount_general
+            : $membershipPrice->amount_preferential;
+
+        return Inertia::location($member->checkout($priceId, [
+            'success_url' => route('membership.success'),
+            'cancel_url'  => route('profile.edit'),
+            'metadata'    => [
+                'member_id'           => $member->id,
+                'membership_price_id' => $membershipPrice->id,
+                'amount'              => $amount,
+            ],
+        ])->url);
+    }
+
+    public function success()
+    {
+        return Inertia::render('Memberships/PaymentSuccesful');
+    }
+
 }

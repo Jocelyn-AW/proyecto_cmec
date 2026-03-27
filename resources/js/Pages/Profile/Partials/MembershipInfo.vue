@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
     member: { type: Object, required: true },
@@ -57,15 +58,16 @@ const daysRemaining = computed(() => {
     return Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
 });
 
-const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    const date = new Date(dateStr);
+const formatDate = (value) => {
+    if (!value) return '--'
+
+    let date = new Date(value.substring(0, 10) + 'T12:00:00');
     return date.toLocaleDateString('es-MX', {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
     });
-};
+}
 
 const fullName = computed(() => {
     const parts = [props.member?.name, props.member?.last_name].filter(Boolean);
@@ -76,6 +78,12 @@ const location = computed(() => {
     const parts = [props.member?.city, props.member?.state].filter(Boolean);
     return parts.length ? parts.join(', ') : '—';
 });
+
+const form = useForm({})
+
+const handleCheckout = () => {
+    form.post(route('membership.checkout'))
+}
 </script>
 
 <template>
@@ -97,7 +105,7 @@ const location = computed(() => {
                 </div>
             </div>
 
-            <button type="button"
+            <button type="button" @click="handleCheckout"
                 class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2">
                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -181,14 +189,6 @@ const location = computed(() => {
                         </p>
                         <p class="mt-1 text-sm font-medium text-slate-700">
                             {{ location }}
-                        </p>
-                    </div>
-                    <div v-if="member.hospital">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                            Hospital
-                        </p>
-                        <p class="mt-1 text-sm font-medium text-slate-700">
-                            {{ member.hospital }}
                         </p>
                     </div>
                 </div>

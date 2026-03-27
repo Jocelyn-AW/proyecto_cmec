@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Controllers\Admin\MembersController;
 use App\Listeners\StripeWebhookListener;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -29,6 +30,8 @@ use App\Models\AcademicSession;
 use App\Models\Album;
 use App\Models\MembershipPrice;
 use App\Models\Setting;
+use App\Observers\MembershipObserver;
+use App\Observers\MembershipPriceObserver;
 use Exception;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
@@ -84,6 +87,8 @@ class AppServiceProvider extends ServiceProvider
         $this->setStripeKeys();
         Cashier::useCustomerModel(Member::class);
         Event::listen(WebhookReceived::class, StripeWebhookListener::class);
+        Membership::observe(MembershipObserver::class);
+        MembershipPrice::observe(MembershipPriceObserver::class);
     }
 
     private function setStripeKeys () :void 
