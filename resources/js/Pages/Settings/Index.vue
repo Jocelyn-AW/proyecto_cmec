@@ -122,7 +122,7 @@ const handleSubmit = () => {
                     <div>
                         <label
                             class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Llave publica</label>
-                        <input type="text" v-model="form.stripe_key" maxlength="190"
+                        <input type="text" v-model="form.stripe_key" maxlength="190" placeholder="pk_1234...."
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         <span v-if="errors.stripe_key" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.stripe_key }}</span>
                         <p class="text-xs text-gray-400 dark:text-gray-500 flex flex-row-reverse">Ultima actualizacion: {{ formatDate(stripeKey.updated_at) }}</p>
@@ -131,7 +131,7 @@ const handleSubmit = () => {
                     <div>
                         <label
                             class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Llave secreta</label>
-                        <input type="text" v-model="form.stripe_secret" maxlength="190"
+                        <input type="text" v-model="form.stripe_secret" maxlength="190" placeholder="sk_1234...."
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         <span v-if="errors.stripe_secret" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.stripe_secret }}</span>
                         <p class="text-xs text-gray-400 dark:text-gray-500 flex flex-row-reverse">Ultima actualizacion: {{ formatDate(stripeSecret.updated_at) }}</p>
@@ -140,7 +140,7 @@ const handleSubmit = () => {
                     <div>
                         <label
                             class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Webhook</label>
-                        <input type="text" v-model="form.stripe_webhook_secret" maxlength="190"
+                        <input type="text" v-model="form.stripe_webhook_secret" maxlength="190" placeholder="whsec_1234...."
                             class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
                         <span v-if="errors.stripe_webhook_secret" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.stripe_webhook_secret }}</span>
                         <p class="text-xs text-gray-400 dark:text-gray-500 flex flex-row-reverse">Ultima actualizacion: {{ formatDate(stripeWebhook.updated_at) }}</p>
