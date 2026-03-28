@@ -29,16 +29,24 @@ class StripeWebhookListener
             $session = $event->payload['data']['object'];
             $metadata = $session['metadata'] ?? [];
 
+            Log::info('session '. $session);
+            Log::info('meta '. $metadata);
+
             //Si es membresia
             if (isset($metadata['member_id'])) {
+                Log::info('es un pago de membresia');
                 $this->handleMembershipPayment($session, $metadata);
                 return;
             }
 
+            Log::info('es un pago de evento');
+
             // Buscar el attendee por su stripe_id
             $attendee = Attendee::where('stripe_id', $session['customer'])->first();
+            
 
             if ($attendee) {
+                Log::info('ejecutar pago');
                 $attendee->update(['status' => 'paid']);
 
                 AttendeesController::registerPayment($attendee, [
