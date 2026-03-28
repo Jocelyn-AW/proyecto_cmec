@@ -7,6 +7,7 @@ use App\Models\Attendee;
 use App\Models\Member;
 use App\Models\MembershipPrice;
 use App\Models\Payment;
+use App\Services\MailService;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Events\WebhookReceived;
 
@@ -83,5 +84,24 @@ class StripeWebhookListener
             'status'           => 'paid',
             'payment_date'     => now(),
         ]);
+
+        $this->sendMembershipEmail($member);
+    }
+
+    private function sendMembershipEmail(Member $member)
+    {
+        $mailService = new MailService;
+
+        $mailService->sendCustomEmail(
+            to: $member->email,
+            subject: 'Renovacion de Membresia',
+            viewName: 'emails.membership_renew',
+            viewData: [
+                'subject' => 'Renovación de Membresía',
+                'name' => $member->name,
+                'inscription_date' => $member->inscription_date,
+                'expiration_date' => $member->expiration_date,
+            ]
+        );
     }
 }
