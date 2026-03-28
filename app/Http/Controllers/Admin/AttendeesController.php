@@ -479,7 +479,8 @@ class AttendeesController extends Controller
                 'status' => $status,
                 'payment_date' => now()
             ]);
-
+            
+            Log::info('Pago registrado correctamente');
             return true;
         } catch (\Exception $e) {
             Log::error($e->getMessage());
