@@ -12,14 +12,16 @@
         <p><strong>Contraseña:</strong> {{ $password }}</p>
     </div>
 
-    <p>Puedes iniciar sesión desde el siguiente enlace:</p>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <p style="font-size: small; text-align: center;">Por seguridad, te recomendamos cambiar tu contraseña 
+            después de iniciar sesión. Puedes iniciar sesión desde el siguiente enlace.
+        </p>
+        
 
-    <a href="{{ $loginUrl }}" class="button">
-        Iniciar sesión
-    </a>
+        <a href="{{ $loginUrl }}" class="button" style="margin-bottom: 1rem;">
+            Iniciar sesión
+        </a>
+    </div>
 
-    <p>Por seguridad, te recomendamos cambiar tu contraseña después de iniciar sesión.</p>
-
-    <p>Saludos,<br>
-        Equipo {{ config('app.name') }}</p>
+    
 @endsection

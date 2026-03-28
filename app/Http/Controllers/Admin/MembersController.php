@@ -78,7 +78,7 @@ class MembersController extends Controller
                         'name' => $user->name,
                         'email' => $user->email,
                         'password' => $password,
-                        'loginUrl' => url('/login'),
+                        'loginUrl' => route('login')
                     ]
                 );
 
