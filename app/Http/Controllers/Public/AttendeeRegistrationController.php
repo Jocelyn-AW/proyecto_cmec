@@ -120,7 +120,7 @@ class AttendeeRegistrationController extends Controller
         }
 
         return response()->json([
-            'name'  => $member->name,
+            'name'  => $member->name . ' ' . $member->last_name,
             'email' => $member->email,
             'phone' => $member->phone,
             'state' => $member->state,
