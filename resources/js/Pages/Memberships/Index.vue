@@ -22,15 +22,22 @@ const props = defineProps({
 const page = usePage();
 
 onMounted(() => {
-    if (page.props.success || props.flash.success) success(page.props.success || props.flash.success)
-    if (page.props.error || props.flash.error) errorA(page.props.error || props.flash.error)
-    if (page.props.warning || props.flash.warning) warning(page.props.warning || props.flash.warning)
-
-    // Al cargar
+    checkFlash(props.flash)
     if (Object.keys(props.errors).length > 0) {
         errorA('Hubo un error en los datos subidos.')
     }
 })
+
+watch(() => props.flash, (val) => {
+    checkFlash(val)
+}, { deep: true })
+
+// Funcion auxiliar
+const checkFlash = (flash) => {
+    if (flash?.success) success(flash.success)
+    if (flash?.error) errorA(flash.error)
+    if (flash?.warning) warning(flash.warning)
+}
 
 // Al equvocarse
 watch(() => props.errors, (val) => {
@@ -110,6 +117,8 @@ const handleSubmit = () => {
             preserveState: true,
             preserveScroll: true,
             onFinish: () => { isSubmitting.value = false; },
+            onSuccess: () => success('Información actualizada con éxito.'),
+            onError: () => errorA('Hubo un problema al actualizar la información.'),
         });
     } else {
         router.post(route('memberships.update', formData.id), {
@@ -122,8 +131,11 @@ const handleSubmit = () => {
         }, {
             preserveState: true,
             preserveScroll: true,
+            only: ['membership', 'flash', 'errors'],
             onFinish: () => { isSubmitting.value = false; },
-        });
+            onSuccess: () => success('Información actualizada con éxito.'),
+            onError: () => errorA('Hubo un problema al actualizar la información.'),
+        })
     }
 };
 
@@ -147,6 +159,13 @@ const flatpickrConfig = {
 <template>
 
     <Head title="Membresía" />
+
+
+
+    <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+        :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"
+        @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
+        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()" @close="hideAlert()" />
 
     <div class="min-h-screen">
 
@@ -286,7 +305,7 @@ const flatpickrConfig = {
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha inicio</span>
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Fecha fin</span>
                         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio General</span>
-                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio Preferencial</span>
+                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Precio Preferencial (Miembros)</span>
                         <span></span>
                     </div>
 
@@ -397,9 +416,4 @@ const flatpickrConfig = {
         </div>
 
     </div>
-
-    <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
-        :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"
-        @confirm="alertState.onConfirm ? alertState.onConfirm() : hideAlert()"
-        @cancel="alertState.onCancel ? alertState.onCancel() : hideAlert()" @close="hideAlert()" />
 </template>

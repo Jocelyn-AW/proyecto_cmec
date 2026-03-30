@@ -147,7 +147,7 @@ class DirectoryController extends Controller
     private function getValidationRules () 
     {
         $rules = [
-            'member_id' => 'required|string|exists:members,id',
+            'member_id' => 'required|integer|exists:members,id',
             'name' => 'required|string',
             'specialty' => 'required|string',
             'state' => 'required|string',
