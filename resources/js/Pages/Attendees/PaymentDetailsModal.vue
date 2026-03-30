@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import { useAlert } from '@/composables/useAlert'
+import Alerta from '@/Components/Alerta.vue';
 
 const props = defineProps({
     show: {
@@ -17,6 +19,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close'])
+
+const { alertState, success, errorA, warning, hideAlert } = useAlert()
 
 const formatDate = (originalDate) => {
     let date = new Date(originalDate)
@@ -59,6 +63,19 @@ const maxWidthClass = computed(() => {
     }
     return sizes[props.maxWidth] || 'max-w-md'
 })
+
+
+const copiarReferencia = async (texto) => {
+    try {
+        await navigator.clipboard.writeText(texto);
+        success('¡Referencia copiada al portapapeles!')
+    } catch (err) {
+        //console.error('Error al copiar: ', err)
+        errorA('Error al copiar')
+    }
+};
+const handleConfirm = () => { alertState.value.onConfirm?.(); alertState.value.show = false }
+const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.show = false }
 </script>
 
 <template>
@@ -165,13 +182,33 @@ const maxWidthClass = computed(() => {
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <!-- Referencia -->
                                     <div class="p-4 rounded-xl border border-slate-200 overflow-hidden">
-                                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
-                                            Referencia
-                                        </p>
-                                        <p class="text-sm font-medium text-slate-900 truncate"
-                                            :title="paymentDetails.reference">
-                                            {{ paymentDetails.reference || 'No aplica' }}
-                                        </p>
+                                        <div class="flex items-center justify-between gap-4">
+
+                                            <div class="min-w-0 flex-1">
+                                                <p
+                                                    class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                                                    Referencia
+                                                </p>
+                                                <p class="text-sm font-medium text-slate-900 truncate"
+                                                    :title="paymentDetails.reference">
+                                                    {{ paymentDetails.reference || 'No aplica' }}
+                                                </p>
+                                            </div>
+
+                                            <button v-if="paymentDetails.reference"
+                                                @click="copiarReferencia(paymentDetails.reference)"
+                                                class="flex-shrink-0 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-200"
+                                                title="Copiar referencia" aria-label="Copiar referencia">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                                    </path>
+                                                </svg>
+                                            </button>
+
+                                        </div>
                                     </div>
 
                                     <!-- Fecha -->
@@ -243,4 +280,7 @@ const maxWidthClass = computed(() => {
             </div>
         </Transition>
     </Teleport>
+    <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+        :buttonText="alertState.buttonText" :cancelText="alertState.cancelText" @confirm="handleConfirm"
+        @cancel="handleCancel" @close="alertState.show = false" />
 </template>

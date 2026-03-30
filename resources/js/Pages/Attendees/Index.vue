@@ -86,6 +86,12 @@ const formatAmount = (amount) => {
     return new Intl.NumberFormat('en-US', options).format(amount);
 }
 
+const formatDate = (originalDate) => {
+    let date = new Date(originalDate)
+    let options = { day: '2-digit', month: 'long', year: 'numeric' }
+    return new Intl.DateTimeFormat('es-MX', options).format(date)
+}
+
 const formattedDate = (originalDate) => {
     if (originalDate) {
         let fullDate = originalDate.slice(0, 10) + 'T00:00:00';
@@ -122,6 +128,7 @@ const tableColumns = computed(() => {
         ] : []),
 
         { label: 'Estatus de Pago', key: 'status' },
+        { label: 'Fecha de Pago', key: 'created_at' },
         { label: 'Datos fiscales', key: 'invoice_data' },
         { label: 'Asistencia', key: 'did_attend' },
     ]
@@ -346,6 +353,10 @@ const handleExportExcel = () => {
                         {{ item.status === 'free' ? 'Gratis' : '' }}
                         {{ item.status === 'cancelled' ? 'Cancelado' : '' }}
                     </span>
+                </template>
+
+                <template #cell-created_at="{ item }">
+                    {{ formatDate(item.created_at) }}
                 </template>
 
                 <!-- Datos Fiscales -->
