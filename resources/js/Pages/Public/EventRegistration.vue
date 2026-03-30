@@ -64,6 +64,8 @@ const validateMember = async () => {
         form.name  = data.name;
         form.email = data.email;
         form.phone = data.phone;
+        form.state = data.state;
+        form.city  = data.city;
 
         isMemberVerified.value = true;
         memberStatus.value = '✓ Miembro verificado';

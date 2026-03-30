@@ -123,6 +123,8 @@ class AttendeeRegistrationController extends Controller
             'name'  => $member->name,
             'email' => $member->email,
             'phone' => $member->phone,
+            'state' => $member->state,
+            'city'  => $member->city,
         ]);
     }
 
