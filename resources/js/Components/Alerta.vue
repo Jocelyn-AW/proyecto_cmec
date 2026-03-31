@@ -1,4 +1,15 @@
 <script setup>
+/*
+import { useAlert } from '@/composables/useAlert'
+import Alerta from '@/Components/Alerta.vue';
+const { alertState, success, errorA, warning, hideAlert } = useAlert()
+const handleConfirm = () => { alertState.value.onConfirm?.(); alertState.value.show = false }
+const handleCancel = () => { alertState.value.onCancel?.(); alertState.value.show = false }
+<Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
+        :buttonText="alertState.buttonText" :cancelText="alertState.cancelText" @confirm="handleConfirm"
+        @cancel="handleCancel" @close="alertState.show = false" />
+
+ */
 import { ref, watch, computed } from 'vue'
 
 const props = defineProps({

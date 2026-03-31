@@ -86,7 +86,20 @@ class MembershipsController extends Controller
             ]);
 
             $membership->prices()->delete();
-            $membership->prices()->createMany($data['prices']);
+
+            $insertData = collect($data['prices'])->map(function ($price) use ($membership) {
+                return [
+                    'membership_id' => $membership->id,
+                    'start_date' => $price['start_date'],
+                    'end_date' => $price['end_date'],
+                    'amount_general' => $price['amount_general'],
+                    'amount_preferential' => $price['amount_preferential'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            });
+
+            MembershipPrice::insert($insertData->toArray());
 
             DB::commit();
 
@@ -235,5 +248,4 @@ class MembershipsController extends Controller
     {
         return Inertia::render('Memberships/PaymentSuccesful');
     }
-
 }
