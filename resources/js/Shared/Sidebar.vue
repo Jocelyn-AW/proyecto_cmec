@@ -178,6 +178,8 @@ import ImagesIcon from "@/icons/ImagesIcon.vue";
 import BlogIcon from "@/icons/BlogIcon.vue";
 import PriceTagIcon from "@/icons/PriceTagIcon.vue";
 import NewsIcon from "@/icons/NewsIcon.vue";
+import InfoIcon from "@/icons/InfoIcon.vue";
+import PaperclipIcon from "@/icons/PaperclipIcon.vue";
 
 
 const page = usePage()
@@ -210,7 +212,12 @@ const menuGroups = computed(() => [
                 icon: UserCircleIcon,
                 name: "Mi Cuenta",
                 path: "/profile",
-            }
+            },
+            {
+                icon: PaperclipIcon,
+                name: "Datos Fiscales",
+                path: "/datos-fiscales",
+            },
         ]
     },
     ...(isAdmin.value ? [{
