@@ -102,12 +102,18 @@ class AttendeeRegistrationController extends Controller
     {
         [$event, $config] = $this->resolveEvent($eventType, $eventId);
 
+        $hasOnlinePayment = collect($config['prices'])
+            ->map(fn($price) => $event->$price)
+            ->filter()
+            ->isNotEmpty();
+
         return Inertia::render('Public/EventRegistration', [
             'event'      => $event,
             'event_type' => $eventType,
             'event_name' => $event->{$config['name_field']},
             'person_types' => $config['person_types'],
             'amounts' => $config['amounts'],
+            'has_online_payment' => $hasOnlinePayment,
         ]);
     }
 

@@ -15,6 +15,7 @@ const props = defineProps({
     event_name:     { type: String, default: '' },
     person_types:   { type: Array,  default: () => [] },
     amounts:        { type: Object, default: () => ({}) },
+    has_online_payment: { type: Boolean, default: false },
 })
 
 const { alertState, warning, hideAlert, success, errorA } = useAlert();
@@ -144,172 +145,210 @@ const handleConfirm = () => {
             </div>
         </div>
 
-        <div class="mt-6">
-            <!-- Tipo de asistente -->
-            <div
-                class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
-                <!-- Encabezado -->
-                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
-                    <div
-                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                        </svg>
+        <template v-if="has_online_payment">
+            <div class="mt-6">
+                <!-- Tipo de asistente -->
+                <div
+                    class="overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
+                    <!-- Encabezado -->
+                    <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
+                        <div
+                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Tipo de Asistente</h2>
+                            <p class="text-xs text-gray-500">Selecciona tu tipo de registro</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Tipo de Asistente</h2>
-                        <p class="text-xs text-gray-500">Selecciona tu tipo de registro</p>
+
+                    <!-- Datos -->
+                    <div class="px-8 py-6 space-y-6">
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tipo de
+                                asistente</label>
+                            <select v-model="form.person_type" @change="toggleMemberField(form.person_type)"
+                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800">
+                                <option v-for="type in person_types" :key="type.value" :value="type.value">
+                                    {{ type.label }}
+                                </option>
+                            </select>
+                            <span v-if="errors.person_type" class="text-red-500 text-xs flex justify-end mt-1">{{
+                                errors.person_type }}</span>
+                        </div>
+
+                        <!-- Campo exclusivo para miembros -->
+                        <div v-if="showMemberField" class="space-y-3">
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Número de socio
+                                (CMEC)</label>
+                            <div class="flex gap-3">
+                                <input type="text" v-model="form.cmec_member_id" @input="errors.cmec_member_id = '', memberStatus = ''"
+                                    class="dark:bg-dark-900 h-11 flex-1 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                                    placeholder="Ingresa tu número de socio" />
+                                <button type="button" @click="validateMember"
+                                    class="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">
+                                    Verificar
+                                </button>
+                            </div>
+                            <span v-if="memberStatus"
+                                :class="isMemberVerified ? 'text-green-500' : 'text-amber-500'"
+                                class="text-xs flex justify-end">
+                                {{ memberStatus }}
+                            </span>
+                            <span v-if="errors.cmec_member_id" class="text-red-500 text-xs flex justify-end mt-1">{{
+                                errors.cmec_member_id }}</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Datos -->
-                <div class="px-8 py-6 space-y-6">
-                    <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Tipo de
-                            asistente</label>
-                        <select v-model="form.person_type" @change="toggleMemberField(form.person_type)"
-                            class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800">
-                            <option v-for="type in person_types" :key="type.value" :value="type.value">
-                                {{ type.label }}
-                            </option>
-                        </select>
-                        <span v-if="errors.person_type" class="text-red-500 text-xs flex justify-end mt-1">{{
-                            errors.person_type }}</span>
+                <!-- Datos personales -->
+                <div
+                    class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
+                    <!-- Encabezado -->
+                    <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
+                        <div
+                            class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Datos Personales</h2>
+                            <p class="text-xs text-gray-500">Información de contacto</p>
+                        </div>
                     </div>
 
-                    <!-- Campo exclusivo para miembros -->
-                    <div v-if="showMemberField" class="space-y-3">
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Número de socio
-                            (CMEC)</label>
-                        <div class="flex gap-3">
-                            <input type="text" v-model="form.cmec_member_id" @input="errors.cmec_member_id = '', memberStatus = ''"
-                                class="dark:bg-dark-900 h-11 flex-1 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
-                                placeholder="Ingresa tu número de socio" />
-                            <button type="button" @click="validateMember"
-                                class="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">
-                                Verificar
-                            </button>
+                    <!-- Datos -->
+                    <div class="px-8 py-6 space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nombre
+                                    completo *</label>
+                                <input type="text" v-model="form.name" :readonly="isMemberVerified" required @input="errors.name = ''"
+                                    :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.name" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.name }}</span>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email *</label>
+                                <input type="email" v-model="form.email" :readonly="isMemberVerified" required @input="errors.email = ''"
+                                    :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.email" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.email }}</span>
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Teléfono
+                                    *</label>
+                                <input type="text" v-model="form.phone" :readonly="isMemberVerified" required maxlength="12" @input="errors.phone = ''"
+                                    :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.phone" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.phone }}</span>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Estado *</label>
+                                <input type="text" v-model="form.state" required
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.state" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.state }}</span>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Ciudad *</label>
+                                <input type="text" v-model="form.city" required
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.city" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.city }}</span>
+                            </div>
+
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Especialidad</label>
+                                <input type="text" v-model="form.specialty"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.specialty" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.specialty }}</span>
+                            </div>
+
+                            <div v-if="event_type == 'conference'">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha de
+                                    nacimiento</label>
+                                <input type="date" v-model="form.birth_date"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.birth_date" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.birth_date }}</span>
+                            </div>
+
+                            <div v-if="event_type == 'conference'"">
+                                <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Necesidades
+                                    especiales</label>
+                                <input type="text" v-model="form.special_needs"
+                                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
+                                <span v-if="errors.special_needs" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.special_needs }}</span>
+                            </div>
                         </div>
-                        <span v-if="memberStatus"
-                            :class="isMemberVerified ? 'text-green-500' : 'text-amber-500'"
-                            class="text-xs flex justify-end">
-                            {{ memberStatus }}
-                        </span>
-                        <span v-if="errors.cmec_member_id" class="text-red-500 text-xs flex justify-end mt-1">{{
-                            errors.cmec_member_id }}</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Datos personales -->
+            <!-- Botón de envío -->
             <div
                 class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
-                <!-- Encabezado -->
-                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-8 py-5">
-                    <div
-                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                            <line x1="16" y1="13" x2="8" y2="13" />
-                            <line x1="16" y1="17" x2="8" y2="17" />
-                            <polyline points="10 9 9 9 8 9" />
+                <div class="flex flex-row-reverse gap-3 px-8 py-5">
+                    <button @click="handleSubmit" :disabled="isSubmitting"
+                        class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <span v-if="isSubmitting">Procesando...</span>
+                        <span v-else>Continuar al pago</span>
+                    </button>
+                </div>
+            </div>
+        </template>
+        
+        <template v-else>
+            <div class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
+                <div class="flex flex-col items-center justify-center px-8 py-16 text-center">
+
+                    <!-- Ícono -->
+                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <line x1="2" y1="10" x2="22" y2="10"/>
+                            <line x1="6" y1="15" x2="6.01" y2="15"/>
+                            <line x1="10" y1="15" x2="14" y2="15"/>
                         </svg>
                     </div>
-                    <div>
-                        <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Datos Personales</h2>
-                        <p class="text-xs text-gray-500">Información de contacto</p>
-                    </div>
-                </div>
 
-                <!-- Datos -->
-                <div class="px-8 py-6 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nombre
-                                completo *</label>
-                            <input type="text" v-model="form.name" :readonly="isMemberVerified" required @input="errors.name = ''"
-                                :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.name" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.name }}</span>
-                        </div>
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-white/90">
+                        Registro en línea no disponible
+                    </h2>
 
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email *</label>
-                            <input type="email" v-model="form.email" :readonly="isMemberVerified" required @input="errors.email = ''"
-                                :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.email" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.email }}</span>
-                        </div>
+                    <p class="mt-3 max-w-sm text-sm text-gray-500 dark:text-gray-400">
+                        Este evento no tiene habilitado el pago en línea por el momento. 
+                        Para registrarte comunícate con nosotros.
+                    </p>
 
-                        <div>
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Teléfono
-                                *</label>
-                            <input type="text" v-model="form.phone" :readonly="isMemberVerified" required maxlength="12" @input="errors.phone = ''"
-                                :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.phone" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.phone }}</span>
-                        </div>
-
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Estado *</label>
-                            <input type="text" v-model="form.state" required
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.state" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.state }}</span>
-                        </div>
-
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Ciudad *</label>
-                            <input type="text" v-model="form.city" required
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.city" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.city }}</span>
-                        </div>
-
-                        <div>
-                            <label
-                                class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Especialidad</label>
-                            <input type="text" v-model="form.specialty"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.specialty" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.specialty }}</span>
-                        </div>
-
-                        <div v-if="event_type == 'conference'">
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Fecha de
-                                nacimiento</label>
-                            <input type="date" v-model="form.birth_date"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.birth_date" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.birth_date }}</span>
-                        </div>
-
-                        <div v-if="event_type == 'conference'"">
-                            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Necesidades
-                                especiales</label>
-                            <input type="text" v-model="form.special_needs"
-                                class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.special_needs" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.special_needs }}</span>
-                        </div>
+                    <!-- Puedes agregar info de contacto si la tienes -->
+                    <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                        <a href="mailto:contacto@cmec.mx"
+                            class="rounded-lg border border-gray-200 dark:border-gray-700 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            Contactar por correo
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Botón de envío -->
-        <div
-            class="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-white/[0.03] dark:border dark:border-gray-800">
-            <div class="flex flex-row-reverse gap-3 px-8 py-5">
-                <button @click="handleSubmit" :disabled="isSubmitting"
-                    class="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                    <span v-if="isSubmitting">Procesando...</span>
-                    <span v-else>Continuar al pago</span>
-                </button>
-            </div>
-        </div>
+        </template>
     </div>
 
     <!-- Modal de confirmación -->
