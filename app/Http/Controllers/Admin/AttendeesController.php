@@ -325,6 +325,37 @@ class AttendeesController extends Controller
         ]);
     }
 
+    public function getInvoiceData(string $cmecId)
+    {
+        $member = Member::where('cmec_member_id', $cmecId)->first();
+
+        if (!$member) {
+            return response()->json(['found' => false], 404);
+        }
+
+        $invoiceData = InvoiceData::where('billable_type', 'member')
+            ->where('billable_id', $member->id)
+            ->first();
+
+        if (!$invoiceData) {
+            return response()->json(['found' => false], 404);
+        }
+
+        return response()->json([
+            'found' => true,
+            'invoiceData' => [
+                'rfc'              => $invoiceData->rfc,
+                'name'             => $invoiceData->name,
+                'email'            => $invoiceData->email,
+                'postal_code'      => $invoiceData->postal_code,
+                'person_type'      => $invoiceData->person_type,
+                'tax_regime'       => $invoiceData->tax_regime,
+                'cfdi_use'         => $invoiceData->cfdi_use,
+                'address'          => $invoiceData->address,
+            ],
+        ]);
+    }
+
     public function uploadDiploma(Request $request, $id)
     {
         $attendee = Attendee::findOrFail($id);
