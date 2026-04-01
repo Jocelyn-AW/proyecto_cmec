@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\HistoryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Public\AttendeeRegistrationController;
+use App\Http\Controllers\Web\MemberInvoiceController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -29,7 +30,7 @@ Route::middleware(['auth', 'membership.expiry'])->group(function () {
 
     Route::get('/directory', [DirectoryController::class, 'index'])->name('directory');
     Route::post('/directory', [DirectoryController::class, 'saveChanges'])->name('directory.save');
-    Route::post('/directory/profile/{id}',[DirectoryController::class, 'uploadProfile'])->name('directory.profile');
+    Route::post('/directory/profile/{id}', [DirectoryController::class, 'uploadProfile'])->name('directory.profile');
     Route::delete('/{id}', [DirectoryController::class, 'delete'])->name('directory.delete');
     Route::put('restore/{id}', [DirectoryController::class, 'restore'])->name('directory.restore');
 
@@ -37,6 +38,10 @@ Route::middleware(['auth', 'membership.expiry'])->group(function () {
 
     Route::post('/membership/checkout', [MembershipsController::class, 'checkout'])->name('membership.checkout');
     Route::get('/membership/success', [MembershipsController::class, 'success'])->name('membership.success');
+
+
+    Route::get('/datos-fiscales',  [MemberInvoiceController::class, 'edit'])->name('invoice-data.show');
+    Route::post('/datos-fiscales', [MemberInvoiceController::class, 'store'])->name('invoice-data.store');
 });
 
 //Registro al Evento y Pago con Stripe
@@ -48,4 +53,4 @@ Route::prefix('eventos')->group(function () {
     Route::get('/payment/cancel/{eventType}/{eventId}',  [AttendeeRegistrationController::class, 'cancel'])->name('payment.cancel');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

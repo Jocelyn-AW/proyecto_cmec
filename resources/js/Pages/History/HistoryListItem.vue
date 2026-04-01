@@ -30,7 +30,11 @@ const eventTypeMap = {
     academic_session: {
         label: 'Sesión Académica',
         class: 'bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400'
-    }
+    },
+    membership: {
+        label: 'Membresía',
+        class: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
+    },
 }
 
 const eventTypeLabel = (type) => {
@@ -62,7 +66,8 @@ const firstSessionDate = computed(() => {
             <div class="flex items-center gap-4">
                 <div
                     class="h-16 w-28 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <img v-if="item.cover_url" :src="item.cover_url"
+                    <img v-if="item.cover_url || item.event_type === 'membership'"
+                        :src="item.cover_url || '/images/placeholders/login_image.jpg'"
                         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     <div v-else class="flex h-full w-full items-center justify-center text-gray-400">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

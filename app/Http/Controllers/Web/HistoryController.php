@@ -8,10 +8,12 @@ use App\Models\Attendee;
 use App\Models\Conference;
 use App\Models\Course;
 use App\Models\Member;
+use App\Models\Membership;
 use App\Models\Payment;
 use App\Models\Webinar;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -33,18 +35,60 @@ class HistoryController extends Controller
     }
 
     // --------------------------------------------------
-    // PRIAVTE: Query principal
+    // PRIVATE: Query principal
     // --------------------------------------------------
 
     private function buildQuery(Request $request)
     {
-        $member     = $this->resolveAuthMember();
-        $perPage    = 10;
-        $dateFrom   = $request->get('date_from');
-        $dateTo     = $request->get('date_to');
+        $member   = $this->resolveAuthMember();
+        $perPage  = 10;
+        $page     = (int) $request->get('page', 1);
+        $dateFrom = $request->get('date_from');
+        $dateTo   = $request->get('date_to');
         $didAttend  = $request->get('did_attend');
         $hasDiploma = $request->get('has_diploma');
+        $eventType   = $request->get('event_type');
 
+        // Attendee-based items (eventos)
+        // si NO se filtro exclusivamente por membership
+        $attendeeItems = ($eventType !== 'membership')
+            ? $this->getAttendeeItems($member, $dateFrom, $dateTo, $didAttend, $hasDiploma, $eventType)
+            : collect();
+
+        // Membership payments
+        // si no hay filtros de asistencia/diploma || el tipo es membership o vacio
+        $membershipItems = (!$didAttend && !$hasDiploma && (!$eventType || $eventType === 'membership'))
+            ? $this->getMembershipItems($member, $dateFrom, $dateTo)
+            : collect();
+
+        // Merge
+        $all = $attendeeItems->concat($membershipItems)
+            ->sortByDesc('sort_date')
+            ->values();
+
+        $slice = $all->forPage($page, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $slice,
+            $all->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // PRIVATE: Items basados en Attendee (eventos)
+    // ------------------------------------------------------------------
+
+    private function getAttendeeItems(
+        Member $member,
+        ?string $dateFrom,
+        ?string $dateTo,
+        ?string $didAttend,
+        ?string $hasDiploma,
+        ?string $eventType
+    ): Collection {
         $query = Attendee::where('person_type', 'member')
             ->where('person_id', $member->id)
             ->with([
@@ -60,10 +104,12 @@ class HistoryController extends Controller
             ])
             ->orderBy('created_at', 'desc');
 
-        // ------------------------------------------
-        // Filtro: rango de fecha del evento (por sesiones)
-        // ------------------------------------------
+        // Filtro: tipo de evento
+        if ($eventType) {
+            $query->where('event_type', $eventType);
+        }
 
+        // Filtro: rango de fecha del evento (por sesiones)
         if ($dateFrom || $dateTo) {
             $query->whereHasMorph(
                 'event',
@@ -75,43 +121,55 @@ class HistoryController extends Controller
             );
         }
 
-        // ------------------------------------------
         // Filtro: asistencia
-        // ------------------------------------------
-
         if (!is_null($didAttend)) {
             $query->where('did_attend', $didAttend === 'yes');
         }
 
-        // ------------------------------------------
         // Filtro: tiene diploma
-        // ------------------------------------------
-
         if (!is_null($hasDiploma)) {
             $hasDiploma === 'yes'
                 ? $query->whereHas('media',        fn($q) => $q->where('collection_name', 'diplomas'))
                 : $query->whereDoesntHave('media', fn($q) => $q->where('collection_name', 'diplomas'));
         }
 
-        $paginated = $query->paginate($perPage)->withQueryString();
+        $attendees = $query->get();
+        $payments  = $this->loadPaymentsForAttendees($attendees, $member->id);
 
-        $payments = $this->loadPaymentsForAttendees($paginated->getCollection(), $member->id);
+        return $attendees->map(fn($a) => $this->formatAttendee($a, $payments));
+    }
 
-        return $paginated->through(
-            fn($attendee) => $this->formatAttendee($attendee, $payments)
-        );
+    // ------------------------------------------------------------------
+    // PRIVATE: Items de pagos de membresia
+    // ------------------------------------------------------------------
+
+    private function getMembershipItems(Member $member, ?string $dateFrom, ?string $dateTo): Collection
+    {
+        $query = Payment::where('user_type', 'member')
+            ->where('user_id', $member->id)
+            ->where('event_payed_type', 'membership')
+            ->orderBy('payment_date', 'desc');
+
+        if ($dateFrom) {
+            $query->whereDate('payment_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('payment_date', '<=', $dateTo);
+        }
+
+        return $query->get()->map(fn($p) => $this->formatMembershipPayment($p));
     }
 
     // ------------------------------------------------------------------
     // PRIVATE: Cargar pagos del miembro para los eventos
     // ------------------------------------------------------------------
+
     private function loadPaymentsForAttendees(Collection $attendees, int $memberId): Collection
     {
         if ($attendees->isEmpty()) {
             return collect();
         }
 
-        // pares [type, id] de los attendees
         $pairs = $attendees->map(fn($a) => [
             'type' => $a->event_type,
             'id'   => $a->event_id,
@@ -135,8 +193,9 @@ class HistoryController extends Controller
     }
 
     // ------------------------------------------------------------------
-    // Convertir el attendee en el array que necesita el frontend
+    // Formatear attendee -> array para el frontend
     // ------------------------------------------------------------------
+
     private function formatAttendee(Attendee $attendee, Collection $payments): array
     {
         $event     = $attendee->event;
@@ -165,7 +224,42 @@ class HistoryController extends Controller
                 'status'         => $payment?->status ?? $attendee->status,
                 'payment_method' => $payment?->payment_method,
                 'payment_date'   => $payment?->payment_date?->format('Y-m-d'),
+                'reference'      => $payment?->reference,
             ],
+            'sort_date'   => $firstDate ?? $attendee->created_at->format('Y-m-d'),
+        ];
+    }
+
+    // ------------------------------------------------------------------
+    // Formatear pago de membresia -> array para el frontend
+    // ------------------------------------------------------------------
+
+    private function formatMembershipPayment(Payment $payment): array
+    {
+        $membershipName = null;
+        if ($payment->event_payed_id) {
+            $membership = Membership::withTrashed()->find($payment->event_payed_id);
+            $membershipName = $membership?->name;
+        }
+
+        return [
+            'id'          => 'membership-' . $payment->id,
+            'folio'       => null,
+            'event_type'  => 'membership',
+            'event_name'  => $membershipName ?? 'Membresía',
+            'cover_url'   => null,
+            'first_date'  => $payment->payment_date?->format('Y-m-d'),
+            'status'      => $payment->status,
+            'did_attend'  => null,
+            'diploma_url' => null,
+            'payment' => [
+                'amount'         => $payment->amount,
+                'status'         => $payment->status,
+                'payment_method' => $payment->payment_method,
+                'payment_date'   => $payment->payment_date?->format('Y-m-d'),
+                'reference'      => $payment->reference,
+            ],
+            'sort_date'   => $payment->payment_date?->format('Y-m-d') ?? $payment->created_at->format('Y-m-d'),
         ];
     }
 

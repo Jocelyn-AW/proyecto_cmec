@@ -156,17 +156,17 @@ class AttendeesController extends Controller
             case Constants::EVENT_CONFERENCE:
                 $eventName = 'Congreso';
                 $events = Conference::select('id', 'name')
-                            ->where('subtype', Constants::EVENT_CONFERENCE);
+                    ->where('subtype', Constants::EVENT_CONFERENCE);
                 break;
             case Constants::EVENT_PRECONFERENCE:
                 $eventName = 'Pre-congreso';
                 $events = Conference::select('id', 'name')
-                            ->where('subtype', Constants::EVENT_PRECONFERENCE);
+                    ->where('subtype', Constants::EVENT_PRECONFERENCE);
                 break;
             case Constants::EVENT_TRANSCONFERENCE:
                 $eventName = 'Trans-congreso';
                 $events = Conference::select('id', 'name')
-                            ->where('subtype', Constants::EVENT_TRANSCONFERENCE);
+                    ->where('subtype', Constants::EVENT_TRANSCONFERENCE);
                 break;
             case Constants::EVENT_WEBINAR:
                 $eventName = 'Webinar';
@@ -293,6 +293,38 @@ class AttendeesController extends Controller
             ->with('success', 'Asistente restaurado exitosamente');
     }
 
+    public function findMemberByCmec(string $cmecId)
+    {
+        $member = Member::where('cmec_member_id', $cmecId)->first();
+
+        if (!$member) {
+            return response()->json(['found' => false], 404);
+        }
+
+        $member->load('invoiceData');
+
+        return response()->json([
+            'found' => true,
+            'member' => [
+                'name'           => $member->name . ' ' . $member->last_name,
+                'email'          => $member->email,
+                'phone'          => $member->phone,
+                'state'          => $member->state,
+                'city'           => $member->city,
+                'hospital'       => $member->hospital,
+                'has_invoice_data' => $member->invoiceData !== null,
+                // Datos fiscales
+                'rfc'              => $member->invoiceData?->rfc ?? '',
+                'tax_name'         => $member->invoiceData?->name ?? '',
+                'postal_code'      => $member->invoiceData?->postal_code ?? '',
+                'tax_person_type'  => $member->invoiceData?->person_type ?? '',
+                'tax_regime'       => $member->invoiceData?->tax_regime ?? '',
+                'cfdi_use'         => $member->invoiceData?->cfdi_use ?? '',
+                'address'          => $member->invoiceData?->address ?? '',
+            ],
+        ]);
+    }
+
     public function uploadDiploma(Request $request, $id)
     {
         $attendee = Attendee::findOrFail($id);
@@ -377,8 +409,10 @@ class AttendeesController extends Controller
             Constants::STATUS_PAID,
         ];
 
-        if (in_array($request->payment_method, $methodsWithReference) && 
-            in_array($request->status, $statusWithReference)) {
+        if (
+            in_array($request->payment_method, $methodsWithReference) &&
+            in_array($request->status, $statusWithReference)
+        ) {
             $rules['reference'] = 'required|string|max:100';
         }
 
@@ -479,7 +513,7 @@ class AttendeesController extends Controller
                 'status' => $status,
                 'payment_date' => now()
             ]);
-            
+
             Log::info('Pago registrado correctamente');
             return true;
         } catch (\Exception $e) {
@@ -488,7 +522,8 @@ class AttendeesController extends Controller
         }
     }
 
-    private function saveInvoiceData(Attendee $attendee, array $data) {
+    private function saveInvoiceData(Attendee $attendee, array $data)
+    {
         try {
             $isMember = $attendee->person_type == Constants::PERSON_MEMBER && !empty($attendee->person_id);
 
@@ -498,7 +533,7 @@ class AttendeesController extends Controller
             ];
 
             $values = [
-                
+
                 'rfc' => $data['rfc'] ?? null,
                 'name' => $data['tax_name'] ?? null,
                 'email' => $attendee->email,
@@ -532,7 +567,7 @@ class AttendeesController extends Controller
         ], fn($v) => $v !== null && $v !== '');
     }
 
-    private function isConferenceRelated (string $event_type)
+    private function isConferenceRelated(string $event_type)
     {
         $events = [
             Constants::EVENT_CONFERENCE,

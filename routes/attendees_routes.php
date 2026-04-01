@@ -10,6 +10,7 @@ Route::delete('/{id}', [AttendeesController::class, 'delete'])->name('delete');
 Route::put('/restore/{id}', [AttendeesController::class, 'restore'])->name('restore');
 Route::post('/upload-diploma/{id}', [AttendeesController::class, 'uploadDiploma'])->name('upload-diploma');
 Route::get('/changeAttend/{id}', [AttendeesController::class, 'changeDidAttend'])->name('change-attend');
+Route::get('/by-cmec/{cmecId}', [AttendeesController::class, 'findMemberByCmec'])->name('by-cmec');
 
 //Exports
 Route::get('/{event}/export/excel', [AttendeesController::class, 'exportExcel'])->name('export.excel');
