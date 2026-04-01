@@ -137,6 +137,29 @@ class AttendeesController extends Controller
                     }
                     return $attendee;
                 });
+
+                // inyeccion de datos fiscales del miembro
+                if ($memberPersonIds->isNotEmpty()) {
+                    $memberInvoiceData = InvoiceData::where('billable_type', 'member')
+                        ->whereIn('billable_id', $memberPersonIds)
+                        ->withTrashed()
+                        ->get()
+                        ->keyBy('billable_id');
+
+                    $paginated->getCollection()->transform(function ($attendee) use ($memberInvoiceData) {
+                        if (
+                            $attendee->person_type === 'member' &&
+                            $attendee->person_id &&
+                            !$attendee->invoice_data
+                        ) {
+                            $invoiceData = $memberInvoiceData->get($attendee->person_id);
+                            if ($invoiceData) {
+                                $attendee->setRelation('invoiceData', $invoiceData);
+                            }
+                        }
+                        return $attendee;
+                    });
+                }
             }
             //
 
