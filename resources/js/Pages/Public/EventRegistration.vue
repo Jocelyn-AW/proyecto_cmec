@@ -14,6 +14,7 @@ const props = defineProps({
     event_type:     { type: String, default: '' },
     event_name:     { type: String, default: '' },
     person_types:   { type: Array,  default: () => [] },
+    amounts:        { type: Object, default: () => ({}) },
 })
 
 const { alertState, warning, hideAlert, success, errorA } = useAlert();
@@ -64,6 +65,8 @@ const validateMember = async () => {
         form.name  = data.name;
         form.email = data.email;
         form.phone = data.phone;
+        form.state = data.state;
+        form.city  = data.city;
 
         isMemberVerified.value = true;
         memberStatus.value = '✓ Miembro verificado';
@@ -73,12 +76,36 @@ const validateMember = async () => {
     }
 }
 
+watch(() => form.person_type, (newValue) => {
+    if (newValue !== 'member') {
+        form.cmec_member_id = '';
+        toggleMemberField(newValue);
+    }
+})
+
+const showConfirmModal = ref(false)
+
 const handleSubmit = () => {
+    if (!form.name || !form.email || !form.phone || !form.state || !form.city || !form.person_type) {
+        warning('Por favor completa todos los campos obligatorios.')
+        return;
+    }
+
+    if (showMemberField.value && !isMemberVerified.value) {
+        warning('Por favor verifica tu número de socio para continuar.')
+        return;
+    }
+    
+    showConfirmModal.value = true
+}
+
+const handleConfirm = () => {
+    showConfirmModal.value = false
     form.post(route('public.event.store', { eventType: props.event_type, eventId: props.event.id }), {
         preserveScroll: true,
         onStart: () => isSubmitting.value = true,
         onFinish: () => isSubmitting.value = false,
-    });
+    })
 }
 </script>
 
@@ -157,7 +184,7 @@ const handleSubmit = () => {
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Número de socio
                             (CMEC)</label>
                         <div class="flex gap-3">
-                            <input type="text" v-model="form.cmec_member_id"
+                            <input type="text" v-model="form.cmec_member_id" @input="errors.cmec_member_id = '', memberStatus = ''"
                                 class="dark:bg-dark-900 h-11 flex-1 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                                 placeholder="Ingresa tu número de socio" />
                             <button type="button" @click="validateMember"
@@ -204,31 +231,28 @@ const handleSubmit = () => {
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Nombre
                                 completo *</label>
-                            <input type="text" v-model="form.name" :readonly="isMemberVerified" required
+                            <input type="text" v-model="form.name" :readonly="isMemberVerified" required @input="errors.name = ''"
                                 :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.name" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.name
-                                }}</span>
+                            <span v-if="errors.name" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.name }}</span>
                         </div>
 
                         <div>
                             <label
                                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Email *</label>
-                            <input type="email" v-model="form.email" :readonly="isMemberVerified" required
+                            <input type="email" v-model="form.email" :readonly="isMemberVerified" required @input="errors.email = ''"
                                 :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.email" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.email
-                                }}</span>
+                            <span v-if="errors.email" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.email }}</span>
                         </div>
 
                         <div>
                             <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Teléfono
                                 *</label>
-                            <input type="text" v-model="form.phone" :readonly="isMemberVerified" required
+                            <input type="text" v-model="form.phone" :readonly="isMemberVerified" required maxlength="12" @input="errors.phone = ''"
                                 :class="{ 'bg-gray-50 dark:bg-gray-800/50': isMemberVerified }"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.phone" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.phone
-                                }}</span>
+                            <span v-if="errors.phone" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.phone }}</span>
                         </div>
 
                         <div>
@@ -236,8 +260,7 @@ const handleSubmit = () => {
                                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Estado *</label>
                             <input type="text" v-model="form.state" required
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.state" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.state
-                                }}</span>
+                            <span v-if="errors.state" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.state }}</span>
                         </div>
 
                         <div>
@@ -245,8 +268,7 @@ const handleSubmit = () => {
                                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Ciudad *</label>
                             <input type="text" v-model="form.city" required
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.city" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.city
-                                }}</span>
+                            <span v-if="errors.city" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.city }}</span>
                         </div>
 
                         <div>
@@ -254,8 +276,7 @@ const handleSubmit = () => {
                                 class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Especialidad</label>
                             <input type="text" v-model="form.specialty"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.specialty" class="text-red-500 text-xs flex justify-end mt-1">{{
-                                errors.specialty }}</span>
+                            <span v-if="errors.specialty" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.specialty }}</span>
                         </div>
 
                         <div v-if="event_type == 'conference'">
@@ -263,8 +284,7 @@ const handleSubmit = () => {
                                 nacimiento</label>
                             <input type="date" v-model="form.birth_date"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.birth_date" class="text-red-500 text-xs flex justify-end mt-1">{{
-                                errors.birth_date }}</span>
+                            <span v-if="errors.birth_date" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.birth_date }}</span>
                         </div>
 
                         <div v-if="event_type == 'conference'"">
@@ -272,8 +292,7 @@ const handleSubmit = () => {
                                 especiales</label>
                             <input type="text" v-model="form.special_needs"
                                 class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800" />
-                            <span v-if="errors.special_needs" class="text-red-500 text-xs flex justify-end mt-1">{{
-                                errors.special_needs }}</span>
+                            <span v-if="errors.special_needs" class="text-red-500 text-xs flex justify-end mt-1">{{ errors.special_needs }}</span>
                         </div>
                     </div>
                 </div>
@@ -292,6 +311,79 @@ const handleSubmit = () => {
             </div>
         </div>
     </div>
+
+    <!-- Modal de confirmación -->
+    <Teleport to="body">
+        <div v-if="showConfirmModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl dark:bg-gray-900 dark:border dark:border-gray-800">
+
+                <!-- Header -->
+                <div class="flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 px-6 py-4">
+                    <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4" />
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Confirmar registro</h2>
+                        <p class="text-xs text-gray-500">Verifica que tus datos sean correctos</p>
+                    </div>
+                </div>
+
+                <!-- Datos -->
+                <div class="px-6 py-4 space-y-3">
+                    <div class="rounded-xl bg-gray-50 dark:bg-gray-800/50 px-4 py-3 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Nombre</span>
+                            <span class="font-medium text-gray-800 dark:text-white/90">{{ form.name }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Email</span>
+                            <span class="font-medium text-gray-800 dark:text-white/90">{{ form.email }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Teléfono</span>
+                            <span class="font-medium text-gray-800 dark:text-white/90">{{ form.phone }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Estado / Ciudad</span>
+                            <span class="font-medium text-gray-800 dark:text-white/90">{{ form.state }}, {{ form.city }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Tipo de asistente</span>
+                            <span class="font-medium text-gray-800 dark:text-white/90">
+                                {{ person_types.find(t => t.value === form.person_type)?.label }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Precio -->
+                    <div class="rounded-xl bg-brand-50 dark:bg-brand-500/10 px-4 py-3 flex justify-between items-center">
+                        <span class="text-sm font-medium text-brand-700 dark:text-brand-400">Total a pagar</span>
+                        <span class="text-lg font-bold text-brand-700 dark:text-brand-400">
+                            ${{ props.event[props.amounts[form.person_type]]?.toLocaleString('es-MX') }} MXN
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex gap-3 border-t border-gray-100 dark:border-gray-800 px-6 py-4">
+                    <button @click="showConfirmModal = false"
+                        class="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        Editar datos
+                    </button>
+                    <button @click="handleConfirm" :disabled="form.processing"
+                        class="flex-1 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition-colors">
+                        <span v-if="form.processing">Procesando...</span>
+                        <span v-else>Confirmar y pagar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </Teleport>
 
     <Alerta :show="alertState.show" :message="alertState.message" :title="alertState.title" :type="alertState.type"
         :buttonText="alertState.buttonText" :cancelText="alertState.cancelText"

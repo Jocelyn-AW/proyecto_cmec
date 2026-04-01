@@ -13,7 +13,7 @@ useSidebarProvider();
     <div class="min-h-screen bg-gray-100 xl:flex">
         <Sidebar />
         <Backdrop />
-        <div class="flex-1 transition-all duration-300 ease-in-out lg:ml-[90px]">
+        <div class="flex-1 transition-all duration-300 ease-in-out lg:pl-[90px] w-full">
             <AppHeader />
             <div class="p-4 mx-auto max-w-(--breakpoint-3xl) md:p-6">
                 <!-- Page Content -->

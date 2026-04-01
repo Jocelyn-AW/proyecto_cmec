@@ -79,6 +79,14 @@ const location = computed(() => {
     return parts.length ? parts.join(', ') : '—';
 });
 
+const canRenew = computed(() => {
+    const year = props.member?.inscription_date ? new Date(props.member.inscription_date).getFullYear() : null;
+    const lastDayOfYear = year ? new Date(year, 11, 31) : null;
+    const today = new Date();
+
+    return lastDayOfYear !== null && today > lastDayOfYear;
+});
+
 const form = useForm({})
 
 const handleCheckout = () => {
@@ -106,6 +114,7 @@ const handleCheckout = () => {
             </div>
 
             <button type="button" @click="handleCheckout"
+                :class="canRenew ? '' : 'disabled'" :title="canRenew ? '' : 'No puedes renovar tu membresía en este momento'"
                 class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2">
                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
