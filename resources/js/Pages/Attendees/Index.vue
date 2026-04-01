@@ -303,6 +303,10 @@ const handleExportExcel = () => {
                     {{ (truncate(item.event.topic, 30) || truncate(item.event.name, 30)) ?? 'N/A' }}
                 </template>
 
+                <template #cell-name="{ item }">
+                    {{  truncate(item.name, 15) }}
+                </template>
+
                 <!-- Fecha de nacimiento  -->
                 <template v-if="isConference" #cell-birth_date="{ item }">
                     {{ formattedDate(item.birth_date) }}

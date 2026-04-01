@@ -137,6 +137,29 @@ class AttendeesController extends Controller
                     }
                     return $attendee;
                 });
+
+                // inyeccion de datos fiscales del miembro
+                if ($memberPersonIds->isNotEmpty()) {
+                    $memberInvoiceData = InvoiceData::where('billable_type', 'member')
+                        ->whereIn('billable_id', $memberPersonIds)
+                        ->withTrashed()
+                        ->get()
+                        ->keyBy('billable_id');
+
+                    $paginated->getCollection()->transform(function ($attendee) use ($memberInvoiceData) {
+                        if (
+                            $attendee->person_type === 'member' &&
+                            $attendee->person_id &&
+                            !$attendee->invoice_data
+                        ) {
+                            $invoiceData = $memberInvoiceData->get($attendee->person_id);
+                            if ($invoiceData) {
+                                $attendee->setRelation('invoiceData', $invoiceData);
+                            }
+                        }
+                        return $attendee;
+                    });
+                }
             }
             //
 
@@ -321,6 +344,37 @@ class AttendeesController extends Controller
                 'tax_regime'       => $member->invoiceData?->tax_regime ?? '',
                 'cfdi_use'         => $member->invoiceData?->cfdi_use ?? '',
                 'address'          => $member->invoiceData?->address ?? '',
+            ],
+        ]);
+    }
+
+    public function getInvoiceData(string $cmecId)
+    {
+        $member = Member::where('cmec_member_id', $cmecId)->first();
+
+        if (!$member) {
+            return response()->json(['found' => false], 404);
+        }
+
+        $invoiceData = InvoiceData::where('billable_type', 'member')
+            ->where('billable_id', $member->id)
+            ->first();
+
+        if (!$invoiceData) {
+            return response()->json(['found' => false], 404);
+        }
+
+        return response()->json([
+            'found' => true,
+            'invoiceData' => [
+                'rfc'              => $invoiceData->rfc,
+                'name'             => $invoiceData->name,
+                'email'            => $invoiceData->email,
+                'postal_code'      => $invoiceData->postal_code,
+                'person_type'      => $invoiceData->person_type,
+                'tax_regime'       => $invoiceData->tax_regime,
+                'cfdi_use'         => $invoiceData->cfdi_use,
+                'address'          => $invoiceData->address,
             ],
         ]);
     }

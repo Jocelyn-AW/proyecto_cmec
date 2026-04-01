@@ -11,6 +11,7 @@ Route::put('/restore/{id}', [AttendeesController::class, 'restore'])->name('rest
 Route::post('/upload-diploma/{id}', [AttendeesController::class, 'uploadDiploma'])->name('upload-diploma');
 Route::get('/changeAttend/{id}', [AttendeesController::class, 'changeDidAttend'])->name('change-attend');
 Route::get('/by-cmec/{cmecId}', [AttendeesController::class, 'findMemberByCmec'])->name('by-cmec');
+Route::get('/getInvoiceData/{cmecId}', [AttendeesController::class, 'getInvoiceData'])->name('get-invoice-data');
 
 //Exports
 Route::get('/{event}/export/excel', [AttendeesController::class, 'exportExcel'])->name('export.excel');

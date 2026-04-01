@@ -48,6 +48,7 @@ const props = defineProps({
 
 const { alertState, success, errorA, warning, hideAlert } = useAlert()
 const isLoadingMember = ref(false)
+const invoiceDataLoaded = ref(false)
 
 watch(() => props.flash, (value) => {
     if (!value) return
@@ -147,7 +148,8 @@ const fetchMemberData = async () => {
                 createForm.cfdi_use = m.cfdi_use
                 createForm.tax_regime = m.tax_regime
                 createForm.address = m.address
-                showInvoiceForm.value = true
+                
+                invoiceDataLoaded.value = true
             }
 
             success('Datos del miembro cargados')
@@ -163,6 +165,33 @@ const fetchMemberData = async () => {
     }
 }
 
+const fetchInvoiceData = async (cmecId) => {
+    if (!cmecId) return
+
+    try {
+        const { data } = await axios.get(`/attendees/getInvoiceData/${cmecId}`)
+
+        if (data.found) {
+            const m = data?.invoiceData
+
+            createForm.rfc =                m?.rfc
+            createForm.tax_name =           m?.name
+            createForm.postal_code =        m?.postal_code
+            createForm.tax_person_type =    m?.person_type
+            createForm.cfdi_use =           m?.cfdi_use
+            createForm.tax_regime =         m?.tax_regime
+            createForm.address =            m?.address
+
+            invoiceDataLoaded.value = true
+        }
+    } catch (e) {
+        if (e.response?.status === 404) {
+            warning('No se encontraron datos fiscales para ese miembro')
+        } else {
+            errorA('Error al obtener datos fiscales del miembro')
+        }
+    }
+}
 
 //String formatters
 const generateRandomString = (length = 5) => {
@@ -373,6 +402,25 @@ watch(selectedState, (value, old) => {
         selectedCity.value = ''
     }
     createForm.state = value
+})
+
+watch(showInvoiceForm, (value) => {
+    if (invoiceDataLoaded.value) return
+
+    if (!value) {
+        createForm.rfc = '';
+        createForm.tax_name = '';
+        createForm.postal_code = '';
+        createForm.tax_person_type = '';
+        createForm.tax_regime = '';
+        createForm.cfdi_use = '';
+        createForm.address = '';
+    } else {
+        
+        if (createForm.cmec_member_id) {
+            fetchInvoiceData(createForm.cmec_member_id);
+        }
+    }
 })
 </script>
 <template>
