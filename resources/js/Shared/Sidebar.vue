@@ -213,11 +213,11 @@ const menuGroups = computed(() => [
                 name: "Mi Cuenta",
                 path: "/profile",
             },
-            {
+            ...(!isAdmin.value? [{
                 icon: PaperclipIcon,
                 name: "Datos Fiscales",
                 path: "/datos-fiscales",
-            },
+            }]: []),
         ]
     },
     ...(isAdmin.value ? [{

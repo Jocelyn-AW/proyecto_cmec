@@ -39,9 +39,10 @@ const dateFrom = ref(route().params.date_from ?? '')
 const dateTo = ref(route().params.date_to ?? '')
 const didAttend = ref(route().params.did_attend ?? '')
 const hasDiploma = ref(route().params.has_diploma ?? '')
+const eventType = ref(route().params.event_type ?? '')
 
 const hasActiveFilters = computed(() =>
-    dateFrom.value || dateTo.value || didAttend.value || hasDiploma.value
+    dateFrom.value || dateTo.value || didAttend.value || hasDiploma.value || eventType.value
 )
 
 const clearFilters = () => {
@@ -49,6 +50,7 @@ const clearFilters = () => {
     dateTo.value = ''
     didAttend.value = ''
     hasDiploma.value = ''
+    eventType.value = ''
 }
 
 const applyFilters = () => {
@@ -59,12 +61,13 @@ const applyFilters = () => {
             date_to: dateTo.value || undefined,
             did_attend: didAttend.value || undefined,
             has_diploma: hasDiploma.value || undefined,
+            event_type: eventType.value || undefined,
         },
         { preserveState: true, replace: true, only: ['history'] }
     )
 }
 
-watch([dateFrom, dateTo, didAttend, hasDiploma], applyFilters)
+watch([dateFrom, dateTo, didAttend, hasDiploma, eventType], applyFilters)
 
 // ----------------------------------
 // flatpickr
@@ -113,23 +116,23 @@ const goToPage = (url) => {
                         <div class="mt-6 flex flex-wrap gap-4">
                             <div class="flex flex-col">
                                 <span class="text-2xl font-bold text-gray-800 dark:text-white/90">
-                                    {{ history.data?.length ?? 0 }}
+                                    {{ history.total ?? 0 }}
                                 </span>
-                                <span class="text-xs text-gray-500">Eventos registrados</span>
+                                <span class="text-xs text-gray-500">Resultados encontrados</span>
                             </div>
                             <div class="h-12 w-px bg-gray-200 dark:bg-gray-700" />
                             <div class="flex flex-col">
                                 <span class="text-2xl font-bold text-gray-800 dark:text-white/90">
                                     {{history.data?.filter(i => i.did_attend).length ?? 0}}
                                 </span>
-                                <span class="text-xs text-gray-500">Asistencias</span>
+                                <span class="text-xs text-gray-500">Asistencias (esta página)</span>
                             </div>
                             <div class="h-12 w-px bg-gray-200 dark:bg-gray-700" />
                             <div class="flex flex-col">
                                 <span class="text-2xl font-bold text-gray-800 dark:text-white/90">
                                     {{history.data?.filter(i => i.diploma_url).length ?? 0}}
                                 </span>
-                                <span class="text-xs text-gray-500">Diplomas disponibles</span>
+                                <span class="text-xs text-gray-500">Diplomas (esta página)</span>
                             </div>
                         </div>
                     </div>
@@ -181,7 +184,35 @@ const goToPage = (url) => {
                     </div>
 
                     <div class="p-8">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+
+                            <!-- Tipo de evento (NUEVO) -->
+                            <div>
+                                <label class="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    Tipo de evento
+                                </label>
+                                <div class="relative">
+                                    <select v-model="eventType"
+                                        class="h-10 w-full appearance-none rounded-lg border border-gray-300 dark:border-gray-700 bg-transparent px-3 pr-8 text-sm text-gray-800 dark:text-white/90 focus:border-brand-300 focus:outline-none focus:ring-3 focus:ring-brand-500/10 dark:bg-gray-900">
+                                        <option value="">Todos</option>
+                                        <option value="webinar">Webinar</option>
+                                        <option value="academic_session">Sesión Académica</option>
+                                        <option value="conference">Congreso</option>
+                                        <option value="pre_conference">Pre-Congreso</option>
+                                        <option value="trans_conference">Trans-Congreso</option>
+                                        <option value="course">Curso</option>
+                                        <option value="membership">Membresía</option>
+                                    </select>
+                                    <span
+                                        class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                        <svg class="stroke-current" width="14" height="14" viewBox="0 0 16 16"
+                                            fill="none">
+                                            <path d="M3.8335 5.9165L8.00016 10.0832L12.1668 5.9165" stroke-width="1.2"
+                                                stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
 
                             <!-- Desde -->
                             <div>
@@ -280,10 +311,10 @@ const goToPage = (url) => {
                         <div>
                             <h2 class="text-sm font-semibold text-gray-800 dark:text-white/90">Eventos</h2>
                             <p class="text-xs text-gray-500">
-                                {{ history.data?.length
-                                    ? `${history.data.length} resultado${history.data.length === 1 ? '' : 's'}
-                                encontrado${history.data.length === 1 ? '' : 's'}`
-                                    : 'Sin resultados' }}
+                                {{ history.total
+                                    ? `${history.total} resultado${history.total === 1 ? '' : 's'} encontrado${history.total
+                                        === 1 ? '' : 's'}`
+                                : 'Sin resultados' }}
                             </p>
                         </div>
                     </div>
