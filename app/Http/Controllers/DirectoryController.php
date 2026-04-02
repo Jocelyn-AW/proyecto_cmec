@@ -15,7 +15,7 @@ use Inertia\Inertia;
 
 class DirectoryController extends Controller
 {
-    public function index (Request $request)
+    public function index(Request $request)
     {
         try {
             $user = Auth::user();
@@ -23,8 +23,7 @@ class DirectoryController extends Controller
             if ($user->role == 'administrador') {
                 return Inertia::render('Directory/Admin/Index', [
                     'members' => $this->getAdminData($request)
-                ]); 
-
+                ]);
             } else {
 
                 $member = Member::where('user_id', $user->id)->first()->id;
@@ -37,7 +36,6 @@ class DirectoryController extends Controller
                     'clinics' => $clinics
                 ]);
             }
-            
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }
@@ -50,33 +48,38 @@ class DirectoryController extends Controller
         $status = $request->input('status', '');
 
         $members = Member::with([
-            'directory' => function ($q) {
-                $q->withTrashed();
-            }, 
-            'clinics' => function ($q) {
-                $q->withTrashed();
-            }]);
+            'directory' => fn($q) => $q->withTrashed(),
+            'clinics'   => fn($q) => $q->withTrashed(),
+        ]);
 
         if (!empty($search)) {
-            $members->where(function ($query) use ($search){
+            $members->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('city', 'like', "%{$search}%")
                     ->orWhere('cmec_member_id', 'like', "%{$search}%")
                     ->orWhere('state', 'like', "%{$search}%");
-            });   
+            });
         }
 
         if ($status === 'trashed') {
-            $members->whereHas('directory', function ($query) {
-                $query->onlyTrashed();
-            });
-        } elseif ($status === '') {
-            $members->whereHas('directory'); 
+            $members->whereHas(
+                'directory',
+                fn($q) => $q->onlyTrashed()
+            );
+        } elseif ($status === 'all') {
+            $members->whereHas(
+                'directory',
+                fn($q) => $q->withTrashed()
+            );
+        } else {
+            $members->whereHas('directory');
         }
 
+        $memberTrashFilter = ($status === 'trashed') ? 'all' : $status;
 
-        return $members->withTrashFilter($status)    
-            ->paginate($perPage)->through(function ($member) {
+        return $members->withTrashFilter($memberTrashFilter)
+            ->paginate($perPage)
+            ->through(function ($member) {
                 if ($member->directory?->trashed()) {
                     $member->deleted_at = $member->directory->deleted_at;
                 }
@@ -86,7 +89,8 @@ class DirectoryController extends Controller
             ->withQueryString();
     }
 
-    public function delete(int $member_id) {
+    public function delete(int $member_id)
+    {
         try {
             $directory = DirectoryData::where('member_id', $member_id);
             $directory->delete();
@@ -104,7 +108,8 @@ class DirectoryController extends Controller
         }
     }
 
-    public function restore(int $member_id) {
+    public function restore(int $member_id)
+    {
         try {
             $directory = DirectoryData::withTrashed()->where('member_id', $member_id);
             $directory->restore();
@@ -128,7 +133,8 @@ class DirectoryController extends Controller
             $id = $request->input('id');
 
             $data = $request->validate(
-                $this->getValidationRules(), $this->getValidationMsg()
+                $this->getValidationRules(),
+                $this->getValidationMsg()
             );
 
             DirectoryData::updateOrCreate(['id' => $id], $data);
@@ -141,10 +147,9 @@ class DirectoryController extends Controller
         } catch (Exception $e) {
             Log::error($e->getMessage());
         }
-
     }
 
-    private function getValidationRules () 
+    private function getValidationRules()
     {
         $rules = [
             'member_id' => 'required|integer|exists:members,id',
@@ -163,7 +168,7 @@ class DirectoryController extends Controller
         return $rules;
     }
 
-    private function getValidationMsg () 
+    private function getValidationMsg()
     {
         return [
             'required' => 'Este campo es obligatorio',

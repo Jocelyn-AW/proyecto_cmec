@@ -204,16 +204,17 @@ const menuGroups = computed(() => [
                 path: "/directory",
             },
             {
+                icon: UserCircleIcon,
+                name: "Mi Cuenta",
+                path: "/profile",
+            },
+            ...(!isAdmin.value? [
+            {
                 name: "Mi historial",
                 icon: DocsIcon,
                 path: '/history',
             },
             {
-                icon: UserCircleIcon,
-                name: "Mi Cuenta",
-                path: "/profile",
-            },
-            ...(!isAdmin.value? [{
                 icon: PaperclipIcon,
                 name: "Datos Fiscales",
                 path: "/datos-fiscales",
