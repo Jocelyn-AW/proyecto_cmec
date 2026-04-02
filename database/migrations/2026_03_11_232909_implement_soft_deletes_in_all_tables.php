@@ -36,6 +36,9 @@ return new class extends Migration
     public function up(): void
     {
         foreach ($this->tables as $tableName) {
+            if (!Schema::hasTable($tableName)) {
+                continue;
+            }
             Schema::table($tableName, function (Blueprint $table) {
                 if (!Schema::hasColumn($table->getTable(), 'deleted_at')) {
                     $table->softDeletes();
@@ -50,6 +53,9 @@ return new class extends Migration
     public function down(): void
     {
         foreach ($this->tables as $tableName) {
+            if (!Schema::hasTable($tableName)) {
+                continue;
+            }
             Schema::table($tableName, function (Blueprint $table) {
                 $table->dropSoftDeletes();
             });
